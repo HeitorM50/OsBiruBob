@@ -1,0 +1,8 @@
+Navigate to the bob-get-started/express-todo-api-modern folder.
+
+Create a Dockerfile for this API using Node 22 and run it on port 3000.
+Do not install dependencies locally. The Dockerfile handles all installations.
+
+Once you create the Dockerfile, build the image and start the container.
+Then verify the API is running by adding a task with a POST request to
+/api/todos and showing me the response.

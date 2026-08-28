@@ -15,17 +15,21 @@ definições de ferramenta, Skills, prompts de sistema, regras base, regras do
 projeto. O Bob expõe essa decomposição no export da sessão — mas **nenhuma
 interface mostra esse número para quem está usando**.
 
-Numa sessão real nossa, de 8.772 tokens:
+Na nossa Rodada A — baseline real, versionada em [`benchmark/rodada-a.json`](benchmark/rodada-a.json) —
+o overhead fixo foi de 10.439 tokens:
 
-| Origem | Tokens |
-|---|---|
-| `toolDefinitions` | 5.447 |
-| `skills` | 1.478 |
-| `toolSystemPrompts` | 652 |
-| `staticSections` | 563 |
-| `customInstructions` | 318 |
-| `baseRules` | 197 |
-| **`projectRules`** | **0** |
+| Origem | Tokens | % |
+|---|---:|---:|
+| `toolDefinitions` | 5.403 | 51,8% |
+| `toolSystemPrompts` | 2.470 | 23,7% |
+| `skills` | 1.541 | 14,8% |
+| `staticSections` | 563 | 5,4% |
+| `baseRules` | 197 | 1,9% |
+| `customInstructions` | 160 | 1,5% |
+| `environment` | 71 | 0,7% |
+| `roleDefinition` | 34 | 0,3% |
+| **`projectRules`** | **0** | **0,0%** |
+| `mcpToolDefinitions` | 0 | 0,0% |
 
 Esse zero é o achado. `projectRules: 0` significa que **não existe `AGENTS.md`** no
 repositório: o agente redescobre as mesmas coisas por tentativa e erro em toda
@@ -73,7 +77,7 @@ já versionado, para a ferramenta poder ser avaliada numa máquina limpa:
 git clone https://github.com/HeitorM50/OsBiruBob.git
 cd OsBiruBob
 # comando do modo demo — a definir na Fase 6
-# entrada: fixtures/sample-export.json
+# entrada: fixtures/sample-export.json (export real, cópia do baseline)
 ```
 
 **Em cima de uma sessão sua.** No Bob IDE: `Tasks` → export JSON. Aponte o Hindsight
