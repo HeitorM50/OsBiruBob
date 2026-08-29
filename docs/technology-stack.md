@@ -43,16 +43,39 @@ configuração de compilação — nenhum override por pacote.
 | Cobertura | `@vitest/coverage-v8` (built-in, sem configuração extra) |
 | Convenção de arquivos | `src/**/*.test.ts` |
 
-### 1.5 CLI, Build e Interface
+### 1.5 Interface, CLI e Build
+
+O produto entregue é uma **SPA estática**. A CLI continua existindo como
+ferramenta de desenvolvimento sobre o mesmo core.
 
 | Camada | Decisão | Ferramenta |
 |---|---|---|
-| CLI | Parsing de argumentos | **[Cleye](https://github.com/privatenumber/cleye)** ou `process.argv` manual para CLIs simples |
-| Build | Bundler | **[tsup](https://tsup.egoist.dev/)** `^8` |
-| Output de terminal | Formatação e cores | **[chalk](https://github.com/chalk/chalk)** `^5` + tabelas via template literal simples |
-| Modo demo | Entrada fixa | `fixtures/sample-export.json` carregado com `fs.readFileSync` — zero dependência de rede |
+| UI | Biblioteca de componentes | **[React](https://react.dev/)** `^18` |
+| UI | Bundler e dev server | **[Vite](https://vite.dev/)** `^5` + `@vitejs/plugin-react` |
+| UI | Estilo | CSS Modules — nativo do Vite, zero dependência |
+| CLI | Parsing de argumentos | `process.argv` manual — a CLI tem poucas flags |
+| CLI | Bundler | **[tsup](https://tsup.egoist.dev/)** `^8` |
+| CLI | Output de terminal | **[chalk](https://github.com/chalk/chalk)** `^5` |
+| Modo demo | Entrada fixa | `fixtures/sample-export.json` **embutido no bundle** via `import` — zero rede, zero `fs` |
 
-O build produz um único binário CJS em `dist/`. O entry point da CLI é `src/cli.ts`.
+### Dois alvos de build
+
+| Alvo | Comando | Saída | Papel |
+|---|---|---|---|
+| **Web** | `npm run build:web` | `dist/web/` — HTML, JS, CSS estáticos | O produto |
+| **CLI** | `npm run build` | `dist/cli.js` — bundle CJS | Desenvolvimento e CI |
+
+Entry points: `src/ui/main.tsx` para a web, `src/cli.ts` para o terminal.
+**Nenhuma funcionalidade pode existir em apenas um dos dois** — os dois são
+adaptadores finos sobre o mesmo core.
+
+### 1.6 Catálogos de recomendação
+
+`data/mcp-catalog.json` e `data/tool-catalog.json` são **dado versionado**, não
+código. Importados como JSON estático (Vite e tsup resolvem `import` de JSON
+nativamente), portanto entram no bundle e funcionam offline.
+
+Tipos em [`domain-model.md`](./domain-model.md), Modelo 10.
 
 ---
 
@@ -102,7 +125,25 @@ mais rápido em repos TypeScript puros.
 | **Jest** | Requer `ts-jest` ou `babel-jest` para TypeScript — configuração adicional e transformação mais lenta. Para o escopo deste projeto, o overhead não se justifica. |
 | **Mocha + Chai** | Ecossistema fragmentado (assertion lib separada, type definitions separadas); mais boilerplate de configuração. |
 
-### 2.5 Build — tsup vs. alternativas
+### 2.5 Interface — React + Vite vs. alternativas
+
+**Justificativa:** o produto precisa de quatro telas com abas, tabelas, diff e
+lista de achados expansível — estado de UI o suficiente para que manipular DOM na
+mão custe mais tempo do que o projeto tem. React resolve isso com o modelo que
+todo mundo do time já conhece, e Vite entrega dev server instantâneo e build
+estático sem configuração.
+
+Design e usabilidade valem 5 dos 20 pontos da avaliação. É a área onde ferramenta
+de análise normalmente perde ponto, e não é lugar para economizar.
+
+| Alternativa | Motivo do descarte |
+|---|---|
+| **TypeScript puro + DOM** | Menos dependência e bundle menor, mas montar abas, diff e listas expansíveis à mão consome justamente o recurso mais escasso — tempo. |
+| **Preact** | API praticamente idêntica com bundle menor, mas o ganho é irrelevante num app estático aberto localmente, e o alias de compatibilidade adiciona um ponto de configuração a mais. |
+| **Next.js** | Traz SSR, roteamento de servidor e um runtime que **quebraria a premissa de deploy estático sem backend**. Resolve problemas que não temos. |
+| **Svelte / Vue** | Tecnicamente adequados; descartados por familiaridade do time, não por mérito. |
+
+### 2.6 Build — tsup vs. alternativas
 
 **Justificativa:** `tsup` é configurável em zero linhas para o caso mais comum
 (`tsup src/cli.ts --format cjs`). Baseado em esbuild internamente — build em
@@ -150,7 +191,31 @@ npm test
 npm run test:watch
 ```
 
-### Build
+### Aplicação web — desenvolvimento
+
+```bash
+npm run dev:web
+```
+
+> Equivale a `vite`. Abre a SPA com hot reload. **É o produto.**
+
+### Aplicação web — build estático
+
+```bash
+npm run build:web
+```
+
+> Equivale a `vite build`. Saída em `dist/web/`: HTML, JS e CSS estáticos, sem
+> runtime de servidor e sem variável de ambiente. É o que vai para o deploy.
+
+```bash
+npm run preview
+```
+
+> Equivale a `vite preview`. Serve `dist/web/` localmente para conferir o build
+> antes de publicar.
+
+### Build da CLI
 
 ```bash
 npm run build
@@ -160,31 +225,50 @@ npm run build
 
 ### Modo demo (local, sem chaves de API)
 
+O modo demo do **produto** é o botão "Ver exemplo" na própria SPA: carrega
+`fixtures/sample-export.json` embutido no bundle. Funciona em máquina limpa, sem
+arquivo, sem credencial e sem rede.
+
+No terminal, o equivalente é:
+
 ```bash
 npm run demo
 ```
 
-> Equivale a `node dist/cli.js --input fixtures/sample-export.json --demo`.
-> Não faz chamadas de rede. Entrada: [`fixtures/sample-export.json`](../fixtures/sample-export.json)
+> Equivale a `npm run build && node dist/cli.js --input fixtures/sample-export.json --demo`.
+> **O build faz parte do comando de propósito:** sem ele, `node dist/cli.js` falha
+> com `MODULE_NOT_FOUND` num clone limpo.
+> Entrada: [`fixtures/sample-export.json`](../fixtures/sample-export.json)
 > (cópia fiel do export real da Rodada A). Saída: análise completa no terminal.
 
 ---
 
 ## 4. Estrutura esperada de `package.json` (scripts)
 
+> **Estado atual:** o `package.json` ainda tem apenas os scripts da CLI
+> (`dev`, `build`, `test`, `test:watch`, `test:cov`, `demo`, `typecheck`).
+> `dev:web`, `build:web` e `preview` entram junto com as dependências de UI, no
+> início da F6 — adicioná-los antes criaria comandos que falham. A correção do
+> `demo` (prefixar com `npm run build`) entra na mesma mudança.
+
 ```json
 {
   "scripts": {
     "dev":        "tsx src/cli.ts",
+    "dev:web":    "vite",
     "build":      "tsup src/cli.ts --format cjs --dts --clean",
+    "build:web":  "vite build",
+    "preview":    "vite preview",
     "test":       "vitest run",
     "test:watch": "vitest",
     "test:cov":   "vitest run --coverage",
-    "demo":       "node dist/cli.js --input fixtures/sample-export.json --demo",
+    "demo":       "npm run build && node dist/cli.js --input fixtures/sample-export.json --demo",
     "typecheck":  "tsc --noEmit"
   }
 }
 ```
+
+> `demo` depende de `build` de propósito — ver [Modo demo](#modo-demo-local-sem-chaves-de-api).
 
 ---
 
@@ -193,7 +277,13 @@ npm run demo
 | Pacote | Tipo | Versão | Papel |
 |---|---|---|---|
 | `zod` | prod | `^3` | Validação e tipagem do contrato de domínio |
-| `chalk` | prod | `^5` | Output colorido no terminal |
+| `react` | prod | `^18` | Biblioteca de UI da SPA |
+| `react-dom` | prod | `^18` | Renderização da SPA no browser |
+| `chalk` | prod | `^5` | Output colorido no terminal (só CLI) |
+| `vite` | dev | `^5` | Dev server e build estático da web |
+| `@vitejs/plugin-react` | dev | `^4` | Suporte a React no Vite |
+| `@types/react` | dev | `^18` | Tipos do React |
+| `@types/react-dom` | dev | `^18` | Tipos do React DOM |
 | `tsup` | dev | `^8` | Build da CLI |
 | `typescript` | dev | `^5` | Compilador |
 | `tsx` | dev | `^4` | Execução TypeScript em desenvolvimento sem build |
@@ -201,5 +291,35 @@ npm run demo
 | `@vitest/coverage-v8` | dev | `^1` | Cobertura de código |
 | `@types/node` | dev | `^20` | Tipos do Node.js |
 
-> Nenhuma dependência de framework web (Express, Fastify, etc.) é adicionada nesta
-> fase. O Hindsight é uma ferramenta CLI — output no terminal, não em browser.
+---
+
+## 6. Restrições do alvo web
+
+O core (`parser`, `observe`, `diagnose`, `prescribe`, `compare`) é compilado para o
+browser sem alteração. Para que continue assim:
+
+- **Nenhuma API de Node fora de `src/cli.ts`.** Sem `fs`, `path`, `process`, `os`.
+  O arquivo de entrada é lido com `FileReader`; o fixture e os catálogos entram por
+  `import` estático.
+- **Nenhuma requisição de rede em runtime.** Sem `fetch`, `XMLHttpRequest`,
+  WebSocket ou telemetria. O bundle é autocontido.
+- **Conteúdo do export nunca vira HTML.** Sem `dangerouslySetInnerHTML`,
+  `innerHTML` ou `eval` — o export é entrada não-confiável também no navegador.
+- **Sem persistência.** Nada de `localStorage` com dado de sessão alheia. Recarregar
+  perde o estado, e isso é preferível.
+
+## 7. Proibições
+
+Estas dependências **não entram**, em nenhuma fase, e a proibição é arquitetural
+(ver [`architecture.md`](./architecture.md), seção "Nenhuma chamada a LLM"):
+
+| Categoria | Exemplos | Por quê |
+|---|---|---|
+| SDK de LLM | `@anthropic-ai/sdk`, `openai`, `@ibm-cloud/watsonx-ai` | Quebra o modo demo sem API key, o deploy estático, a privacidade e a explicabilidade |
+| Cliente HTTP | `axios`, `node-fetch`, `got` | Não há nada para buscar — o dado vem do arquivo do usuário |
+| Framework de backend | Express, Fastify, Next.js | Não há servidor, e não pode haver: o export não sai da máquina |
+| Banco de dados / ORM | qualquer | Não há estado persistido |
+| Telemetria / analytics | qualquer | Enviaria dado de sessão privada |
+
+Toda recomendação do Hindsight é **regra + catálogo**, determinística e rastreável
+até um campo do export.

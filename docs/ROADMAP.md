@@ -6,7 +6,7 @@ Dev Day Hackathon.
 O objetivo é entregar um laço fechado demonstrável:
 
 ```text
-export do Bob → Observe → Diagnose → Prescribe → Verify → interface/demo
+export do Bob → Observe → Diagnose → Prescribe → Verify → aplicação web
 ```
 
 O projeto só avança de fase quando o respectivo portão estiver comprovado. Uma
@@ -24,6 +24,11 @@ funcionalidade sem evidência verificável não conta como concluída.
 5. **Toda recomendação precisa de evidência.** Achado, turno, trecho de origem e
    regra proposta devem permanecer rastreáveis.
 6. **O modo demo não depende de IBM Cloud, API key ou sessão ativa.**
+7. **O produto é uma aplicação web estática.** Roda no navegador, sem backend e sem
+   rede. O export contém código e caminhos do usuário e não sai da máquina — isso é
+   restrição de arquitetura e argumento de produto ao mesmo tempo.
+8. **Nenhuma recomendação vem de modelo de linguagem.** Regra e catálogo, sempre
+   rastreáveis até um campo do export.
 
 ## Caminho crítico
 
@@ -167,7 +172,12 @@ fases seguintes.
 
 ### Portão F2
 
-Para `benchmark/rodada-a.json`:
+O contrato de saída da F2 é o **`ObserveReport`**, definido em
+[`domain-model.md`](./domain-model.md), Modelo 6. Ele já traz a tabela completa de
+conformidade — incluindo inventário de ferramentas (23 / 5 / 18) e comandos
+externos (3), que não constavam desta tabela.
+
+Resumo, para `benchmark/rodada-a.json`:
 
 | Métrica | Esperado |
 |---|---:|
@@ -245,6 +255,27 @@ Cada detector deve retornar, no mínimo:
    - `projectRules` deve sair de zero;
    - uma mudança observável precisa aparecer no novo export.
 
+### As cinco famílias de prescrição
+
+Além do `AGENTS.md`, a F4 recomenda **ferramentas a desligar, Skills, MCPs e
+subagentes**. Cada família tem um sinal de origem e uma prioridade honesta:
+
+| Família | Sinal no baseline | Prioridade | Observação |
+|---|---|---|---|
+| `AGENTS.md` | `projectRules: 0` | **P0** | O achado central |
+| Desligar ferramenta | **18 de 23 ociosas (78%)** | **P0** | Maior número quantitativo que temos |
+| Desligar Skill | `skills: 1541` com `loadedSkills: []` | **P0** | Subtração direta |
+| Habilitar MCP | 3 comandos externos (`docker` ×2, `curl`) | **P1** | Precisa de `data/mcp-catalog.json` |
+| Criar Skill | — | **P2** | Exige N sessões; com uma só, confiança `"low"` ou não emite |
+| Dividir em subagente | pressão 6,5% | **P2** | Não dispara no baseline, e está certo. `maxContextWindow` não vem no export |
+
+Duas regras que impedem recomendação sem lastro:
+
+- **Nada de LLM.** Toda prescrição é regra + catálogo. Ver
+  [`architecture.md`](./architecture.md), seção "Nenhuma chamada a LLM".
+- **Ausência de dado não vira recomendação.** Sem `maxContextWindow`, a prescrição
+  de subagente simplesmente não é emitida.
+
 ### Portão F4
 
 - artefato aceito pelo Bob;
@@ -292,31 +323,56 @@ apenas a métrica que favorece a hipótese.
 
 ---
 
-## Fase 6 — Interface e modo demo
+## Fase 6 — Aplicação web
 
 **Objetivo:** permitir que um jurado entenda problema, evidência, prescrição e
-resultado sem conhecer o schema do Bob.
+resultado sem conhecer o schema do Bob — e sem instalar nada.
+
+O entregável é uma **SPA estática** em `src/ui/`, publicada como URL e também
+executável a partir de um clone. A CLI continua existindo, mas **não é o produto**.
+
+### Por que web, e não terminal
+
+A submissão exige aplicação com deploy online ou execução local com interface.
+Além disso, o core já é composto de funções puras sem I/O — roda no navegador sem
+alteração. A interface é aditiva, não é reescrita.
 
 ### Ordem de implementação
 
-1. **#24 — Modo demo sem API key** — P0.
-2. **#21 — Decomposição do contexto** — P0.
-3. **#22 — Achados com evidência** — P0.
-4. **#23 — Comparativo antes/depois** — P0 depois da F5.
+1. **#24 — Modo demo** — P0. Botão "Ver exemplo" carrega
+   `fixtures/sample-export.json` embutido no bundle. Sem arquivo, sem credencial,
+   sem rede.
+2. **#21 — Decomposição do contexto** — P0. Barra empilhada com `projectRules`
+   destacado quando zero; overhead fixo, conversa e total separados.
+3. **#22 — Achados com evidência** — P0. Cada achado com turno, `fieldPath` e o
+   trecho que o comprova.
+4. **Prescrições em abas** — P0 para `AGENTS.md` (com diff) e Ferramentas;
+   P1 para MCPs; P2 para Skills e Subagentes.
+5. **#23 — Comparativo antes/depois** — P0 depois da F5.
 
-### Fluxo mínimo da demo
+### Entrada
+
+Arquivos entram por drag-and-drop, lidos com `FileReader`. A tela aceita **N
+arquivos**: um basta para diagnóstico, dois habilitam o A/B, três ou mais tornam
+a recomendação de Skill defensável.
+
+### Fluxo da demo
 
 ```text
-Selecionar export → ver decomposição → abrir achado → revisar prescrição
-→ comparar Rodada A e Rodada B
+Abrir a URL → "Ver exemplo" (ou arrastar o JSON) → ver a decomposição
+→ abrir um achado e sua evidência → revisar as prescrições
+→ arrastar a Rodada B → tabela de delta
 ```
 
 ### Portão F6
 
-- funciona em clone limpo com um comando documentado;
-- não requer credenciais nem serviços externos;
-- estados de carregamento, erro e ausência de Rodada B são compreensíveis;
+- abre pela URL publicada **e** funciona em clone limpo com um comando documentado;
+- **o JSON não sai do navegador** — sem upload, sem rede, sem telemetria;
+- não requer credenciais, API key nem serviços externos;
+- estados de carregamento, erro, export inválido e ausência de Rodada B são
+  compreensíveis;
 - nenhuma informação sensível aparece por padrão;
+- estimativas estão rotuladas como estimativas (I-6);
 - percurso principal cabe nos 90 segundos centrais do vídeo.
 
 ---
@@ -385,23 +441,48 @@ Esses percentuais são tetos de planejamento, não metas de consumo.
 
 ## Política de corte de escopo
 
-Se o prazo ou Bobcoins apertarem, cortar nesta ordem:
+Ordem de prioridade com o escopo web. Construir de cima para baixo; cortar de
+baixo para cima.
 
-1. gerador de Skill;
-2. modo customizado automático;
-3. estimativa por ferramenta individual;
-4. navegação avançada pelo transcript;
-5. animações e acabamento visual;
-6. detectores que só disparam em fixtures sintéticas.
+### Essencial — sem isto não existe produto
 
-Não cortar:
+| Ordem | Item | Por quê |
+|---|---|---|
+| 1 | `ObserveReport` + `parser` + `observe` | É o primeiro dominó: a UI e todos os detectores consomem esse contrato |
+| 2 | Tela 1 — decomposição do contexto | É o "ninguém nunca viu esse número" |
+| 3 | Tela 2 — achados com evidência | Sem evidência, é opinião |
+| 4 | Detectores `projectRules: 0` e ferramenta ociosa | Os dois únicos que disparam no baseline |
+| 5 | `AGENTS.md` gerado com diff | É a prescrição que fecha o laço |
+| 6 | Build estático publicado | Exigência de submissão |
+
+### Alto valor — cortar só se o relógio obrigar
+
+| Ordem | Item |
+|---|---|
+| 7 | Recomendação de MCP via catálogo — barata, com evidência visível no log |
+| 8 | Tela 4 — tabela de delta A/B (depende da F5) |
+| 9 | Agrupamento das ferramentas ociosas por propósito (`tool-catalog.json`) |
+
+### Cortar primeiro
+
+| Ordem | Item | Por quê é o primeiro a cair |
+|---|---|---|
+| 10 | Recomendação de Skill nova | Precisa de N sessões; com uma só é palpite |
+| 11 | Recomendação de subagente | Não dispara no baseline e depende de `maxContextWindow`, que não vem no export |
+| 12 | Modo customizado automático | Formato ainda não confirmado |
+| 13 | Estimativa por ferramenta individual | O export só dá o agregado (I-6) |
+| 14 | Navegação avançada pelo transcript | Conveniência |
+| 15 | Animações e acabamento visual | Último |
+
+### Não cortar, em nenhuma hipótese
 
 - parser do export real;
 - decomposição do contexto;
 - pelo menos dois achados explicáveis;
 - proposta revisável de configuração;
 - Rodada B e tabela de delta;
-- modo demo sem API key;
+- modo demo sem API key, funcionando em máquina limpa;
+- a garantia de que o export não sai do navegador;
 - auditoria de segurança e entregáveis obrigatórios.
 
 ## Definition of Done geral
