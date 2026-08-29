@@ -293,6 +293,108 @@ export interface TurnMetrics {
 }
 
 // ---------------------------------------------------------------------------
+// Model 6 — ObserveReport (full)
+// ---------------------------------------------------------------------------
+
+export interface ToolCallRecord {
+  callId:             string;
+  name:               string;
+  arguments:          Record<string, unknown>;
+  turnIndex:          number;
+  assistantMessageId: string;
+
+  resultMessageId:    string | null;
+  isError:            boolean | null;
+  permission:         "read" | "edit" | "execute" | "todo" | null;
+  durationMs:         number | null;
+  isOutsideWorkspace: boolean | null;
+}
+
+export interface ToolInventory {
+  available:              string[];
+  used:                   string[];
+  idle:                   string[];
+  idleRatio:              number;
+  toolDefinitionTokens:   number;
+  estimatedTokensPerTool: number | null;
+}
+
+export interface ExternalCommandRecord {
+  callId:     string;
+  turnIndex:  number;
+  raw:        string;
+  binaries:   string[];
+  isHttp:     boolean;
+  targetHost: string | null;
+}
+
+export interface HumanIntervention {
+  messageId:      string;
+  afterTurnIndex: number;
+  timestamp:      EpochMs;
+  content:        string;
+}
+
+export interface ApprovalSummary {
+  autoApprovalEnabled: boolean;
+  allowedPermissions:  Array<"read" | "edit" | "execute" | "todo">;
+  approvedCommands:    string[];
+}
+
+export interface SessionTotals {
+  taskCount:          number;
+  subtaskCount:       number;
+  cost:               number;
+  assistantTurns:     number;
+  toolCalls:          number;
+  erroredToolCalls:   number;
+  humanInterventions: number;
+}
+
+export interface ObserveAnomaly {
+  kind:       "unmatched-tool-call" | "orphan-tool-result" | "unknown-field" | "version-mismatch";
+  taskId?:    string;
+  messageId?: string;
+  callId?:    string;
+  fieldPath?: string;
+  detail:     string;
+}
+
+export interface TaskReport {
+  taskId:     string;
+  parentId:   string | null;
+  isSubtask:  boolean;
+  title:      string;
+  modeId:     string;
+  createdAt:  EpochMs;
+  updatedAt:  EpochMs;
+  durationMs: number;
+  completed:  boolean;
+
+  cost:          number;
+  contextTokens: number;
+
+  context:            ContextSummary;
+  turns:              TurnMetrics[];
+  toolCalls:          ToolCallRecord[];
+  toolInventory:      ToolInventory;
+  externalCommands:   ExternalCommandRecord[];
+  humanInterventions: HumanIntervention[];
+  approval:           ApprovalSummary;
+}
+
+export interface ObserveReport {
+  sessionId:  string;
+  exportedAt: EpochMs;
+  workspace:  string;
+  tasks:      TaskReport[];
+  totals:     SessionTotals;
+
+  unavailableMetrics: string[];
+  anomalies:          ObserveAnomaly[];
+}
+
+// ---------------------------------------------------------------------------
 // Model 6 — Finding
 // ---------------------------------------------------------------------------
 
