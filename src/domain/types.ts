@@ -330,6 +330,8 @@ export interface ToolCallRecord {
   resultMessageId: string | null;
   /** null when no result; never treated as false (absence ≠ success). */
   isError: boolean | null;
+  /** Error result content; null for successful or unmatched calls. Redactable. */
+  errorMessage: string | null;
   /** null when no result; preserves unknown future string values. */
   permission: ToolPermission | null;
   /** null when no result or result has no durationMs. */
