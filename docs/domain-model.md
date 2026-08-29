@@ -431,6 +431,14 @@ interface TurnMetrics {
 - `contextDelta` = `turns[n].contextTokens − turns[n-1].contextTokens`; `null` no
   primeiro turno. Nunca somar `contextTokens` entre turnos (I-2).
 
+#### Nota de divergência de custo — baseline atual
+
+No baseline (benchmark/rodada-a.json), a soma dos `cost` dos cinco turnos é
+**0.16262400000000002**, enquanto `task.costs.cost` é **0.336902**. São medições
+distintas (custo por mensagem assistant vs. custo total da task reportado pelo Bob)
+e **não devem ser reconciliadas**: não distribuir nem fabricar o residual. Ambos os
+valores devem ser preservados sem arredondamento (I-3).
+
 ### `ToolCallRecord`
 
 Chamada e resultado já correlacionados pelo `id` (I-4), achatados e com o turno
