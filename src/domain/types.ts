@@ -381,8 +381,10 @@ export interface ToolInventory {
   available: string[];
   used: string[];
   idle: string[];
-  idleRatio: number;
+  /** null when available is empty (no tools to compute a ratio). */
+  idleRatio: number | null;
   toolDefinitionTokens: number;
+  /** null when available is empty — labelled (estimate) in presentation. */
   estimatedTokensPerTool: number | null;
 }
 
@@ -391,6 +393,8 @@ export interface ExternalCommandRecord {
   turnIndex: number;
   /** Potentially sensitive command text — redact before display. */
   raw: string;
+  /** Always true — marks raw as redactable. */
+  rawRedactable: true;
   binaries: string[];
   isHttp: boolean;
   targetHost: string | null;
@@ -435,7 +439,8 @@ export interface TaskReport {
   context: ContextSummary;
   turns: TurnMetrics[];
   toolCalls: ToolCallRecord[];
-  toolInventory: ToolInventory;
+  /** null when availableTools is absent from the first user message. */
+  toolInventory: ToolInventory | null;
   externalCommands: ExternalCommandRecord[];
   humanInterventions: HumanIntervention[];
   approval: ApprovalSummary;

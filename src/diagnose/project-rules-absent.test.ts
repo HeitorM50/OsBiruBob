@@ -59,7 +59,7 @@ function makeTaskReport(taskId: string, context: ContextSummary): TaskReport {
       available: [],
       used: [],
       idle: [],
-      idleRatio: 0,
+      idleRatio: null,
       toolDefinitionTokens: context.breakdown.toolDefinitions,
       estimatedTokensPerTool: null,
     },

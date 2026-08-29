@@ -77,15 +77,15 @@ describe("observe — benchmark/rodada-a.json (conformance gate)", () => {
   });
 
   it("tasks[0].toolInventory.available.length === 23", () => {
-    expect(report.tasks[0].toolInventory.available.length).toBe(23);
+    expect(report.tasks[0].toolInventory?.available.length).toBe(23);
   });
 
   it("tasks[0].toolInventory.used.length === 5", () => {
-    expect(report.tasks[0].toolInventory.used.length).toBe(5);
+    expect(report.tasks[0].toolInventory?.used.length).toBe(5);
   });
 
   it("tasks[0].toolInventory.idle.length === 18", () => {
-    expect(report.tasks[0].toolInventory.idle.length).toBe(18);
+    expect(report.tasks[0].toolInventory?.idle.length).toBe(18);
   });
 
   it("tasks[0].externalCommands.length === 3", () => {
@@ -146,15 +146,15 @@ describe("observe — fixtures/sample-export.json (identical to rodada-a)", () =
   });
 
   it("tasks[0].toolInventory.available.length === 23", () => {
-    expect(report.tasks[0].toolInventory.available.length).toBe(23);
+    expect(report.tasks[0].toolInventory?.available.length).toBe(23);
   });
 
   it("tasks[0].toolInventory.used.length === 5", () => {
-    expect(report.tasks[0].toolInventory.used.length).toBe(5);
+    expect(report.tasks[0].toolInventory?.used.length).toBe(5);
   });
 
   it("tasks[0].toolInventory.idle.length === 18", () => {
-    expect(report.tasks[0].toolInventory.idle.length).toBe(18);
+    expect(report.tasks[0].toolInventory?.idle.length).toBe(18);
   });
 
   it("tasks[0].externalCommands.length === 3", () => {
@@ -439,7 +439,8 @@ describe("observe — external commands detail (baseline)", () => {
     const curlCmd = cmds.find((c) => c.binaries.includes("curl"));
     expect(curlCmd).toBeDefined();
     expect(curlCmd?.isHttp).toBe(true);
-    expect(curlCmd?.targetHost).toBe("localhost:3000");
+    // URL.hostname strips the port — "localhost:3000" → "localhost"
+    expect(curlCmd?.targetHost).toBe("localhost");
   });
 
   it("non-http command has isHttp === false", () => {
@@ -458,6 +459,8 @@ describe("observe — tool inventory used/idle", () => {
     const session = loadSession("fixtures/sample-export.json");
     const report = observe(session);
     const inv = report.tasks[0].toolInventory;
+    expect(inv).not.toBeNull();
+    if (!inv) return;
 
     const usedSet = new Set(inv.used);
     const idleSet = new Set(inv.idle);
@@ -474,18 +477,21 @@ describe("observe — tool inventory used/idle", () => {
     expect(inv.available.length).toBe(inv.used.length + inv.idle.length);
   });
 
-  it("idleRatio = idle / available", () => {
+  it("idleRatio = idle / available (no rounding)", () => {
     const session = loadSession("fixtures/sample-export.json");
     const report = observe(session);
     const inv = report.tasks[0].toolInventory;
+    expect(inv).not.toBeNull();
+    if (!inv) return;
+    expect(inv.idleRatio).not.toBeNull();
     const expected = inv.idle.length / inv.available.length;
-    expect(Math.abs(inv.idleRatio - expected)).toBeLessThan(1e-12);
+    expect(inv.idleRatio).toBe(expected);
   });
 
   it("toolDefinitionTokens === 5403 (from breakdown.toolDefinitions)", () => {
     const session = loadSession("fixtures/sample-export.json");
     const report = observe(session);
-    expect(report.tasks[0].toolInventory.toolDefinitionTokens).toBe(5403);
+    expect(report.tasks[0].toolInventory?.toolDefinitionTokens).toBe(5403);
   });
 });
 
@@ -566,5 +572,333 @@ describe("runObserve — pure orchestration error handling", () => {
     expect(() => runObserve("null")).not.toThrow();
     expect(() => runObserve("")).not.toThrow();
     expect(() => runObserve("42")).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tool inventory — detailed baseline characterisation (acceptance criteria)
+// ---------------------------------------------------------------------------
+
+import { toPublicReport } from "./public-report";
+
+describe("observe — tool inventory baseline characterisation", () => {
+  const session = loadSession("benchmark/rodada-a.json");
+  const report = observe(session);
+  const inv = report.tasks[0].toolInventory!;
+
+  it("toolInventory is not null (availableTools present in baseline)", () => {
+    expect(inv).not.toBeNull();
+  });
+
+  it("available.length === 23", () => {
+    expect(inv.available.length).toBe(23);
+  });
+
+  it("used.length === 5", () => {
+    expect(inv.used.length).toBe(5);
+  });
+
+  it("idle.length === 18", () => {
+    expect(inv.idle.length).toBe(18);
+  });
+
+  it("used set is exactly {execute_command, list_files, read_file, update_todo_list, write_file}", () => {
+    const usedSet = new Set(inv.used);
+    expect(usedSet.has("execute_command")).toBe(true);
+    expect(usedSet.has("list_files")).toBe(true);
+    expect(usedSet.has("read_file")).toBe(true);
+    expect(usedSet.has("update_todo_list")).toBe(true);
+    expect(usedSet.has("write_file")).toBe(true);
+    expect(usedSet.size).toBe(5);
+  });
+
+  it("idle includes read_xlsx, create_chart, spawn_subagent, use_skill, grep", () => {
+    const idleSet = new Set(inv.idle);
+    expect(idleSet.has("read_xlsx")).toBe(true);
+    expect(idleSet.has("create_chart")).toBe(true);
+    expect(idleSet.has("spawn_subagent")).toBe(true);
+    expect(idleSet.has("use_skill")).toBe(true);
+    expect(idleSet.has("grep")).toBe(true);
+  });
+
+  it("idleRatio === 18 / 23 (exact, no rounding)", () => {
+    expect(inv.idleRatio).toBe(18 / 23);
+  });
+
+  it("toolDefinitionTokens === 5403", () => {
+    expect(inv.toolDefinitionTokens).toBe(5403);
+  });
+
+  it("estimatedTokensPerTool === 5403 / 23 (exact, no rounding)", () => {
+    expect(inv.estimatedTokensPerTool).toBe(5403 / 23);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tool inventory — null when availableTools is absent
+// ---------------------------------------------------------------------------
+
+describe("observe — toolInventory null when availableTools absent", () => {
+  it("toolInventory is null and unavailableMetrics contains the task entry", () => {
+    const base = JSON.parse(readFixture("fixtures/sample-export.json"));
+    // Remove availableTools from the first user message
+    for (const msg of base.tasks[0].messages) {
+      if (msg.data?.role === "user") {
+        delete msg.data.availableTools;
+        break;
+      }
+    }
+    const result = parseSession(JSON.stringify(base));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const report = observe(result.value);
+    expect(report.tasks[0].toolInventory).toBeNull();
+    // unavailableMetrics must include a marker for this task's toolInventory
+    const taskId = report.tasks[0].taskId;
+    expect(report.unavailableMetrics.some((m) => m.includes("toolInventory") && m.includes(taskId))).toBe(true);
+  });
+
+  it("no used-tool-not-available anomaly when availableTools is absent", () => {
+    const base = JSON.parse(readFixture("fixtures/sample-export.json"));
+    for (const msg of base.tasks[0].messages) {
+      if (msg.data?.role === "user") {
+        delete msg.data.availableTools;
+        break;
+      }
+    }
+    const result = parseSession(JSON.stringify(base));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const report = observe(result.value);
+    const anomalies = report.anomalies.filter((a) => a.kind === "used-tool-not-available");
+    expect(anomalies).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tool inventory — availableTools present but empty
+// ---------------------------------------------------------------------------
+
+describe("observe — toolInventory with empty availableTools", () => {
+  it("idleRatio is null (no division by zero)", () => {
+    const base = JSON.parse(readFixture("fixtures/sample-export.json"));
+    for (const msg of base.tasks[0].messages) {
+      if (msg.data?.role === "user") {
+        msg.data.availableTools = [];
+        break;
+      }
+    }
+    const result = parseSession(JSON.stringify(base));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const report = observe(result.value);
+    const inv = report.tasks[0].toolInventory;
+    expect(inv).not.toBeNull();
+    expect(inv!.idleRatio).toBeNull();
+    expect(inv!.estimatedTokensPerTool).toBeNull();
+    expect(inv!.available).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tool inventory — used-tool-not-available anomaly
+// ---------------------------------------------------------------------------
+
+describe("observe — used-tool-not-available anomaly", () => {
+  it("tool used but not in availableTools emits anomaly and is not in inv.used", () => {
+    const base = JSON.parse(readFixture("fixtures/sample-export.json"));
+    // Replace the availableTools list with one that omits 'read_file'
+    for (const msg of base.tasks[0].messages) {
+      if (msg.data?.role === "user") {
+        // Keep all current tools but remove read_file
+        msg.data.availableTools = (msg.data.availableTools as string[]).filter(
+          (t: string) => t !== "read_file"
+        );
+        break;
+      }
+    }
+    const result = parseSession(JSON.stringify(base));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const report = observe(result.value);
+    const inv = report.tasks[0].toolInventory!;
+
+    // read_file should NOT be in used
+    expect(inv.used).not.toContain("read_file");
+
+    // anomaly emitted
+    const anomaly = report.anomalies.find(
+      (a) => a.kind === "used-tool-not-available" && a.detail.includes("read_file")
+    );
+    expect(anomaly).toBeDefined();
+    expect(anomaly?.taskId).toBe(report.tasks[0].taskId);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// External commands — detailed baseline (acceptance criteria)
+// ---------------------------------------------------------------------------
+
+describe("observe — external commands baseline detail", () => {
+  const session = loadSession("benchmark/rodada-a.json");
+  const report = observe(session);
+  const cmds = report.tasks[0].externalCommands;
+
+  it("exactly 3 external commands", () => {
+    expect(cmds).toHaveLength(3);
+  });
+
+  it("two commands contain docker binary", () => {
+    const dockerCmds = cmds.filter((c) => c.binaries.includes("docker"));
+    expect(dockerCmds.length).toBe(2);
+  });
+
+  it("one command contains curl binary with isHttp: true", () => {
+    const curlCmds = cmds.filter((c) => c.binaries.includes("curl"));
+    expect(curlCmds).toHaveLength(1);
+    expect(curlCmds[0].isHttp).toBe(true);
+  });
+
+  it("curl command targetHost === 'localhost' (URL.hostname strips port)", () => {
+    const curlCmd = cmds.find((c) => c.binaries.includes("curl"));
+    expect(curlCmd?.targetHost).toBe("localhost");
+  });
+
+  it("every command has rawRedactable: true", () => {
+    for (const cmd of cmds) {
+      expect(cmd.rawRedactable).toBe(true);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Binary parser — edge cases
+// ---------------------------------------------------------------------------
+
+import { extractExternalCommands } from "./index";
+
+function makeCmd(command: string): { name: string; arguments: Record<string, unknown>; callId: string; turnIndex: number } {
+  return { name: "execute_command", arguments: { command }, callId: "test-call-id", turnIndex: 0 };
+}
+
+describe("binary parser — chained operators", () => {
+  it("a && b extracts both binaries", () => {
+    const [rec] = extractExternalCommands([makeCmd("echo hello && cat file.txt")]);
+    expect(rec.binaries).toContain("echo");
+    expect(rec.binaries).toContain("cat");
+  });
+
+  it("a; b extracts both binaries", () => {
+    const [rec] = extractExternalCommands([makeCmd("ls -la; rm -rf /tmp/test")]);
+    expect(rec.binaries).toContain("ls");
+    expect(rec.binaries).toContain("rm");
+  });
+
+  it("a | b extracts both binaries", () => {
+    const [rec] = extractExternalCommands([makeCmd("docker ps | grep running")]);
+    expect(rec.binaries).toContain("docker");
+    expect(rec.binaries).toContain("grep");
+  });
+});
+
+describe("binary parser — sudo handling", () => {
+  it("sudo command extracts the real binary", () => {
+    const [rec] = extractExternalCommands([makeCmd("sudo docker ps")]);
+    expect(rec.binaries).toContain("docker");
+    expect(rec.binaries).not.toContain("sudo");
+  });
+
+  it("NAME=value sudo -u root /usr/bin/docker ps extracts docker", () => {
+    const [rec] = extractExternalCommands([makeCmd("NAME=value sudo -u root /usr/bin/docker ps")]);
+    expect(rec.binaries).toContain("docker");
+    expect(rec.binaries).not.toContain("sudo");
+    expect(rec.binaries).not.toContain("root");
+  });
+});
+
+describe("binary parser — env assignments", () => {
+  it("leading NAME=value assignments are skipped", () => {
+    const [rec] = extractExternalCommands([makeCmd("NODE_ENV=test npm run build")]);
+    expect(rec.binaries).toContain("npm");
+    expect(rec.binaries).not.toContain("NODE_ENV=test");
+  });
+
+  it("env NAME=value command extracts the real binary", () => {
+    const [rec] = extractExternalCommands([makeCmd("env NODE_ENV=test npm run build")]);
+    expect(rec.binaries).toContain("npm");
+    expect(rec.binaries).not.toContain("env");
+  });
+});
+
+describe("binary parser — absolute paths", () => {
+  it("absolute path returns basename only", () => {
+    const [rec] = extractExternalCommands([makeCmd("/usr/bin/docker build -t img .")]);
+    expect(rec.binaries).toContain("docker");
+    expect(rec.binaries).not.toContain("/usr/bin/docker");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Public report projection — toPublicReport
+// ---------------------------------------------------------------------------
+
+describe("toPublicReport — redaction", () => {
+  const session = loadSession("fixtures/sample-export.json");
+  const report = observe(session);
+  const pub = toPublicReport(report);
+
+  it("workspace is [REDACTED]", () => {
+    expect(pub.workspace).toBe("[REDACTED]");
+  });
+
+  it("original report workspace is unchanged (immutability)", () => {
+    expect(report.workspace).not.toBe("[REDACTED]");
+  });
+
+  it("all task titles are [REDACTED]", () => {
+    for (const t of pub.tasks) {
+      expect(t.title).toBe("[REDACTED]");
+    }
+  });
+
+  it("all toolCall arguments are [REDACTED]", () => {
+    for (const t of pub.tasks) {
+      for (const tc of t.toolCalls) {
+        expect(tc.arguments).toBe("[REDACTED]");
+      }
+    }
+  });
+
+  it("all externalCommands raw fields are [REDACTED]", () => {
+    for (const t of pub.tasks) {
+      for (const cmd of t.externalCommands) {
+        expect(cmd.raw).toBe("[REDACTED]");
+      }
+    }
+  });
+
+  it("externalCommands contain more than 0 entries (sanity check)", () => {
+    const cmds = pub.tasks.flatMap((t) => t.externalCommands);
+    expect(cmds.length).toBeGreaterThan(0);
+  });
+
+  it("original report externalCommands raw fields are not [REDACTED] (immutability)", () => {
+    for (const t of report.tasks) {
+      for (const cmd of t.externalCommands) {
+        expect(cmd.raw).not.toBe("[REDACTED]");
+      }
+    }
+  });
+
+  it("original report toolCalls arguments are not [REDACTED] (immutability)", () => {
+    for (const t of report.tasks) {
+      for (const tc of t.toolCalls) {
+        expect(tc.arguments).not.toBe("[REDACTED]");
+      }
+    }
   });
 });
