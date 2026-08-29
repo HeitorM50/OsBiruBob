@@ -19,6 +19,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { parseSession } from "./parser/index";
 import { observe } from "./observe/index";
+import { toPublicReport } from "./observe/public-report";
 import type { ObserveReport } from "./domain/types";
 
 // ---------------------------------------------------------------------------
@@ -135,10 +136,19 @@ function formatReport(report: ObserveReport): string {
     }
     lines.push("");
     lines.push("  Tool inventory:");
-    lines.push(`    Available  ${task.toolInventory.available.length}`);
-    lines.push(`    Used       ${task.toolInventory.used.length}  (${task.toolInventory.used.join(", ")})`);
-    lines.push(`    Idle       ${task.toolInventory.idle.length}  (idle ratio: ${(task.toolInventory.idleRatio * 100).toFixed(1)}%)`);
-    lines.push(`    Tool defs  ${task.toolInventory.toolDefinitionTokens} tokens`);
+    if (task.toolInventory === null) {
+      lines.push(`    (unavailable — availableTools absent from export)`);
+    } else {
+      const inv = task.toolInventory;
+      const idleRatioPct = inv.idleRatio !== null ? `${(inv.idleRatio * 100).toFixed(1)}%` : "n/a";
+      lines.push(`    Available  ${inv.available.length}`);
+      lines.push(`    Used       ${inv.used.length}  (${inv.used.join(", ")})`);
+      lines.push(`    Idle       ${inv.idle.length}  (idle ratio: ${idleRatioPct})`);
+      lines.push(`    Tool defs  ${inv.toolDefinitionTokens} tokens`);
+      if (inv.estimatedTokensPerTool !== null) {
+        lines.push(`    Est. tokens/tool  ${inv.estimatedTokensPerTool} (estimate)`);
+      }
+    }
     if (task.externalCommands.length > 0) {
       lines.push("");
       lines.push(`  External commands (${task.externalCommands.length}):`);
@@ -224,9 +234,10 @@ function main(): void {
   const { report } = result;
 
   if (emitJson) {
-    // JSON output for programmatic consumption — no redaction needed; upstream
-    // UI/Compare must apply their own presentation-layer redaction when rendering.
-    process.stdout.write(JSON.stringify(report, null, 2) + "\n");
+    // Emit a redacted projection — workspace, task titles, tool arguments,
+    // external command raw text, and human intervention content are replaced
+    // with [REDACTED] to prevent accidental leakage.
+    process.stdout.write(JSON.stringify(toPublicReport(report), null, 2) + "\n");
   } else {
     process.stdout.write(formatReport(report));
   }
