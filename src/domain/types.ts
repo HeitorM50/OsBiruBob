@@ -120,6 +120,18 @@ export interface TaskMeta {
 // Model 5 — ToolCall / ToolResult
 // ---------------------------------------------------------------------------
 
+/**
+ * Known permission values from the export.
+ * Open union: unknown future string values are preserved as-is and must not
+ * cause the parser or observe module to fail (forward-compatibility policy).
+ */
+export type ToolPermission =
+  | "read"
+  | "edit"
+  | "execute"
+  | "todo"
+  | (string & Record<never, never>); // forward-compatible open union
+
 export interface ToolCall {
   /** Prefix "tooluse_…". Correlate with ToolUsage.signature.id (I-4). */
   id: string;
@@ -136,7 +148,7 @@ export interface ToolUsage {
     /** true = tool failed. Basis for retry detector. */
     isError: boolean;
   };
-  permission: "read" | "edit" | "execute" | "todo";
+  permission: ToolPermission;
   isOutsideWorkspace: boolean;
   labels?: {
     displayName: string;
@@ -293,105 +305,72 @@ export interface TurnMetrics {
 }
 
 // ---------------------------------------------------------------------------
-// Model 6 — ObserveReport (full)
+// Model 6 — ToolCallRecord
 // ---------------------------------------------------------------------------
 
+/**
+ * A single tool-call invocation correlated with its result (if any).
+ * Produced by extractToolCalls in src/observe/tool-calls.ts.
+ *
+ * - Fields from the result side are null when no matching result was found
+ *   (unmatched call). null means "absent", never false or 0 (I-6).
+ * - arguments is redactable — always replace with [REDACTED] in public output.
+ * - Correlation is exclusively by ID (I-4). Never by position.
+ */
 export interface ToolCallRecord {
-  callId:             string;
-  name:               string;
-  arguments:          Record<string, unknown>;
-  turnIndex:          number;
+  callId: string;
+  name: string;
+  /** Potentially sensitive (paths, code, commands) — redact before display. */
+  arguments: Record<string, unknown>;
+  /** 0-based index over assistant messages (same numbering as TurnMetrics.index). */
+  turnIndex: number;
   assistantMessageId: string;
 
-  resultMessageId:    string | null;
-  isError:            boolean | null;
-  permission:         "read" | "edit" | "execute" | "todo" | null;
-  durationMs:         number | null;
+  /** null when there is no matching result for this call. */
+  resultMessageId: string | null;
+  /** null when no result; never treated as false (absence ≠ success). */
+  isError: boolean | null;
+  /** null when no result; preserves unknown future string values. */
+  permission: ToolPermission | null;
+  /** null when no result or result has no durationMs. */
+  durationMs: number | null;
+  /** null when no result. */
   isOutsideWorkspace: boolean | null;
 }
 
-export interface ToolInventory {
-  available:              string[];
-  used:                   string[];
-  idle:                   string[];
-  idleRatio:              number;
-  toolDefinitionTokens:   number;
-  estimatedTokensPerTool: number | null;
-}
+// ---------------------------------------------------------------------------
+// Model 6 — ObserveAnomaly
+// ---------------------------------------------------------------------------
 
-export interface ExternalCommandRecord {
-  callId:     string;
-  turnIndex:  number;
-  raw:        string;
-  binaries:   string[];
-  isHttp:     boolean;
-  targetHost: string | null;
-}
-
-export interface HumanIntervention {
-  messageId:      string;
-  afterTurnIndex: number;
-  timestamp:      EpochMs;
-  content:        string;
-}
-
-export interface ApprovalSummary {
-  autoApprovalEnabled: boolean;
-  allowedPermissions:  Array<"read" | "edit" | "execute" | "todo">;
-  approvedCommands:    string[];
-}
-
-export interface SessionTotals {
-  taskCount:          number;
-  subtaskCount:       number;
-  cost:               number;
-  assistantTurns:     number;
-  toolCalls:          number;
-  erroredToolCalls:   number;
-  humanInterventions: number;
-}
-
+/**
+ * Structural anomaly detected during observation — not a diagnostic finding.
+ * Produced in src/observe/tool-calls.ts, collected into ObserveReport.
+ *
+ * Kinds:
+ * - "unmatched-tool-call"    — assistant emitted a call with no matching result
+ * - "orphan-tool-result"     — result message has no matching call anywhere
+ * - "duplicate-tool-call-id" — same callId appears in >1 assistant toolCalls[]
+ * - "duplicate-tool-result-id" — same resultId (signature.id) in >1 tool messages
+ * - "unknown-field"          — unexpected field in the export (forward-compat)
+ * - "version-mismatch"       — export version ≠ 1
+ *
+ * Never include arguments, message content, or absolute paths in `detail`.
+ */
 export interface ObserveAnomaly {
-  kind:       "unmatched-tool-call" | "orphan-tool-result" | "unknown-field" | "version-mismatch";
-  taskId?:    string;
+  kind:
+    | "unmatched-tool-call"
+    | "orphan-tool-result"
+    | "duplicate-tool-call-id"
+    | "duplicate-tool-result-id"
+    | "unknown-field"
+    | "version-mismatch"
+    | (string & Record<never, never>); // forward-compatible
+  taskId?: string;
   messageId?: string;
-  callId?:    string;
+  callId?: string;
   fieldPath?: string;
-  detail:     string;
-}
-
-export interface TaskReport {
-  taskId:     string;
-  parentId:   string | null;
-  isSubtask:  boolean;
-  title:      string;
-  modeId:     string;
-  createdAt:  EpochMs;
-  updatedAt:  EpochMs;
-  durationMs: number;
-  completed:  boolean;
-
-  cost:          number;
-  contextTokens: number;
-
-  context:            ContextSummary;
-  turns:              TurnMetrics[];
-  toolCalls:          ToolCallRecord[];
-  toolInventory:      ToolInventory;
-  externalCommands:   ExternalCommandRecord[];
-  humanInterventions: HumanIntervention[];
-  approval:           ApprovalSummary;
-}
-
-export interface ObserveReport {
-  sessionId:  string;
-  exportedAt: EpochMs;
-  workspace:  string;
-  tasks:      TaskReport[];
-  totals:     SessionTotals;
-
-  unavailableMetrics: string[];
-  anomalies:          ObserveAnomaly[];
+  /** Human-readable detail — must NOT contain arguments, content, or paths. */
+  detail: string;
 }
 
 // ---------------------------------------------------------------------------
