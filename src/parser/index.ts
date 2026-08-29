@@ -108,18 +108,20 @@ const MessageSchema = z
   })
   .passthrough();
 
-const BreakdownDetailSchema = z.object({
-  roleDefinition: z.number(),
-  staticSections: z.number(),
-  skills: z.number(),
-  baseRules: z.number(),
-  projectRules: z.number(),
-  customInstructions: z.number(),
-  environment: z.number(),
-  toolSystemPrompts: z.number(),
-  toolDefinitions: z.number(),
-  mcpToolDefinitions: z.number(),
-});
+const BreakdownDetailSchema = z
+  .object({
+    roleDefinition: z.number(),
+    staticSections: z.number(),
+    skills: z.number(),
+    baseRules: z.number(),
+    projectRules: z.number(),
+    customInstructions: z.number(),
+    environment: z.number(),
+    toolSystemPrompts: z.number(),
+    toolDefinitions: z.number(),
+    mcpToolDefinitions: z.number(),
+  })
+  .catchall(z.number());
 
 const ContextBreakdownSchema = z
   .object({
