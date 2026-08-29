@@ -22,6 +22,7 @@ import type {
   ContextSummary,
   ToolCallRecord,
   ToolInventory,
+  ToolPermission,
   ExternalCommandRecord,
   HumanIntervention,
   ApprovalSummary,
@@ -270,7 +271,7 @@ function extractToolCallRecords(
     {
       messageId: string;
       isError: boolean;
-      permission: "read" | "edit" | "execute" | "todo";
+      permission: ToolPermission;
       durationMs: number | null;
       isOutsideWorkspace: boolean;
     }

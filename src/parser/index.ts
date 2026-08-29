@@ -85,7 +85,10 @@ const MessageDataSchema = z
             isError: z.boolean(),
           })
           .passthrough(),
-        permission: z.enum(["read", "edit", "execute", "todo"]),
+        // Accept any string for permission — forward-compatible policy.
+        // Known values: "read" | "edit" | "execute" | "todo".
+        // Unknown future values are preserved as-is and must not break parsing.
+        permission: z.string(),
         isOutsideWorkspace: z.boolean(),
         labels: z
           .object({
