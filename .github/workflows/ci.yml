@@ -1,0 +1,100 @@
+name: CI / Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# One concurrent run per ref; cancel in-flight runs on new pushes.
+# PR runs are isolated by head ref; main runs share the "pages" key so
+# only the latest push deploys.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Job 1: install, typecheck, test ────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run test suite
+        run: npm test
+
+  # ── Job 2: build static app and deploy to GitHub Pages ─────────────────────
+  # Runs only on push to main — skipped entirely on pull_request events.
+  # Requires the repository Pages source to be set to "GitHub Actions" in
+  # Settings → Pages before the first deploy.
+  #
+  # NOTE: `build:web` (vite build → dist/web/) is added to package.json in F6
+  # alongside Vite and React. Until then this job will fail; it is gated on
+  # the `if:` condition so it never runs on PRs and won't block them.
+  deploy:
+    name: Deploy to Pages
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    # Serialise deploys; do not cancel an in-flight deploy when a new push
+    # arrives — let the in-flight run finish so Pages is never left in a
+    # partially-deployed state.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static app
+        # build:web = vite build → dist/web/
+        # Added to package.json in F6 alongside Vite + React dependencies.
+        run: npm run build:web
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Must match the `outDir` set in vite.config.ts (dist/web/).
+          path: dist/web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
