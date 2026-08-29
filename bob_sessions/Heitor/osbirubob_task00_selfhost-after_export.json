@@ -1,0 +1,523 @@
+{
+  "version": 1,
+  "exportedAt": 1788015223162,
+  "workspace": "file:/[REDACTED]",
+  "tasks": [
+    {
+      "task": {
+        "id": "7fbe7dc730d8208c143a2cd1bbdb208b",
+        "workspace": "file:/[REDACTED]",
+        "parentId": null,
+        "taskType": "normal",
+        "title": "[REDACTED]",
+        "status": "active",
+        "firstMessage": "[REDACTED]",
+        "version": null,
+        "gitSha": null,
+        "gitBranch": null,
+        "isPinned": false,
+        "lastError": null,
+        "messageQueue": null,
+        "createdAt": 1788014458160,
+        "updatedAt": 1788015136522,
+        "env": {
+          "id": "7fbe7dc730d8208c143a2cd1bbdb208b",
+          "workspace": "file:/[REDACTED]",
+          "workspaceName": "[REDACTED]",
+          "scheme": "file",
+          "query": "[REDACTED]",
+          "language": "en",
+          "isPlayground": false,
+          "costEffective": true,
+          "modeId": "hindsight-implementation",
+          "_meta": {
+            "commandSecurityModel": "openai/gpt-oss-20b"
+          },
+          "staticEnvInfo": {
+            "primaryWorkspace": "[REDACTED]",
+            "systemInfo": {
+              "platform": "linux",
+              "release": "7.1.8-arch1-3",
+              "arch": "x64",
+              "shell": "/usr/bin/bash"
+            }
+          },
+          "task": []
+        },
+        "approvalConfig": {
+          "autoApprovalEnabled": true,
+          "outsideWorkspaceAllowed": false,
+          "allowed_permissions": [
+            "read",
+            "skill",
+            "edit",
+            "execute"
+          ],
+          "editApprovalPreviewMode": "editor",
+          "allowedExecutors": [
+            {
+              "toolId": "execute_command",
+              "approvedCommands": [],
+              "deniedCommands": []
+            }
+          ],
+          "taskCommandApprovals": [
+            {
+              "toolId": "execute_command",
+              "approvedCommands": []
+            }
+          ],
+          "forbiddenApprovalGroups": [],
+          "taskAllowedMcpTools": []
+        },
+        "costs": {
+          "cost": 0.318508,
+          "contextTokens": 25190,
+          "contextWindowBreakdown": {
+            "total": 10062,
+            "reportedTotal": 25190,
+            "breakdown": {
+              "roleDefinition": 18,
+              "staticSections": 563,
+              "skills": 1117,
+              "baseRules": 197,
+              "projectRules": 2092,
+              "customInstructions": 100,
+              "environment": 74,
+              "toolSystemPrompts": 456,
+              "toolDefinitions": 5445,
+              "mcpToolDefinitions": 0
+            },
+            "loadedSkills": [
+              {
+                "name": "implement-pipeline-module",
+                "tokens": 276
+              }
+            ],
+            "key": "[REDACTED]"
+          }
+        }
+      },
+      "messages": [
+        {
+          "id": "70f86cd7c815ac99fbac428314fd4f50",
+          "role": "system",
+          "createdAt": 1788015135201,
+          "data": {
+            "id": "70f86cd7c815ac99fbac428314fd4f50",
+            "role": "system",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788014855284
+            }
+          }
+        },
+        {
+          "id": "285b7c440fd096d0fb6ef52db3776bd4",
+          "role": "user",
+          "createdAt": 1788015135202,
+          "data": {
+            "id": "285b7c440fd096d0fb6ef52db3776bd4",
+            "role": "user",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788014855284
+            },
+            "envContext": "[REDACTED]",
+            "availableTools": [
+              "GetSymbolsOverview",
+              "FindSymbol",
+              "FindReferencingSymbols",
+              "use_skill",
+              "apply_diff",
+              "insert_content",
+              "list_files",
+              "read_file",
+              "read_xlsx",
+              "search_and_replace",
+              "update_todo_list",
+              "write_file",
+              "execute_command",
+              "glob",
+              "grep",
+              "search_bob_docs",
+              "ask_followup_question",
+              "start_workflow"
+            ]
+          }
+        },
+        {
+          "id": "3bf6c824cc3b2f99396f1fdd23ec5f4b",
+          "role": "assistant",
+          "createdAt": 1788015135204,
+          "data": {
+            "id": "3bf6c824cc3b2f99396f1fdd23ec5f4b",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788014857333,
+              "spend": {
+                "cost": 0.023314,
+                "contextTokens": 11657,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_vxCqqys87nA5lM268GPu9q",
+                "name": "use_skill",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_J0Am6Y7UwQVvPLRPjrcfHJ",
+                "name": "read_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "3fb8e88de2eccd418431630c2b02ff3b",
+          "role": "tool",
+          "createdAt": 1788015135204,
+          "data": {
+            "id": "3fb8e88de2eccd418431630c2b02ff3b",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788014869403,
+              "durationMs": 12032
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_vxCqqys87nA5lM268GPu9q",
+                "name": "use_skill",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "skill",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "953425a884341e29c85add07b62fdd30",
+          "role": "tool",
+          "createdAt": 1788015135222,
+          "data": {
+            "id": "953425a884341e29c85add07b62fdd30",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788014869417,
+              "durationMs": 11
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_J0Am6Y7UwQVvPLRPjrcfHJ",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "499cac89ca19ee8aab82cc2b9b9ebe85",
+          "role": "assistant",
+          "createdAt": 1788015135223,
+          "data": {
+            "id": "499cac89ca19ee8aab82cc2b9b9ebe85",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788014871737,
+              "spend": {
+                "cost": 0.03223,
+                "contextTokens": 16115,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_YepiNR5zsUyFfZpPodGIlg",
+                "name": "glob",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "463fff410de162e54d9b93771b99bc92",
+          "role": "tool",
+          "createdAt": 1788015135223,
+          "data": {
+            "id": "463fff410de162e54d9b93771b99bc92",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788014871904,
+              "durationMs": 40
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_YepiNR5zsUyFfZpPodGIlg",
+                "name": "glob",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "0cfeec7203741dd2a35a69fccaf9052e",
+          "role": "assistant",
+          "createdAt": 1788015135223,
+          "data": {
+            "id": "0cfeec7203741dd2a35a69fccaf9052e",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788014873958,
+              "spend": {
+                "cost": 0.032908,
+                "contextTokens": 16454,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_A1ku1fNi0Ut8YolxW9QNNF",
+                "name": "write_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "e5f8f816052269fbfcd37bf16abf5b63",
+          "role": "tool",
+          "createdAt": 1788015135224,
+          "data": {
+            "id": "e5f8f816052269fbfcd37bf16abf5b63",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788014880195,
+              "durationMs": 2913
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_A1ku1fNi0Ut8YolxW9QNNF",
+                "name": "write_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "edit",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "094da8db3cd48d9af5ed16afa5ec71cc",
+          "role": "assistant",
+          "createdAt": 1788015135225,
+          "data": {
+            "id": "094da8db3cd48d9af5ed16afa5ec71cc",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788014882244,
+              "spend": {
+                "cost": 0.037196,
+                "contextTokens": 18598,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_yqsjYbFSKl9mtEUL9atc2n",
+                "name": "execute_command",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "18b901d19c637a4ae8ebe7a688af0107",
+          "role": "tool",
+          "createdAt": 1788015135226,
+          "data": {
+            "id": "18b901d19c637a4ae8ebe7a688af0107",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788014886479,
+              "durationMs": 3159
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_yqsjYbFSKl9mtEUL9atc2n",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "471953ac6589f8ef66704e64ea8a9fc4",
+          "role": "assistant",
+          "createdAt": 1788015135226,
+          "data": {
+            "id": "471953ac6589f8ef66704e64ea8a9fc4",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788014888727,
+              "spend": {
+                "cost": 0.04424,
+                "contextTokens": 22120,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_azzGpKXKfMuw0h0vf3rJqr",
+                "name": "write_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "5670b7c22c866ffbe4fe46e20dbd7039",
+          "role": "tool",
+          "createdAt": 1788015135227,
+          "data": {
+            "id": "5670b7c22c866ffbe4fe46e20dbd7039",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788014904007,
+              "durationMs": 1048
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_azzGpKXKfMuw0h0vf3rJqr",
+                "name": "write_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "edit",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "b408a68bf9ee0c93298beab855131ac1",
+          "role": "assistant",
+          "createdAt": 1788015135229,
+          "data": {
+            "id": "b408a68bf9ee0c93298beab855131ac1",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788014906137,
+              "spend": {
+                "cost": 0.049786,
+                "contextTokens": 24893,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_acZa9pklk2zeBOo7SVPvZY",
+                "name": "execute_command",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_anyEOWLTFPGQXO4IgQfF2M",
+                "name": "execute_command",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "290439a3b67e2ff734dcdcf6b6e6b65d",
+          "role": "tool",
+          "createdAt": 1788015135229,
+          "data": {
+            "id": "290439a3b67e2ff734dcdcf6b6e6b65d",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788015101653,
+              "durationMs": 195506
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_acZa9pklk2zeBOo7SVPvZY",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "f9ac6267949c6521e1ad21bbd3a58f65",
+          "role": "tool",
+          "createdAt": 1788015135230,
+          "data": {
+            "id": "f9ac6267949c6521e1ad21bbd3a58f65",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788015129020,
+              "durationMs": 25374
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_anyEOWLTFPGQXO4IgQfF2M",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "560324894abd4958888dbcaafe103d34",
+          "role": "assistant",
+          "createdAt": 1788015135230,
+          "data": {
+            "id": "560324894abd4958888dbcaafe103d34",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788015131300,
+              "spend": {
+                "cost": 0.05038,
+                "contextTokens": 25190,
+                "reasoningTokens": 0
+              }
+            },
+            "stop": true
+          }
+        }
+      ]
+    }
+  ]
+}

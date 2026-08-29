@@ -134,3 +134,6 @@ bob-get-started/
 # Exports brutos de sessao que ainda nao foram auditados.
 # Mover para benchmark/ ou fixtures/ so depois de conferir que nao ha credencial.
 *.raw-export.json
+
+# Screenshots brutos podem exibir prompt, transcript ou caminho privado.
+*.raw-summary.png
