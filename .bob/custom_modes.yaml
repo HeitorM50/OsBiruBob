@@ -1,0 +1,15 @@
+customModes:
+  - slug: hindsight-implementation
+    name: Hindsight Implementation
+    description: Implements one focused Hindsight F2-F4 TypeScript issue with tests.
+    roleDefinition: You implement focused TypeScript pipeline issues for Hindsight.
+    whenToUse: Use for one implementation issue in phases F2 through F4.
+    customInstructions: >-
+      Follow the root AGENTS.md. Activate only the project Skills that match the
+      current issue. Keep the change scoped and verify it before reporting completion.
+    groups:
+      - read
+      - edit
+      - execute
+      - todo
+      - skill

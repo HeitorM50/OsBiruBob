@@ -126,13 +126,20 @@ export — o que também significa que ela sempre pode ser explicada.
 ## Estrutura do repositório
 
 ```
+.bob/          modo mínimo e Skills compartilhadas para implementar as fases F2–F4
 benchmark/     contrato de métricas, prompt da tarefa e os dois exports das rodadas
 bob_sessions/  screenshots das sessões do Bob (entregável obrigatório)
 fixtures/      export de exemplo para desenvolvimento e modo demo
 data/          catálogos curados (MCP, ferramentas) — dado versionado, não código
+scripts/       sanitização e extração segura de métricas dos exports
 src/           implementação — core puro, mais a SPA em src/ui/
 docs/          arquitetura, modelo de domínio, stack, schema do export e roadmap
 ```
+
+Quem implementar as fases F2–F4 no Bob deve confiar no workspace e selecionar o
+modo **Hindsight Implementation**. A configuração, as três Skills e a medição
+self-hosting estão documentadas em
+[`docs/configuracao-bob.md`](docs/configuracao-bob.md).
 
 ## Resultados
 
