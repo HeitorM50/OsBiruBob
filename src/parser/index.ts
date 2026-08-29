@@ -54,6 +54,7 @@ const MessageMetaSchema = z
 // required for parser correctness — the downstream observe module reads them.
 const MessageDataSchema = z
   .object({
+    id: z.string(),
     role: z.enum(["system", "user", "assistant", "tool"]),
     content: z.string(),
     _meta: MessageMetaSchema,
@@ -106,7 +107,23 @@ const MessageSchema = z
     data: MessageDataSchema,
     createdAt: z.number().optional(),
   })
-  .passthrough();
+  .passthrough()
+  .superRefine((msg, ctx) => {
+    if (msg.role !== msg.data.role) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["data", "role"],
+        message: `role mismatch: envelope has "${msg.role}" but data.role is "${msg.data.role}"`,
+      });
+    }
+    if (msg.id !== msg.data.id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["data", "id"],
+        message: `id mismatch: envelope has "${msg.id}" but data.id is "${msg.data.id}"`,
+      });
+    }
+  });
 
 const BreakdownDetailSchema = z
   .object({

@@ -204,13 +204,15 @@ export type MessageData =
   | AssistantMessageData
   | ToolMessageData;
 
-export interface Message {
-  id: string;
-  role: MessageRole;
-  data: MessageData;
-  /** Same value across all messages in the export — do NOT use for ordering. */
-  createdAt?: EpochMs;
-}
+/**
+ * Discriminated union — the envelope `role` locks `data` to its matching type.
+ * TypeScript will reject `{ role: "assistant", data: { role: "user", ... } }`.
+ */
+export type Message =
+  | { id: string; role: "system";    data: SystemMessageData;    createdAt?: EpochMs }
+  | { id: string; role: "user";      data: UserMessageData;      createdAt?: EpochMs }
+  | { id: string; role: "assistant"; data: AssistantMessageData; createdAt?: EpochMs }
+  | { id: string; role: "tool";      data: ToolMessageData;      createdAt?: EpochMs };
 
 // ---------------------------------------------------------------------------
 // Model 2 — Turn (full)
@@ -264,6 +266,29 @@ export interface ContextSummary {
 
   maxContextWindow: number | null;
   pressure: number | null;
+// Model 6 — ObserveReport (partial — TurnMetrics only; full type added in F2)
+// ---------------------------------------------------------------------------
+
+/** Metrics for one assistant turn. Part of ObserveReport.TaskReport.turns. */
+export interface TurnMetrics {
+  /** 0-based index over assistant messages only (not over messages[]). */
+  index: number;
+  messageId: string;
+  timestamp: EpochMs;
+  /** Spend cost for this turn — full precision, never rounded (I-3). */
+  cost: number;
+  /** Accumulated context tokens at this turn — not an increment (I-2). */
+  contextTokens: number;
+  /**
+   * contextTokens[n] − contextTokens[n-1]. null on the first turn.
+   * Do not sum contextTokens across turns (I-2).
+   */
+  contextDelta: number | null;
+  reasoningTokens: number;
+  /** IDs of all tool calls in this turn. Empty array when none. */
+  toolCallIds: string[];
+  /** true only when data.stop === true on the underlying message. */
+  stop: boolean;
 }
 
 // ---------------------------------------------------------------------------

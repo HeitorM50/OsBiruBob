@@ -13,7 +13,14 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { parseSession, summariseSession } from "./index";
 import type { ParseResult } from "./index";
-import type { Session } from "../domain/types";
+import type {
+  Session,
+  Message,
+  SystemMessageData,
+  UserMessageData,
+  AssistantMessageData,
+  ToolMessageData,
+} from "../domain/types";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -323,5 +330,155 @@ describe("summariseSession — metadata listing without sensitive content", () =
 
     const summary = summariseSession(result.value);
     expect(summary[0].titlePreview).not.toContain("\n");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cross-field consistency — role and id must match between envelope and data
+// ---------------------------------------------------------------------------
+
+describe("parseSession — role/id cross-field consistency", () => {
+  /** Mutate the first message of a cloned fixture and re-serialise. */
+  function withFirstMessage(patch: (msg: Record<string, unknown>) => void): string {
+    const base = JSON.parse(readFixture("fixtures/sample-export.json"));
+    const msg = base.tasks[0].messages[0] as Record<string, unknown>;
+    patch(msg);
+    return JSON.stringify(base);
+  }
+
+  // 1. Baseline is accepted (sanity guard for this describe block)
+  it("accepts the real baseline unchanged", () => {
+    const result = parseSession(readFixture("fixtures/sample-export.json"));
+    expect(result.ok).toBe(true);
+  });
+
+  // 2. Divergent roles → rejected
+  it("returns ok:false when envelope role differs from data.role", () => {
+    const content = withFirstMessage((msg) => {
+      (msg["data"] as Record<string, unknown>)["role"] = "tool";
+    });
+    const result = parseSession(content);
+    expect(result.ok).toBe(false);
+  });
+
+  // 3. Error path for role mismatch names data.role
+  it("error path contains 'data.role' for a role mismatch", () => {
+    const content = withFirstMessage((msg) => {
+      (msg["data"] as Record<string, unknown>)["role"] = "tool";
+    });
+    const result = parseSession(content);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.path).toMatch(/data\.role/);
+  });
+
+  // 4. Divergent IDs → rejected
+  it("returns ok:false when envelope id differs from data.id", () => {
+    const content = withFirstMessage((msg) => {
+      (msg["data"] as Record<string, unknown>)["id"] = "completely-different-id";
+    });
+    const result = parseSession(content);
+    expect(result.ok).toBe(false);
+  });
+
+  // 5. Error path for ID mismatch names data.id
+  it("error path contains 'data.id' for an id mismatch", () => {
+    const content = withFirstMessage((msg) => {
+      (msg["data"] as Record<string, unknown>)["id"] = "completely-different-id";
+    });
+    const result = parseSession(content);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.path).toMatch(/data\.id/);
+  });
+
+  // 6. data.id absent → controlled error, no crash
+  it("returns ok:false without crashing when data.id is absent", () => {
+    const content = withFirstMessage((msg) => {
+      delete (msg["data"] as Record<string, unknown>)["id"];
+    });
+    expect(() => parseSession(content)).not.toThrow();
+    const result = parseSession(content);
+    expect(result.ok).toBe(false);
+  });
+
+  // 7. Error message must not expose sensitive content
+  it("error message does not contain data.content, task.title, tool arguments, or private paths", () => {
+    const raw = JSON.parse(readFixture("fixtures/sample-export.json"));
+    const sensitiveContent = (raw.tasks[0].messages[0].data as Record<string, unknown>)["content"] as string;
+    const taskTitle = raw.tasks[0].task.title as string;
+
+    const content = withFirstMessage((msg) => {
+      (msg["data"] as Record<string, unknown>)["role"] = "tool";
+    });
+    const result = parseSession(content);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    const errorText = result.error.message;
+    // Must not leak message body or task title
+    expect(errorText).not.toContain(sensitiveContent.slice(0, 20));
+    expect(errorText).not.toContain(taskTitle.slice(0, 20));
+    // Must not expose absolute paths from the export
+    expect(errorText).not.toMatch(/\/home\//);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Type-level: Message discriminated union
+// ---------------------------------------------------------------------------
+
+// Valid shapes — these must compile. Declared at module scope so type imports work.
+const _typeLevelSystem: Message = {
+  id: "s1",
+  role: "system",
+  data: { id: "s1", role: "system", content: "", _meta: { timestamp: 1 } } satisfies SystemMessageData,
+};
+const _typeLevelUser: Message = {
+  id: "u1",
+  role: "user",
+  data: { id: "u1", role: "user", content: "", _meta: { timestamp: 1 } } satisfies UserMessageData,
+};
+const _typeLevelAssistant: Message = {
+  id: "a1",
+  role: "assistant",
+  data: { id: "a1", role: "assistant", content: "", _meta: { timestamp: 1 } } satisfies AssistantMessageData,
+};
+const _typeLevelTool: Message = {
+  id: "t1",
+  role: "tool",
+  data: {
+    id: "t1",
+    role: "tool",
+    content: "",
+    _meta: { timestamp: 1 },
+    toolUsage: {
+      signature: { id: "tc1", name: "x", arguments: {}, isError: false },
+      permission: "read",
+      isOutsideWorkspace: false,
+    },
+  } satisfies ToolMessageData,
+};
+
+// Invalid shape — must be rejected by the discriminated union.
+// @ts-expect-error: envelope role "assistant" is incompatible with data.role "user"
+const _typeLevelBad: Message = {
+  id: "x1",
+  role: "assistant",
+  data: { id: "x1", role: "user", content: "", _meta: { timestamp: 1 } } satisfies UserMessageData,
+};
+
+describe("Message discriminated union — type-level correctness", () => {
+  it("accepts valid messages of all four roles at the type level", () => {
+    // Runtime assertion — only to prevent "unused variable" lint errors.
+    // The real check is that the module-scope declarations above compile without errors.
+    expect([_typeLevelSystem, _typeLevelUser, _typeLevelAssistant, _typeLevelTool].length).toBe(4);
+  });
+
+  it("rejects contradictory role/data combinations via @ts-expect-error", () => {
+    // The @ts-expect-error above the module-scope declaration is the real type check.
+    // If tsc ever accepts that assignment without error, typecheck will fail here.
+    void _typeLevelBad;
+    expect(true).toBe(true);
   });
 });
