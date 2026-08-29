@@ -642,6 +642,8 @@ interface Finding {
   detectedAt: number;
   evidence:   FindingEvidence;
   confidence: ConfidenceLevel;
+  metric:     Record<string, unknown>;
+  prescriptionHint: PrescriptionKind;
 
   prescription?: string;
   description?:  string;
@@ -684,6 +686,10 @@ interface FindingEvidence {
   - `"high"`: padrão determinístico (ex.: `isError: true` seguido da mesma tool).
   - `"medium"`: heurística com falso-positivo possível (ex.: `durationMs` alto).
   - `"low"`: correlação fraca ou sinal indireto.
+- `metric` preserva os valores medidos que dão contexto ao achado. Detectores de
+  breakdown incluem o total, os valores por origem e seus percentuais sem arredondar.
+- `prescriptionHint` indica deterministicamente qual tipo de prescrição pode tratar
+  o achado; não significa que uma `Prescription` já tenha sido criada.
 - `prescription` é uma referência para frente — pode ser `undefined` quando o
   `Finding` é criado antes da prescrição ser gerada.
 - `tokenImpact` e `costImpact` são estimativas, não compromissos. Nunca arredondar. (I-3)
