@@ -374,7 +374,85 @@ export interface ObserveAnomaly {
 }
 
 // ---------------------------------------------------------------------------
-// Model 6 — Finding
+// Model 6 — ObserveReport (full contract)
+// ---------------------------------------------------------------------------
+
+export interface ToolInventory {
+  available: string[];
+  used: string[];
+  idle: string[];
+  idleRatio: number;
+  toolDefinitionTokens: number;
+  estimatedTokensPerTool: number | null;
+}
+
+export interface ExternalCommandRecord {
+  callId: string;
+  turnIndex: number;
+  /** Potentially sensitive command text — redact before display. */
+  raw: string;
+  binaries: string[];
+  isHttp: boolean;
+  targetHost: string | null;
+}
+
+export interface HumanIntervention {
+  messageId: string;
+  afterTurnIndex: number;
+  timestamp: EpochMs;
+  /** Potentially sensitive message content — redact before display. */
+  content: string;
+}
+
+export interface ApprovalSummary {
+  autoApprovalEnabled: boolean;
+  allowedPermissions: Array<"read" | "edit" | "execute" | "todo">;
+  approvedCommands: string[];
+}
+
+export interface SessionTotals {
+  taskCount: number;
+  subtaskCount: number;
+  cost: number;
+  assistantTurns: number;
+  toolCalls: number;
+  erroredToolCalls: number;
+  humanInterventions: number;
+}
+
+export interface TaskReport {
+  taskId: string;
+  parentId: string | null;
+  isSubtask: boolean;
+  title: string;
+  modeId: string;
+  createdAt: EpochMs;
+  updatedAt: EpochMs;
+  durationMs: number;
+  completed: boolean;
+  cost: number;
+  contextTokens: number;
+  context: ContextSummary;
+  turns: TurnMetrics[];
+  toolCalls: ToolCallRecord[];
+  toolInventory: ToolInventory;
+  externalCommands: ExternalCommandRecord[];
+  humanInterventions: HumanIntervention[];
+  approval: ApprovalSummary;
+}
+
+export interface ObserveReport {
+  sessionId: string;
+  exportedAt: EpochMs;
+  workspace: string;
+  tasks: TaskReport[];
+  totals: SessionTotals;
+  unavailableMetrics: string[];
+  anomalies: ObserveAnomaly[];
+}
+
+// ---------------------------------------------------------------------------
+// Model 7 — Finding
 // ---------------------------------------------------------------------------
 
 export type FindingKind =
@@ -391,12 +469,17 @@ export type FindingKind =
 export type ConfidenceLevel = "high" | "medium" | "low";
 
 export interface FindingEvidence {
-  type: "message" | "breakdown" | "cross-reference";
+  type: "message" | "breakdown" | "cross-reference" | "command";
+  /** Whether this evidence can expose user-controlled or private data. */
+  redactable: boolean;
   messageIds?: string[];
   toolCallIds?: string[];
+  turnIndices?: number[];
+  fieldPath?: string;
   breakdownField?: keyof BreakdownDetail;
   breakdownValue?: number;
   unusedTools?: string[];
+  externalCommands?: string[];
   rawValue?: unknown;
 }
 
@@ -408,6 +491,10 @@ export interface Finding {
   detectedAt: EpochMs;
   evidence: FindingEvidence;
   confidence: ConfidenceLevel;
+  /** Detector-specific measured values. Never rounded in the domain. */
+  metric: Record<string, unknown>;
+  /** Prescription kind that can address this finding; no prescription is created here. */
+  prescriptionHint: PrescriptionKind;
   prescription?: string;
   description?: string;
   /** Estimated token impact — no rounding (I-3). */

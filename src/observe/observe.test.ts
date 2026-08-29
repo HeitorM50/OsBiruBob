@@ -199,6 +199,39 @@ describe("observe — unavailableMetrics", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Forward-compatible tool permissions
+// ---------------------------------------------------------------------------
+
+describe("observe — forward-compatible tool permissions", () => {
+  it("preserves an unknown permission string without dropping the task", () => {
+    const base = JSON.parse(readFixture("fixtures/sample-export.json"));
+    const toolMessage = base.tasks[0].messages.find(
+      (message: { data?: { role?: string } }) => message.data?.role === "tool"
+    );
+    if (toolMessage === undefined) {
+      throw new Error("Expected the baseline to contain a tool message");
+    }
+    toolMessage.data.toolUsage.permission = "future-permission";
+
+    const parsed = parseSession(JSON.stringify(base));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    const report = observe(parsed.value);
+
+    expect(report.tasks).toHaveLength(1);
+    expect(report.tasks[0].toolCalls).toContainEqual(
+      expect.objectContaining({ permission: "future-permission" })
+    );
+    expect(
+      report.anomalies.some((anomaly) =>
+        anomaly.detail.startsWith("observeTask threw:")
+      )
+    ).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // completed — must come from stop:true, never from task.status
 // ---------------------------------------------------------------------------
 
