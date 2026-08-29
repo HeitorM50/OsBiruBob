@@ -36,7 +36,7 @@ export interface ContextBreakdown {
   total: number;
   /** Full context at end of task (overhead + conversation). */
   reportedTotal: number;
-  breakdown: BreakdownDetail;
+  breakdown: BreakdownDetail & Record<string, number>;
   key: string;
   loadedSkills?: string[];
 }
@@ -236,6 +236,36 @@ export interface Session {
 }
 
 // ---------------------------------------------------------------------------
+// Model 6 — ObserveReport types
+// ---------------------------------------------------------------------------
+
+/**
+ * Context window summary derived from `task.costs.contextWindowBreakdown`.
+ *
+ * - `fixedOverhead`      = contextWindowBreakdown.total   (denominator for %)
+ * - `reportedTotal`      = contextWindowBreakdown.reportedTotal
+ * - `conversationTokens` = max(reportedTotal − fixedOverhead, 0)
+ * - `reportedTotalInconsistent` signals reportedTotal < fixedOverhead
+ * - `breakdownPct`       = each breakdown field / fixedOverhead * 100
+ *                          (all zeros when fixedOverhead === 0)
+ * - `breakdownSumDelta`   = absolute difference between breakdown sum and total
+ * - `breakdownSumConsistent` applies the documented Observe tolerance
+ * - `maxContextWindow`   is external — never in the export; null when unknown
+ * - `pressure`           = reportedTotal / maxContextWindow, or null
+ */
+export interface ContextSummary {
+  fixedOverhead: number;
+  reportedTotal: number;
+  conversationTokens: number;
+  reportedTotalInconsistent: boolean;
+  breakdown: BreakdownDetail & Record<string, number>;
+  breakdownPct: Record<keyof BreakdownDetail, number> & Record<string, number>;
+  breakdownSumDelta: number;
+  breakdownSumConsistent: boolean;
+  loadedSkills: string[];
+
+  maxContextWindow: number | null;
+  pressure: number | null;
 // Model 6 — ObserveReport (partial — TurnMetrics only; full type added in F2)
 // ---------------------------------------------------------------------------
 

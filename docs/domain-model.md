@@ -246,7 +246,7 @@ Presente em `TaskCosts.contextWindowBreakdown`.
 interface ContextBreakdown {
   total:         number;
   reportedTotal: number;
-  breakdown:     BreakdownDetail;
+  breakdown:     BreakdownDetail & Record<string, number>;
   key:           string;
 
   loadedSkills?: string[];
@@ -270,7 +270,7 @@ interface BreakdownDetail {
 
 | Relação | Fórmula | Uso |
 |---|---|---|
-| Tokens de conversa | `reportedTotal − total` | Quanto a conversa ocupa além do overhead fixo |
+| Tokens de conversa | `max(reportedTotal − total, 0)` | Quanto a conversa ocupa além do overhead fixo |
 | Pressão de contexto | `reportedTotal / maxContextWindow` | Acima de ~70%, qualidade e custo degradam |
 | % de cada origem | `campo / total * 100` | Percentuais devem ser calculados sobre `total`, não `reportedTotal` |
 | Ferramenta ociosa | `availableTools[] − toolCalls[].name` | Ferramenta habilitada e nunca chamada = imposto pago em toda sessão |
@@ -391,8 +391,11 @@ interface ContextSummary {
   fixedOverhead:      number;
   reportedTotal:      number;
   conversationTokens: number;
+  reportedTotalInconsistent: boolean;
   breakdown:          BreakdownDetail;
   breakdownPct:       Record<keyof BreakdownDetail, number>;
+  breakdownSumDelta:      number;
+  breakdownSumConsistent: boolean;
   loadedSkills:       string[];
 
   maxContextWindow: number | null;
@@ -401,8 +404,13 @@ interface ContextSummary {
 ```
 
 - `fixedOverhead` = `contextWindowBreakdown.total`.
-- `conversationTokens` = `reportedTotal − fixedOverhead`.
+- `conversationTokens` = `max(reportedTotal − fixedOverhead, 0)`.
+- `reportedTotalInconsistent` sinaliza `reportedTotal < fixedOverhead` sem atribuir
+  causa ao dado inconsistente.
 - `breakdownPct` é calculado sobre `fixedOverhead`, **nunca** sobre `reportedTotal`.
+- `breakdownSumDelta` é a diferença absoluta entre a soma do breakdown e
+  `fixedOverhead`; `breakdownSumConsistent` aplica a tolerância documentada pelo
+  módulo Observe.
 - **`maxContextWindow` não existe no export.** É conhecimento externo (a UI do Bob
   exibe `270.0k`). Deve ser um parâmetro configurável, com `null` como padrão
   honesto. Quando `null`, `pressure` também é `null` — e o detector de subagente
