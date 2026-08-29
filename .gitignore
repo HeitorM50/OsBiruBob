@@ -105,6 +105,7 @@ target/
 # Build outputs
 dist/
 build/
+coverage/
 *.log
 
 # Backup files

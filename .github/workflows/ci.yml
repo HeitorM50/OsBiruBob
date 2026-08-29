@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 # One concurrent run per ref; cancel in-flight runs on new pushes.
 # PR runs are isolated by head ref; main runs share the "pages" key so
 # only the latest push deploys.
@@ -14,19 +17,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ── Job 1: install, typecheck, test ────────────────────────────────────────
+  # ── Job 1: install, typecheck, test with coverage, build ──────────────────
   test:
     name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 20
           cache: npm
 
       - name: Install dependencies
@@ -35,22 +39,26 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Run test suite
-        run: npm test
+      - name: Run test suite with coverage
+        run: npm run test:cov
+
+      - name: Build CLI
+        run: npm run build
 
   # ── Job 2: build static app and deploy to GitHub Pages ─────────────────────
-  # Runs only on push to main — skipped entirely on pull_request events.
+  # Runs only on pushes to main after Pages is explicitly enabled through the
+  # PAGES_ENABLED repository variable. Until the F6 web build exists, main
+  # remains green and this job is reported as skipped.
   # Requires the repository Pages source to be set to "GitHub Actions" in
   # Settings → Pages before the first deploy.
-  #
-  # NOTE: `build:web` (vite build → dist/web/) is added to package.json in F6
-  # alongside Vite and React. Until then this job will fail; it is gated on
-  # the `if:` condition so it never runs on PRs and won't block them.
   deploy:
     name: Deploy to Pages
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      vars.PAGES_ENABLED == 'true'
 
     permissions:
       contents: read
@@ -70,12 +78,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 20
           cache: npm
 
       - name: Install dependencies

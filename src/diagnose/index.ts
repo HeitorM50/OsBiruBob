@@ -9,3 +9,4 @@
  */
 
 export { detectProjectRulesAbsent } from "./project-rules-absent";
+export { detectSkillOverhead } from "./skill-overhead";
