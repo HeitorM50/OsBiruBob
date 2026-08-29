@@ -271,6 +271,7 @@ function extractToolCallRecords(
     {
       messageId: string;
       isError: boolean;
+      errorMessage: string | null;
       permission: ToolPermission;
       durationMs: number | null;
       isOutsideWorkspace: boolean;
@@ -295,6 +296,7 @@ function extractToolCallRecords(
     resultByCallId.set(callId, {
       messageId: msg.id,
       isError: tu.signature.isError,
+      errorMessage: tu.signature.isError ? msg.data.content : null,
       permission: tu.permission,
       durationMs: msg.data._meta.durationMs ?? null,
       isOutsideWorkspace: tu.isOutsideWorkspace,
@@ -329,6 +331,7 @@ function extractToolCallRecords(
         assistantMessageId: turn.messageId,
         resultMessageId: result?.messageId ?? null,
         isError: result?.isError ?? null,
+        errorMessage: result?.errorMessage ?? null,
         permission: result?.permission ?? null,
         durationMs: result?.durationMs ?? null,
         isOutsideWorkspace: result?.isOutsideWorkspace ?? null,
