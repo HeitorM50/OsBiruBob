@@ -340,6 +340,8 @@ describe("buildContextSummary — regression: loadedSkills absent", () => {
     };
     const summary = buildContextSummary(bd);
     expect(summary.loadedSkills).toEqual(["skill-a", "skill-b"]);
+  });
+});
 function loadRodadaA() {
   const content = readFixture("benchmark/rodada-a.json");
   const result = parseSession(content);

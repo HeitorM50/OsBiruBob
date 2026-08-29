@@ -209,10 +209,10 @@ export type MessageData =
  * TypeScript will reject `{ role: "assistant", data: { role: "user", ... } }`.
  */
 export type Message =
-  | { id: string; role: "system";    data: SystemMessageData;    createdAt?: EpochMs }
-  | { id: string; role: "user";      data: UserMessageData;      createdAt?: EpochMs }
+  | { id: string; role: "system"; data: SystemMessageData; createdAt?: EpochMs }
+  | { id: string; role: "user"; data: UserMessageData; createdAt?: EpochMs }
   | { id: string; role: "assistant"; data: AssistantMessageData; createdAt?: EpochMs }
-  | { id: string; role: "tool";      data: ToolMessageData;      createdAt?: EpochMs };
+  | { id: string; role: "tool"; data: ToolMessageData; createdAt?: EpochMs };
 
 // ---------------------------------------------------------------------------
 // Model 2 — Turn (full)
@@ -266,6 +266,7 @@ export interface ContextSummary {
 
   maxContextWindow: number | null;
   pressure: number | null;
+}
 // Model 6 — ObserveReport (partial — TurnMetrics only; full type added in F2)
 // ---------------------------------------------------------------------------
 

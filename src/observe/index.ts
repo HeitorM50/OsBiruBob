@@ -110,6 +110,7 @@ export function buildContextSummary(
 export function breakdownSumDelta(bd: ContextBreakdown): number {
   const sum = Object.values(bd.breakdown).reduce((acc, value) => acc + value, 0);
   return Math.abs(sum - bd.total);
+}
 import type { Message, AssistantMessageData, MessageMeta, TurnMetrics } from "../domain/types";
 
 // ---------------------------------------------------------------------------
