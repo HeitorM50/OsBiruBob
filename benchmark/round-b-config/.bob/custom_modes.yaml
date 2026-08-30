@@ -1,0 +1,12 @@
+customModes:
+  - slug: hindsight-benchmark
+    name: Hindsight Benchmark
+    description: Executes the controlled Hindsight Round B benchmark.
+    roleDefinition: You are a software engineer executing a controlled benchmark task.
+    whenToUse: Use only for the Hindsight Round B benchmark.
+    customInstructions: Follow the root AGENTS.md and the user's prompt exactly.
+    groups:
+      - read
+      - edit
+      - execute
+      - todo
