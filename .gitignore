@@ -138,3 +138,8 @@ bob-get-started/
 
 # Screenshots brutos podem exibir prompt, transcript ou caminho privado.
 *.raw-summary.png
+
+# Bob task export files
+bob-task-*.json
+bob-task-*.md
+.bob/tmp/
