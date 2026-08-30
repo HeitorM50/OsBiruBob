@@ -87,15 +87,15 @@ describe("detectSkillOverhead", () => {
 
   it("does not flag paid skills when at least one loaded skill is declared", () => {
     const report = structuredClone(baselineReport);
-    report.tasks[0].context.loadedSkills = ["implement-pipeline-module"];
+    report.tasks[0].context!.loadedSkills = ["implement-pipeline-module"];
 
     expect(detectSkillOverhead(report)).toEqual([]);
   });
 
   it("does not flag an empty skill slice", () => {
     const report = structuredClone(baselineReport);
-    report.tasks[0].context.breakdown.skills = 0;
-    report.tasks[0].context.breakdownPct.skills = 0;
+    report.tasks[0].context!.breakdown.skills = 0;
+    report.tasks[0].context!.breakdownPct.skills = 0;
 
     expect(detectSkillOverhead(report)).toEqual([]);
   });
@@ -139,6 +139,6 @@ describe("detectSkillOverhead", () => {
     expect(report).toEqual(before);
 
     (first[0].metric.loadedSkills as string[]).push("mutated-result");
-    expect(report.tasks[0].context.loadedSkills).toEqual([]);
+    expect(report.tasks[0].context!.loadedSkills).toEqual([]);
   });
 });

@@ -46,7 +46,7 @@ function rootTasks(report: ObserveReport): ObserveReport["tasks"] {
 
 function roundAFixedOverhead(report: ObserveReport): number {
   return rootTasks(report).reduce(
-    (total, task) => total + task.context.fixedOverhead,
+    (total, task) => total + (task.context?.fixedOverhead ?? 0),
     0
   );
 }

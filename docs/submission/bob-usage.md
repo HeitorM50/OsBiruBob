@@ -127,10 +127,18 @@ each step. All three completed successfully.
 `parentId: null`**. The subtasks appear only as tool calls with text results inside
 the parent — they are **not** exported as separate task records.
 
-That matters for our own domain model. Invariant **I-5** excludes subtasks
-(`parentId !== null`) from aggregation, and our parser handles it — but in export
-format v1 that branch **never fires on real data**. It remains covered by synthetic
-fixtures only, and we say so rather than implying it was validated in production.
+That is true of a **single-task** export. Exporting several tasks at once tells a
+different story: there, subtasks **do** appear as their own entries in `tasks[]`
+with `parentId` set, so invariant **I-5** (exclude subtasks from aggregation) does
+fire on real data. We had previously written the opposite based on the single-task
+export alone, and corrected it once we had the wider sample.
+
+That multi-task export also broke Hindsight, which is how we found it. Bob strips
+`contextWindowBreakdown` and nulls `approvalConfig` on completed tasks, and our
+schema required both — so the tool rejected a legitimate 12-task export outright.
+Both fields are now optional, and their absence is reported as unavailable rather
+than filled with zeros, which would have made two different approval protocols look
+identical in the A/B comparison.
 
 The same session exposed an undocumented structure: the subtask transcript is
 embedded in a **nested `data.messages[]` array** inside the parent message, and its

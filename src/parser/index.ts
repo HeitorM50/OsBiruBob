@@ -100,7 +100,10 @@ const MessageDataSchema = z
           .passthrough()
       )
       .optional(),
-    stop: z.literal(true).optional(),
+    // Real exports also carry stop: false, and it appears on tool messages, not
+    // just assistant ones. Completion is derived from the last assistant message
+    // having stop === true, never from this field merely being present.
+    stop: z.boolean().optional(),
     // tool
     toolUsage: z
       .object({
@@ -187,10 +190,13 @@ const ContextBreakdownSchema = z
   })
   .passthrough();
 
+// contextWindowBreakdown is absent on tasks whose status is "completed": Bob
+// only retains the breakdown while a task is active. Optional here, and reported
+// downstream as unavailable rather than zero.
 const TaskCostsSchema = z.object({
   cost: z.number(),
   contextTokens: z.number(),
-  contextWindowBreakdown: ContextBreakdownSchema,
+  contextWindowBreakdown: ContextBreakdownSchema.optional(),
 });
 
 const TaskEnvSchema = z
@@ -266,7 +272,8 @@ const TaskMetaSchema = z
     updatedAt: z.number(),
     costs: TaskCostsSchema,
     env: TaskEnvSchema,
-    approvalConfig: ApprovalConfigSchema,
+    // Null on tasks whose status is "completed", like contextWindowBreakdown.
+    approvalConfig: ApprovalConfigSchema.nullable().optional(),
     parentId: z.string().nullable().optional(),
     version: z.null().optional(),
     gitSha: z.null().optional(),

@@ -106,7 +106,7 @@ export interface TaskMeta {
   updatedAt: EpochMs;
   costs: TaskCosts;
   env: TaskEnv;
-  approvalConfig: ApprovalConfig;
+  approvalConfig?: ApprovalConfig | null;
   /** Non-null = subtask. Exclude from session-level aggregations (I-5). */
   parentId?: string | null;
   version?: null;
@@ -202,7 +202,7 @@ export interface AssistantMessageData extends MessageDataBase {
   /** One assistant turn may contain multiple parallel calls (I-4). */
   toolCalls?: ToolCall[];
   /** true on the last assistant message of a completed task. */
-  stop?: true;
+  stop?: boolean;
 }
 
 export interface ToolMessageData extends MessageDataBase {
@@ -438,14 +438,20 @@ export interface TaskReport {
   completed: boolean;
   cost: number;
   contextTokens: number;
-  context: ContextSummary;
+  /**
+   * Null when the export carries no contextWindowBreakdown for this task.
+   * Bob drops the breakdown once a task reaches status "completed", so this is a
+   * normal state, not an error. Absence is never rendered as zero.
+   */
+  context: ContextSummary | null;
   turns: TurnMetrics[];
   toolCalls: ToolCallRecord[];
   /** null when availableTools is absent from the first user message. */
   toolInventory: ToolInventory | null;
   externalCommands: ExternalCommandRecord[];
   humanInterventions: HumanIntervention[];
-  approval: ApprovalSummary;
+  /** Null when the export carries no approvalConfig (completed tasks). */
+  approval: ApprovalSummary | null;
 }
 
 export interface ObserveReport {

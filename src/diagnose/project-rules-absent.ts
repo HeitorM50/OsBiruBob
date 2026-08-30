@@ -22,6 +22,9 @@ export function detectProjectRulesAbsent(report: ObserveReport): Finding[] {
 
   for (let taskIndex = 0; taskIndex < report.tasks.length; taskIndex++) {
     const task = report.tasks[taskIndex];
+    // No breakdown means the signal cannot be observed; absence of data is not
+    // evidence of a missing AGENTS.md.
+    if (task.context === null) continue;
     const breakdown = task.context.breakdown as Record<string, number | undefined>;
     const hasProjectRules = Object.prototype.hasOwnProperty.call(
       breakdown,

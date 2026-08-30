@@ -13,6 +13,7 @@ export function detectSkillOverhead(report: ObserveReport): Finding[] {
 
   for (let taskIndex = 0; taskIndex < report.tasks.length; taskIndex++) {
     const task = report.tasks[taskIndex];
+    if (task.context === null) continue;
     const skillTokens = task.context.breakdown.skills;
     const loadedSkills = task.context.loadedSkills ?? [];
 

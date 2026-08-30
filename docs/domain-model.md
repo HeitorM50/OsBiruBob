@@ -368,18 +368,24 @@ interface TaskReport {
   cost:          number;
   contextTokens: number;
 
-  context:            ContextSummary;
+  context:            ContextSummary | null;
   turns:              TurnMetrics[];
   toolCalls:          ToolCallRecord[];
   toolInventory:      ToolInventory;
   externalCommands:   ExternalCommandRecord[];
   humanInterventions: HumanIntervention[];
-  approval:           ApprovalSummary;
+  approval:           ApprovalSummary | null;
 }
 ```
 
 - `isSubtask` = `parentId !== null`. Presente no relatório, **excluída** de
   `SessionTotals` (I-5).
+- **`context` e `approval` são `null` em tasks concluídas.** Bob descarta
+  `contextWindowBreakdown` e anula `approvalConfig` quando a task chega a
+  `status: "completed"` — o que, num export de várias tasks, atinge justamente as
+  subtasks. Ausência é registrada em `unavailableMetrics`, nunca preenchida com
+  zero (I-6): um `allowedPermissions: []` fabricado faria dois protocolos
+  diferentes parecerem idênticos na comparação A/B.
 - `completed` vem de `stop: true` na última mensagem `assistant`, **nunca** de
   `task.status`.
 - `durationMs` = `updatedAt − createdAt`. Inclui espera humana.

@@ -261,6 +261,39 @@ Não estavam no plano e saem sem esforço:
 
 ---
 
+## Exports com várias tasks — campos que somem
+
+Descoberto ao exportar 12 tasks de uma vez (`Tasks → export all`). Um export de
+task única nunca mostra isso.
+
+**Tasks com `status: "completed"` são despidas de dois campos:**
+
+| Campo | Task `active` | Task `completed` |
+|---|---|---|
+| `costs.contextWindowBreakdown` | presente | **ausente** |
+| `approvalConfig` | objeto | **`null`** |
+
+E há uma correlação: no export observado, **todas as tasks `completed` eram
+subtasks** (`parentId` preenchido) e todas as `active` eram raiz.
+
+Consequências para o parser:
+
+- `contextWindowBreakdown` e `approvalConfig` **não podem ser obrigatórios**.
+  Exigi-los faz o Hindsight rejeitar um export legítimo inteiro por causa de uma
+  task concluída.
+- A ausência vira **indisponível**, nunca zero. Um `allowedPermissions: []`
+  fabricado a partir de `approvalConfig: null` faria dois protocolos diferentes
+  parecerem idênticos na comparação A/B.
+- `data.stop` **não é sempre `true`.** Aparece como `false`, e em mensagens
+  `tool`, não só `assistant`. A conclusão da task continua vindo de `stop === true`
+  na última mensagem `assistant`.
+
+> **Correção de uma afirmação anterior.** Documentámos, a partir de um export de
+> task única, que subtasks "não são exportadas como registros separados". Isso vale
+> para o export de uma task só. **Num export de várias tasks, subtasks aparecem sim
+> como entradas próprias em `tasks[]`, com `parentId` preenchido** — e portanto a
+> invariante I-5 (excluir subtasks da agregação) **dispara com dado real**.
+
 ## Sessões com subtask — array de mensagens aninhado
 
 Descoberto ao rodar uma sessão com `start_subtask` (não aparece no baseline).

@@ -32,9 +32,14 @@ function permissionSetKey(perms: readonly string[]): string {
  */
 function rootPermissions(report: ObserveReport): readonly string[] {
   const rootTasks = report.tasks.filter((t) => !t.isSubtask);
-  if (rootTasks.length === 0) return [];
-  // All root tasks in a session share the same approval config — use the last one.
-  return rootTasks[rootTasks.length - 1].approval.allowedPermissions;
+  // Completed tasks have no approval summary. Use the last root task that
+  // actually carries one, so a stripped task cannot silently turn the
+  // permission set into [] and make two different protocols look identical.
+  for (let i = rootTasks.length - 1; i >= 0; i--) {
+    const approval = rootTasks[i].approval;
+    if (approval !== null) return approval.allowedPermissions;
+  }
+  return [];
 }
 
 function rootTasks(report: ObserveReport): ObserveReport["tasks"] {
@@ -57,14 +62,14 @@ function sumContextTokens(report: ObserveReport): number {
 /** Sum fixedOverhead (contextWindowBreakdown.total) across root tasks. */
 function sumFixedOverhead(report: ObserveReport): number {
   return rootTasks(report).reduce(
-    (acc, task) => acc + task.context.fixedOverhead,
+    (acc, task) => acc + (task.context?.fixedOverhead ?? 0),
     0
   );
 }
 
 function sumConversationTokens(report: ObserveReport): number {
   return rootTasks(report).reduce(
-    (acc, task) => acc + task.context.conversationTokens,
+    (acc, task) => acc + (task.context?.conversationTokens ?? 0),
     0
   );
 }
@@ -75,7 +80,11 @@ function sumBreakdownField(
 ): number | null {
   const tasks = rootTasks(report);
   if (tasks.length === 0) return null;
-  return tasks.reduce((acc, task) => acc + task.context.breakdown[field], 0);
+  // Tasks without a breakdown contribute nothing, rather than being counted as
+  // zero-valued members of the sum.
+  const withContext = tasks.filter((t) => t.context !== null);
+  if (withContext.length === 0) return null;
+  return withContext.reduce((acc, task) => acc + task.context!.breakdown[field], 0);
 }
 
 function sumExternalCommands(report: ObserveReport): number {

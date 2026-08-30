@@ -142,4 +142,7 @@ bob-get-started/
 # Bob task export files
 bob-task-*.json
 bob-task-*.md
+# Multi-task exports (Tasks -> export all). Raw, unredacted, and large.
+bob-tasks-*.json
+bob-tasks-*.md
 .bob/tmp/

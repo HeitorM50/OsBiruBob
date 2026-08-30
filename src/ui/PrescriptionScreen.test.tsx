@@ -194,7 +194,7 @@ describe("PrescriptionScreen", () => {
       prescriptions: baseline.prescriptions,
       findings: baseline.findings,
       existingAgentsMd: readFileSync(join(process.cwd(), "AGENTS.md"), "utf8"),
-      contextPressure: baseline.report.tasks[0]?.context.pressure ?? null,
+      contextPressure: baseline.report.tasks[0]?.context!.pressure ?? null,
     });
 
     click(tab(container, "MCPs"));

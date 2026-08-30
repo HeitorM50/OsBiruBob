@@ -148,13 +148,18 @@ function formatReport(report: ObserveReport): string {
     lines.push(`  Cost      $${task.cost.toFixed(6)}`);
     lines.push("");
     lines.push("  Context window:");
-    lines.push(`    Fixed overhead      ${task.context.fixedOverhead.toLocaleString()} tokens`);
-    lines.push(`    Conversation        ${task.context.conversationTokens.toLocaleString()} tokens`);
-    lines.push(`    Reported total      ${task.context.reportedTotal.toLocaleString()} tokens`);
-    if (task.context.pressure !== null) {
-      lines.push(`    Pressure            ${(task.context.pressure * 100).toFixed(1)}%`);
+    const ctx = task.context;
+    if (ctx === null) {
+      lines.push(`    unavailable  (no breakdown in export — task is completed)`);
     } else {
-      lines.push(`    Pressure            null  (no maxContextWindow configured)`);
+      lines.push(`    Fixed overhead      ${ctx.fixedOverhead.toLocaleString()} tokens`);
+      lines.push(`    Conversation        ${ctx.conversationTokens.toLocaleString()} tokens`);
+      lines.push(`    Reported total      ${ctx.reportedTotal.toLocaleString()} tokens`);
+      if (ctx.pressure !== null) {
+        lines.push(`    Pressure            ${(ctx.pressure * 100).toFixed(1)}%`);
+      } else {
+        lines.push(`    Pressure            null  (no maxContextWindow configured)`);
+      }
     }
     lines.push("");
     lines.push("  Tool inventory:");

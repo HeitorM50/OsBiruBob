@@ -174,9 +174,13 @@ export default function App({
     : [];
   const contextPressure =
     selectedAnalysis?.report.tasks
-      .map((task) => task.context.pressure)
+      .map((task) => task.context?.pressure ?? null)
       .find((pressure) => pressure !== null) ?? null;
-  const rootContext = selectedAnalysis?.report.tasks.find((task) => !task.isSubtask)?.context;
+  // Prefer a root task that actually carries a breakdown: completed tasks in a
+  // multi-task export have none, and the diagnosis screen needs one to render.
+  const rootContext =
+    selectedAnalysis?.report.tasks.find((task) => !task.isSubtask && task.context !== null)
+      ?.context ?? null;
   const comparison = useMemo(
     () =>
       analyses[0] !== undefined && analyses[1] !== undefined

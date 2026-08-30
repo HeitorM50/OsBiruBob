@@ -140,7 +140,7 @@ function metricRecord(
 
 describe("detectProjectRulesAbsent", () => {
   const baselineReport = loadBaselineReport();
-  const baselineContext = baselineReport.tasks[0].context;
+  const baselineContext = baselineReport.tasks[0].context!;
 
   it("emits exactly one traceable finding for benchmark/rodada-a.json", () => {
     const findings = detectProjectRulesAbsent(baselineReport);
@@ -200,7 +200,7 @@ describe("detectProjectRulesAbsent", () => {
     expect(report.unavailableMetrics).toContain(PROJECT_RULES_PATH);
     expect(
       Object.prototype.hasOwnProperty.call(
-        report.tasks[0].context.breakdown,
+        report.tasks[0].context!.breakdown,
         "projectRules"
       )
     ).toBe(false);
@@ -241,6 +241,6 @@ describe("detectProjectRulesAbsent", () => {
       "breakdown"
     );
     returnedBreakdown.projectRules = 999;
-    expect(report.tasks[0].context.breakdown.projectRules).toBe(0);
+    expect(report.tasks[0].context!.breakdown.projectRules).toBe(0);
   });
 });

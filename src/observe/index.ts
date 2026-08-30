@@ -459,8 +459,11 @@ function extractTargetHost(command: string): string | null {
 // extractApprovalSummary
 // ---------------------------------------------------------------------------
 
-function extractApprovalSummary(turn: Turn): ApprovalSummary {
+function extractApprovalSummary(turn: Turn): ApprovalSummary | null {
   const ac = turn.task.approvalConfig;
+  // Completed tasks carry no approvalConfig; report it as unavailable, never as
+  // an empty permission set, which would silently weaken protocol validation.
+  if (ac === null || ac === undefined) return null;
   const allowedPermissions = ac.allowed_permissions;
 
   // Collect all approvedCommands from allowedExecutors and taskCommandApprovals
@@ -497,8 +500,16 @@ function observeTask(
   const messages = turn.messages;
   const taskId = task.id;
 
-  // 1. Context summary
-  const context = buildContextSummary(task.costs.contextWindowBreakdown, maxContextWindow);
+  // 1. Context summary.  Absent on completed tasks — Bob only retains the
+  //    breakdown while a task is active.  Recorded as unavailable, not zero.
+  const rawBreakdown = task.costs.contextWindowBreakdown;
+  const context =
+    rawBreakdown === undefined
+      ? null
+      : buildContextSummary(rawBreakdown, maxContextWindow);
+  if (context === null) {
+    unavailableMetrics.push(`tasks[${taskId}].context`);
+  }
 
   // 2. Turn metrics (assistant turns)
   const turns = extractTurnMetrics(messages);
@@ -511,7 +522,7 @@ function observeTask(
   for (const a of tcAnomalies) anomalies.push(a);
 
   // 5. Tool inventory — delegate to focused module.
-  const toolDefinitionTokens = task.costs.contextWindowBreakdown.breakdown.toolDefinitions;
+  const toolDefinitionTokens = rawBreakdown?.breakdown.toolDefinitions ?? 0;
   const { inventory: toolInventory, anomalies: invAnomalies } = extractToolInventory(
     taskId,
     messages,

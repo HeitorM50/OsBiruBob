@@ -49,15 +49,15 @@ describe("observe — benchmark/rodada-a.json (conformance gate)", () => {
   });
 
   it("tasks[0].context.reportedTotal === 17584", () => {
-    expect(report.tasks[0].context.reportedTotal).toBe(17584);
+    expect(report.tasks[0].context!.reportedTotal).toBe(17584);
   });
 
   it("tasks[0].context.fixedOverhead === 10439", () => {
-    expect(report.tasks[0].context.fixedOverhead).toBe(10439);
+    expect(report.tasks[0].context!.fixedOverhead).toBe(10439);
   });
 
   it("tasks[0].context.conversationTokens === 7145", () => {
-    expect(report.tasks[0].context.conversationTokens).toBe(7145);
+    expect(report.tasks[0].context!.conversationTokens).toBe(7145);
   });
 
   it("totals.assistantTurns === 5", () => {
@@ -93,7 +93,7 @@ describe("observe — benchmark/rodada-a.json (conformance gate)", () => {
   });
 
   it("tasks[0].context.pressure === null (no maxContextWindow)", () => {
-    expect(report.tasks[0].context.pressure).toBeNull();
+    expect(report.tasks[0].context!.pressure).toBeNull();
   });
 
   it("tasks[0].completed === true", () => {
@@ -118,15 +118,15 @@ describe("observe — fixtures/sample-export.json (identical to rodada-a)", () =
   });
 
   it("tasks[0].context.reportedTotal === 17584", () => {
-    expect(report.tasks[0].context.reportedTotal).toBe(17584);
+    expect(report.tasks[0].context!.reportedTotal).toBe(17584);
   });
 
   it("tasks[0].context.fixedOverhead === 10439", () => {
-    expect(report.tasks[0].context.fixedOverhead).toBe(10439);
+    expect(report.tasks[0].context!.fixedOverhead).toBe(10439);
   });
 
   it("tasks[0].context.conversationTokens === 7145", () => {
-    expect(report.tasks[0].context.conversationTokens).toBe(7145);
+    expect(report.tasks[0].context!.conversationTokens).toBe(7145);
   });
 
   it("totals.assistantTurns === 5", () => {
@@ -162,7 +162,7 @@ describe("observe — fixtures/sample-export.json (identical to rodada-a)", () =
   });
 
   it("tasks[0].context.pressure === null", () => {
-    expect(report.tasks[0].context.pressure).toBeNull();
+    expect(report.tasks[0].context!.pressure).toBeNull();
   });
 
   it("tasks[0].completed === true", () => {

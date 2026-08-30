@@ -485,3 +485,151 @@ describe("Message discriminated union — type-level correctness", () => {
     expect(true).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Multi-task exports — fields stripped from completed subtasks
+// ---------------------------------------------------------------------------
+//
+// Exporting several tasks at once (Tasks -> export all) produces entries that a
+// single-task export never contains. Bob strips contextWindowBreakdown and
+// approvalConfig from tasks that reached status "completed", and those tasks are
+// the subtasks (parentId set). Rejecting them made Hindsight refuse a legitimate
+// export outright, so each shape below is a regression guard.
+
+describe("parseSession — multi-task export shapes", () => {
+  const baseTask = {
+    id: "t-parent",
+    workspace: "file:/w",
+    parentId: null,
+    taskType: "normal",
+    title: "[REDACTED]",
+    firstMessage: "[REDACTED]",
+    status: "active",
+    isPinned: false,
+    createdAt: 1,
+    updatedAt: 2,
+    costs: {
+      cost: 0.1,
+      contextTokens: 10,
+      contextWindowBreakdown: {
+        total: 10,
+        reportedTotal: 20,
+        key: "k",
+        breakdown: {
+          roleDefinition: 1, staticSections: 1, skills: 1, baseRules: 1,
+          projectRules: 0, customInstructions: 1, environment: 1,
+          toolSystemPrompts: 1, toolDefinitions: 3, mcpToolDefinitions: 0,
+        },
+      },
+    },
+    env: {
+      workspace: "/w",
+      workspaceName: "w",
+      modeId: "agent",
+      staticEnvInfo: {
+        primaryWorkspace: "/w",
+        systemInfo: { platform: "linux", release: "x", arch: "x64", shell: "/bin/bash" },
+      },
+    },
+    approvalConfig: {
+      autoApprovalEnabled: true,
+      outsideWorkspaceAllowed: false,
+      allowed_permissions: ["read"],
+      editApprovalPreviewMode: "editor",
+    },
+  };
+
+  function envelope(tasks: unknown[]): string {
+    return JSON.stringify({ version: 1, exportedAt: 1, workspace: "file:/w", tasks });
+  }
+
+  it("accepts stop: false, which real exports carry on tool messages", () => {
+    const result = parseSession(
+      envelope([
+        {
+          task: baseTask,
+          messages: [
+            {
+              id: "m1",
+              role: "tool",
+              data: {
+                id: "m1",
+                role: "tool",
+                content: "",
+                stop: false,
+                _meta: { timestamp: 1 },
+                toolUsage: {
+                  signature: { id: "c1", name: "read_file", arguments: {}, isError: false },
+                  permission: "read",
+                  isOutsideWorkspace: false,
+                },
+              },
+            },
+          ],
+        },
+      ])
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it("accepts a completed subtask with no contextWindowBreakdown", () => {
+    const result = parseSession(
+      envelope([
+        {
+          task: {
+            ...baseTask,
+            id: "t-child",
+            parentId: "t-parent",
+            status: "completed",
+            costs: { cost: 0.05, contextTokens: 5 },
+          },
+          messages: [],
+        },
+      ])
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.tasks[0].task.costs.contextWindowBreakdown).toBeUndefined();
+  });
+
+  it("accepts a completed subtask with a null approvalConfig", () => {
+    const result = parseSession(
+      envelope([
+        {
+          task: {
+            ...baseTask,
+            id: "t-child",
+            parentId: "t-parent",
+            status: "completed",
+            approvalConfig: null,
+          },
+          messages: [],
+        },
+      ])
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it("keeps the parent task and its stripped subtasks in one session", () => {
+    const result = parseSession(
+      envelope([
+        { task: baseTask, messages: [] },
+        {
+          task: {
+            ...baseTask,
+            id: "t-child",
+            parentId: "t-parent",
+            status: "completed",
+            costs: { cost: 0.05, contextTokens: 5 },
+            approvalConfig: null,
+          },
+          messages: [],
+        },
+      ])
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.tasks).toHaveLength(2);
+    expect(result.value.tasks[1].task.parentId).toBe("t-parent");
+  });
+});
