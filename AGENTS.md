@@ -80,7 +80,7 @@ npm run demo          # build + run the CLI over fixtures/sample-export.json
 - **One module per pipeline stage.** `parser → observe → diagnose → prescribe → compare → cli`.
   Dependencies flow downward only — see `docs/architecture.md` for the
   full prohibition list.
-- **Test files alongside source.** Pattern: `src/**/*.test.ts`.
+- **Test files alongside source.** Pattern: `src/**/*.test.ts` and `src/**/*.test.tsx`.
   Fixtures go in `fixtures/`; tests import from there.
 - **Pure functions for detectors.** Each detector in `src/diagnose/` is
   `(ObserveReport) => Finding[]` with no side effects.
