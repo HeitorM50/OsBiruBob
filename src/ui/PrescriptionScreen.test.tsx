@@ -256,7 +256,7 @@ describe("PrescriptionScreen", () => {
   });
 
   it("downloads a browser Blob without making a network request", () => {
-    const createObjectURL = vi.fn(() => "blob:hindsight-test");
+    const createObjectURL = vi.fn((_object: Blob | MediaSource): string => "blob:hindsight-test");
     const revokeObjectURL = vi.fn();
     Object.defineProperty(URL, "createObjectURL", { configurable: true, value: createObjectURL });
     Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: revokeObjectURL });
