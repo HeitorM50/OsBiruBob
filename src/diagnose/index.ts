@@ -10,3 +10,8 @@
 
 export { detectProjectRulesAbsent } from "./project-rules-absent";
 export { detectSkillOverhead } from "./skill-overhead";
+export {
+  detectMcpCandidates,
+  MCP_CATALOG_ABSENT,
+  MCP_CATALOG_INVALID,
+} from "./mcp-candidate";
