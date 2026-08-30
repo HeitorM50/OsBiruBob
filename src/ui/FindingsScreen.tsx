@@ -28,7 +28,7 @@ const CORE_FINDING_KINDS: readonly FindingKind[] = [
 const GROUP_LABELS: Readonly<Record<string, string>> = {
   "project-rules-absent": "Missing configuration",
   "unused-tool": "Overhead paid but unused",
-  "skill-overhead": "Overhead paid but unused",
+  "skill-overhead": "Overhead paid but undeclared",
   "mcp-candidate": "Shell that could be a tool",
   "redundant-read": "Redundant re-read",
   "retry-after-error": "Retry after failure",
@@ -38,7 +38,7 @@ const GROUP_LABELS: Readonly<Record<string, string>> = {
 const KIND_LABELS: Readonly<Record<string, string>> = {
   "project-rules-absent": "Project rules missing",
   "unused-tool": "Idle tools",
-  "skill-overhead": "Skill overhead",
+  "skill-overhead": "Undeclared skill overhead",
   "mcp-candidate": "MCP server candidate",
   "redundant-read": "Redundant re-read",
   "retry-after-error": "Retry after failure",
@@ -400,9 +400,9 @@ function ZeroDetectorCard({ kind }: { kind: FindingKind }): React.JSX.Element {
       </div>
       <p className={styles.zeroEmpty}>No findings of this type.</p>
       <p className={styles.zeroDetail}>
-        {ZERO_DESCRIPTIONS[kind] ?? "O detector foi executado e retornou zero resultados."}
+        {ZERO_DESCRIPTIONS[kind] ?? "The detector ran and returned zero findings."}
       </p>
-      <p className={styles.zeroPositive}>✓ Resultado positivo</p>
+      <p className={styles.zeroPositive}>✓ Positive outcome</p>
     </article>
   );
 }

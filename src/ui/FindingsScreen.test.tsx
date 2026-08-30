@@ -56,7 +56,7 @@ describe("FindingsScreen baseline", () => {
     render(<FindingsScreen findings={findings} />);
     expect(screen.getByText("Project rules missing")).toBeTruthy();
     expect(screen.getByText("Idle tools")).toBeTruthy();
-    expect(screen.getByText("Skill overhead")).toBeTruthy();
+    expect(screen.getByText("Undeclared skill overhead")).toBeTruthy();
     expect(screen.getByText("MCP server candidate")).toBeTruthy();
   });
 

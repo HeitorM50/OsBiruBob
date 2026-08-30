@@ -39,16 +39,19 @@ describe("App input screen", () => {
     fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
 
     expect(await screen.findByText("Round A")).toBeTruthy();
-    expect(screen.getByText("Example")).toBeTruthy();
+    expect(screen.getAllByText("Example").length).toBeGreaterThan(0);
     expect(screen.getByText(/1 task · 5 turns · 4 findings/)).toBeTruthy();
-    expect(screen.getByText(/Add a Round B/)).toBeTruthy();
+    expect(screen.getByText(/comparison is enabled/)).toBeTruthy();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("treats a comparison with only Round A as a normal next step", async () => {
-    render(<App />);
+    const readText = vi.fn(async () => sampleExport);
+    render(<App readText={readText} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
+    fireEvent.drop(screen.getByTestId("dropzone"), {
+      dataTransfer: { files: [exportFile("round-a.json")] },
+    });
     expect(await screen.findByText("Round A")).toBeTruthy();
 
     const comparisonStep = screen.getByRole("button", {
@@ -80,12 +83,41 @@ describe("App input screen", () => {
     expect(await screen.findByText("Round B")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "5 · Comparison" }));
 
-    expect(screen.getByText("Valid experiment")).toBeTruthy();
+    expect(screen.getByText("Valid export metrics")).toBeTruthy();
     expect(
       screen.getByRole("table", { name: "Metrics calculated by Hindsight" })
     ).toBeTruthy();
-    expect(screen.getByText("18 de 23")).toBeTruthy();
-    expect(screen.getByText("12 de 17")).toBeTruthy();
+    expect(screen.getByText("18 of 23")).toBeTruthy();
+    expect(screen.getByText("12 of 17")).toBeTruthy();
+  });
+
+  it("opens the context breakdown screen with the projectRules finding", async () => {
+    render(<App />);
+    const diagnosisStep = screen.getByRole("button", {
+      name: "2 · Diagnosis",
+    }) as HTMLButtonElement;
+    expect(diagnosisStep.disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
+    expect(await screen.findByText("Round A")).toBeTruthy();
+    expect(diagnosisStep.disabled).toBe(false);
+
+    fireEvent.click(diagnosisStep);
+
+    // The centrepiece of the pitch must be reachable from the demo in one click.
+    expect(screen.getByTestId("context-window-screen")).toBeTruthy();
+    expect(screen.getByTestId("project-rules-alert")).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "This project has no AGENTS.md" })
+    ).toBeTruthy();
+
+    // Baseline aggregates, kept distinct from one another.
+    expect(screen.getByTestId("fixed-overhead").textContent).toBe("10,439");
+    expect(screen.getByTestId("conversation-tokens").textContent).toBe("7,145");
+    expect(screen.getByTestId("reported-total").textContent).toBe("17,584");
+
+    // Zero sources stay listed — the zero is the finding.
+    expect(screen.getByTestId("breakdown-tokens-projectRules").textContent).toBe("0");
   });
 
   it("opens the traceable prescriptions screen for the analyzed baseline", async () => {
@@ -144,7 +176,7 @@ describe("App input screen", () => {
     ).toBeTruthy();
     expect(screen.getByText("Project rules missing")).toBeTruthy();
     expect(screen.getByText("Idle tools")).toBeTruthy();
-    expect(screen.getByText("Skill overhead")).toBeTruthy();
+    expect(screen.getByText("Undeclared skill overhead")).toBeTruthy();
     expect(screen.getByText("MCP server candidate")).toBeTruthy();
     expect(screen.getAllByText("No findings of this type.")).toHaveLength(3);
 
@@ -156,7 +188,7 @@ describe("App input screen", () => {
     const readText = vi.fn(async () => sampleExport);
     render(<App readText={readText} />);
 
-    const selector = screen.getByLabelText("Selecionar exports JSON do IBM Bob");
+    const selector = screen.getByLabelText("Select JSON exports from IBM Bob");
     fireEvent.change(selector, { target: { files: [exportFile("round-a.json")] } });
 
     expect(await screen.findByText("Round A")).toBeTruthy();
@@ -259,11 +291,11 @@ describe("App input screen", () => {
     expect(await screen.findByText("private-session.json")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
-    expect(await screen.findByText("sample-export.json")).toBeTruthy();
+    expect((await screen.findAllByText(/sample-export\.json/)).length).toBeGreaterThan(0);
     expect(screen.queryByText("private-session.json")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Clear analyses" }));
-    expect(screen.queryByLabelText("Arquivos analisados")).toBeNull();
+    expect(screen.queryByLabelText("Analyzed files")).toBeNull();
     expect(screen.getAllByText("no file").length).toBeGreaterThan(0);
   });
 
@@ -276,22 +308,22 @@ describe("App input screen", () => {
     first.unmount();
 
     render(<App />);
-    expect(screen.queryByLabelText("Arquivos analisados")).toBeNull();
+    expect(screen.queryByLabelText("Analyzed files")).toBeNull();
     expect(screen.getByRole("button", { name: "Toggle theme" }).textContent).toBe("Dark theme");
   });
 
   it("shows a controlled error when the embedded example is invalid", async () => {
-    render(<App exampleContent="" />);
+    render(<App exampleContent="" exampleContentB="" />);
     fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
 
-    expect(await screen.findByText(/This file is empty/)).toBeTruthy();
+    expect((await screen.findAllByText(/This file is empty/)).length).toBeGreaterThan(0);
     expect(screen.queryByText("Round A")).toBeNull();
   });
 
   it("ignores an empty selection", async () => {
     render(<App readText={async () => sampleExport} />);
-    fireEvent.change(screen.getByLabelText("Selecionar exports JSON do IBM Bob"), { target: { files: [] } });
+    fireEvent.change(screen.getByLabelText("Select JSON exports from IBM Bob"), { target: { files: [] } });
 
-    await waitFor(() => expect(screen.queryByLabelText("Arquivos analisados")).toBeNull());
+    await waitFor(() => expect(screen.queryByLabelText("Analyzed files")).toBeNull());
   });
 });

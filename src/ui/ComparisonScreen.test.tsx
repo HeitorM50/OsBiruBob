@@ -40,7 +40,7 @@ describe("ComparisonScreen", () => {
   it("renders the complete real A/B table with improvements, regressions and ties", () => {
     renderComparison(compare(reportA, reportB));
 
-    expect(screen.getByText("Valid experiment")).toBeTruthy();
+    expect(screen.getByText("Valid export metrics")).toBeTruthy();
     const table = screen.getByRole("table", {
       name: "Metrics calculated by Hindsight",
     });
@@ -67,8 +67,8 @@ describe("ComparisonScreen", () => {
     expect(body.getByText(/\+1 · \+20.0% · regression/)).toBeTruthy();
     expect(body.getAllByText(/no change/).length).toBeGreaterThan(0);
     expect(body.getByText(/\+121 · zero baseline · intentional increase/)).toBeTruthy();
-    expect(body.getByText("18 de 23")).toBeTruthy();
-    expect(body.getByText("12 de 17")).toBeTruthy();
+    expect(body.getByText("18 of 23")).toBeTruthy();
+    expect(body.getByText("12 of 17")).toBeTruthy();
   });
 
   it("keeps screenshot-only metrics separate and unavailable, never zero-filled", () => {

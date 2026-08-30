@@ -151,7 +151,7 @@ function DeltaCell({ row }: { row: MetricRow }): React.JSX.Element {
         <data
           value={String(row.delta)}
           data-exact={String(row.delta)}
-          title={`Delta exato: ${String(row.delta)}`}
+          title={`Exact delta: ${String(row.delta)}`}
         >
           {content}
         </data>
@@ -164,11 +164,11 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
   const metrics = comparison.metrics;
   const idleDisplayA =
     metrics.idleToolsA !== undefined && metrics.availableToolsA !== undefined
-      ? `${integerFormatter.format(metrics.idleToolsA)} de ${integerFormatter.format(metrics.availableToolsA)}`
+      ? `${integerFormatter.format(metrics.idleToolsA)} of ${integerFormatter.format(metrics.availableToolsA)}`
       : undefined;
   const idleDisplayB =
     metrics.idleToolsB !== undefined && metrics.availableToolsB !== undefined
-      ? `${integerFormatter.format(metrics.idleToolsB)} de ${integerFormatter.format(metrics.availableToolsB)}`
+      ? `${integerFormatter.format(metrics.idleToolsB)} of ${integerFormatter.format(metrics.availableToolsB)}`
       : undefined;
 
   return [
@@ -433,7 +433,7 @@ export function ComparisonScreen({
     return (
       <main className={styles.wrapper}>
         <header className={styles.header}>
-          <p className={styles.eyebrow}>A/B comparison · same task, same commit</p>
+          <p className={styles.eyebrow}>A/B comparison</p>
           <h1>Round B has not been loaded yet.</h1>
         </header>
         <MissingRoundB
@@ -453,7 +453,7 @@ export function ComparisonScreen({
   return (
     <main className={styles.wrapper}>
       <header className={styles.header}>
-        <p className={styles.eyebrow}>A/B comparison · same task, same commit</p>
+        <p className={styles.eyebrow}>A/B comparison</p>
         <h1>{headline(comparison)}</h1>
       </header>
 
@@ -461,12 +461,17 @@ export function ComparisonScreen({
         className={comparison.valid ? styles.validityOk : styles.validityInvalid}
         role={comparison.valid ? "status" : "alert"}
       >
-        <strong>{comparison.valid ? "Valid experiment" : "Invalid experimental comparison"}</strong>
+        <strong>{comparison.valid ? "Valid export metrics" : "Invalid experimental comparison"}</strong>
         <span>
           {comparison.valid
-            ? "The auditable protocol rules match across both rounds."
+            ? "Automatically verified by Hindsight (root task counts, permissions)."
             : comparison.invalidReason ?? "The protocol differs between the rounds."}
         </span>
+        {comparison.valid && (
+           <span style={{ display: "block", marginTop: "4px", fontSize: "0.875rem" }}>
+             <strong>Requires manual verification:</strong> Identical prompt, same codebase/commit, and same builder (not verifiable in export).
+           </span>
+        )}
       </section>
 
       <section className={styles.summaryCards} aria-label="Comparison highlights">

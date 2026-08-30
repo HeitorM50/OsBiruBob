@@ -56,6 +56,13 @@ The full pipeline is deterministic:
 export JSON → Parser → Observe → Diagnose → Prescribe → Compare → UI
 ```
 
+## How Hindsight is different
+
+Unlike generic observability tools that focus strictly on API latency or global spend, Hindsight treats **context window economics** as a measurable, addressable debt.
+- **Local by design**: Other log analysis tools require uploading session data. Hindsight runs 100% locally in the browser, ensuring sensitive source code, absolute paths, and prompts never leave your machine.
+- **Actionable prescriptions**: Dashboards only show numbers. Hindsight diagnoses the specific cause of waste (e.g., absent project rules, idle tools) and generates the exact configuration artifacts (`AGENTS.md`) to fix it.
+- **Deterministic and Verifiable**: Recommendations are rule-based, deterministic, and proven via structural A/B testing of identical tasks, rather than relying on unverified LLM-generated advice.
+
 ## Try it
 
 The product is a self-contained static application. It has no backend, database,

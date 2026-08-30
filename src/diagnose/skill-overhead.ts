@@ -51,7 +51,7 @@ export function detectSkillOverhead(report: ObserveReport): Finding[] {
       },
       prescriptionHint: "disable-skill",
       description:
-        "Skill context consumed tokens, but no loaded skill was declared for this task.",
+        "Skill context consumed tokens, but no skill was declared as used for this task.",
       tokenImpact: skillTokens,
     });
   }

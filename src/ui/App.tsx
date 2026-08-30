@@ -1,5 +1,6 @@
 import React, { useId, useMemo, useRef, useState } from "react";
 import sampleExport from "../../fixtures/sample-export.json?raw";
+import rodadaBExport from "../../benchmark/rodada-b.json?raw";
 import { compare } from "../compare";
 import {
   prescribeAgentsMd,
@@ -16,11 +17,12 @@ import styles from "./App.module.css";
 import { FindingsScreen } from "./FindingsScreen";
 import { PrescriptionScreen } from "./PrescriptionScreen";
 import { ComparisonScreen } from "./ComparisonScreen";
+import ContextWindowScreen from "./ContextWindowScreen";
 
 const DEMO_MAX_CONTEXT_WINDOW = 270_000;
 
 type Theme = "light" | "dark";
-type Screen = "input" | "findings" | "prescriptions" | "comparison";
+type Screen = "input" | "diagnosis" | "findings" | "prescriptions" | "comparison";
 
 interface LoadedAnalysis extends AnalyzedExport {
   id: number;
@@ -33,6 +35,7 @@ interface InputError extends AnalysisError {
 export interface AppProps {
   readText?: (file: File) => Promise<string>;
   exampleContent?: string;
+  exampleContentB?: string;
 }
 
 function roundLabel(index: number): string {
@@ -48,6 +51,7 @@ function nextFrame(): Promise<void> {
 export default function App({
   readText = readFileText,
   exampleContent = sampleExport,
+  exampleContentB = rodadaBExport,
 }: AppProps): React.JSX.Element {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -115,17 +119,32 @@ export default function App({
     nextId.current = 1;
     setAnalyses([]);
     setErrors([]);
-    setLoadingNames(["sample-export.json"]);
+    setLoadingNames(["sample-export.json", "rodada-b.json"]);
     await nextFrame();
 
-    const result = analyzeExport(
+    const resultA = analyzeExport(
       exampleContent,
       "sample-export.json",
       "demo",
       DEMO_MAX_CONTEXT_WINDOW
     );
-    if (result.ok) setAnalyses([withId(result.value)]);
-    else setErrors([errorWithId(result.error)]);
+    const resultB = analyzeExport(
+      exampleContentB,
+      "rodada-b.json",
+      "demo",
+      DEMO_MAX_CONTEXT_WINDOW
+    );
+
+    const newAnalyses = [];
+    const newErrors = [];
+    if (resultA.ok) newAnalyses.push(withId(resultA.value));
+    else newErrors.push(errorWithId(resultA.error));
+    
+    if (resultB.ok) newAnalyses.push(withId(resultB.value));
+    else newErrors.push(errorWithId(resultB.error));
+
+    if (newAnalyses.length > 0) setAnalyses(newAnalyses);
+    if (newErrors.length > 0) setErrors(newErrors);
     setLoadingNames([]);
   }
 
@@ -157,6 +176,7 @@ export default function App({
     selectedAnalysis?.report.tasks
       .map((task) => task.context.pressure)
       .find((pressure) => pressure !== null) ?? null;
+  const rootContext = selectedAnalysis?.report.tasks.find((task) => !task.isSubtask)?.context;
   const comparison = useMemo(
     () =>
       analyses[0] !== undefined && analyses[1] !== undefined
@@ -181,15 +201,17 @@ export default function App({
             {["Input", "Diagnosis", "Findings", "Prescriptions", "Comparison"].map(
               (step, index) => {
                 const isInput = index === 0;
+                const isDiagnosis = index === 1;
                 const isFindings = index === 2;
                 const isPrescriptions = index === 3;
                 const isComparison = index === 4;
                 const enabled =
                   isInput ||
-                  ((isFindings || isPrescriptions || isComparison) &&
+                  ((isDiagnosis || isFindings || isPrescriptions || isComparison) &&
                     selectedAnalysis !== undefined);
                 const active =
                   (isInput && activeScreen === "input") ||
+                  (isDiagnosis && activeScreen === "diagnosis") ||
                   (isFindings && activeScreen === "findings") ||
                   (isPrescriptions && activeScreen === "prescriptions") ||
                   (isComparison && activeScreen === "comparison");
@@ -202,6 +224,9 @@ export default function App({
                     aria-current={active ? "step" : undefined}
                     onClick={() => {
                       if (isInput) setActiveScreen("input");
+                      if (isDiagnosis && selectedAnalysis) {
+                        setActiveScreen("diagnosis");
+                      }
                       if (isFindings && selectedAnalysis) {
                         setActiveScreen("findings");
                       }
@@ -246,13 +271,17 @@ export default function App({
                   ? "80%"
                   : activeScreen === "findings"
                     ? "60%"
-                    : "20%",
+                    : activeScreen === "diagnosis"
+                      ? "40%"
+                      : "20%",
             }}
           />
         </div>
       </header>
 
-      {activeScreen === "findings" && selectedAnalysis ? (
+      {activeScreen === "diagnosis" && rootContext ? (
+        <ContextWindowScreen context={rootContext} />
+      ) : activeScreen === "findings" && selectedAnalysis ? (
         <FindingsScreen findings={selectedAnalysis.diagnosis.findings} />
       ) : activeScreen === "prescriptions" && selectedAnalysis ? (
         <main className={styles.prescriptionMain}>
@@ -323,14 +352,14 @@ export default function App({
               >
                 Select files
               </button>
-              <input
+                <input
                 ref={inputRef}
                 id={inputId}
                 className={styles.fileInput}
                 type="file"
                 accept=".json,application/json"
                 multiple
-                aria-label="Selecionar exports JSON do IBM Bob"
+                aria-label="Select JSON exports from IBM Bob"
                 onChange={(event) => {
                   void loadFiles(Array.from(event.currentTarget.files ?? []));
                   event.currentTarget.value = "";
