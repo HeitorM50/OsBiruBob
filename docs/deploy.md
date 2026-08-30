@@ -35,6 +35,24 @@ arquivo funciona hospedado ou aberto diretamente com `file://`.
 Os checks do CI também bloqueiam referências a scripts ou folhas de estilo
 externos e APIs de rede (`fetch`, `XMLHttpRequest` e `WebSocket`) no artefato.
 
+### Registro de 30 de agosto de 2026
+
+O commit da issue foi clonado em um diretório temporário e verificado sem usar o
+`node_modules` do ambiente de desenvolvimento:
+
+| Verificação | Resultado |
+|---|---|
+| `npm ci` | concluído em clone limpo |
+| `npm run build:web` | concluído; 1 arquivo, 321.057 bytes (90,14 kB gzip) |
+| abertura direta por `file://` | Rodada A carregada pelo modo demo |
+| Chromium 151 em sessão anônima | 0 requisições após clicar em **Ver exemplo**; 0 erros de console |
+| APIs de rede no bundle | nenhuma ocorrência de `fetch`, `XMLHttpRequest` ou `WebSocket` |
+| credenciais de alta confiança | 0 ocorrências |
+| caminhos absolutos adicionais | 0; os 15 encontrados já pertencem ao fixture versionado |
+
+A confirmação visual da aba Network da URL publicada fica anexada à issue de
+deploy, para que a evidência não dependa apenas dos checks automatizados.
+
 ## Privacidade do artefato
 
 O fixture público é o mesmo arquivo já versionado em
