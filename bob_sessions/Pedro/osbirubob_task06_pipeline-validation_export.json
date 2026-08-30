@@ -1,0 +1,1855 @@
+{
+  "version": 1,
+  "exportedAt": 1788067740531,
+  "workspace": "file:/[REDACTED]",
+  "tasks": [
+    {
+      "task": {
+        "id": "818f1e794deb04c930e759f458875031",
+        "workspace": "file:/[REDACTED]",
+        "parentId": null,
+        "taskType": "normal",
+        "title": "[REDACTED]",
+        "status": "active",
+        "firstMessage": "[REDACTED]",
+        "version": null,
+        "gitSha": null,
+        "gitBranch": null,
+        "isPinned": false,
+        "lastError": null,
+        "messageQueue": null,
+        "createdAt": 1788066612306,
+        "updatedAt": 1788067718551,
+        "env": {
+          "id": "818f1e794deb04c930e759f458875031",
+          "workspace": "file:/[REDACTED]",
+          "workspaceName": "[REDACTED]",
+          "scheme": "file",
+          "query": "[REDACTED]",
+          "language": "en",
+          "isPlayground": false,
+          "costEffective": true,
+          "modeId": "agent",
+          "_meta": {
+            "commandSecurityModel": "openai/gpt-oss-20b"
+          },
+          "staticEnvInfo": {
+            "primaryWorkspace": "[REDACTED]",
+            "systemInfo": {
+              "platform": "win32",
+              "release": "10.0.19045",
+              "arch": "x64",
+              "shell": "powershell.exe"
+            }
+          },
+          "task": [
+            {
+              "description": "[REDACTED]",
+              "state": "done"
+            },
+            {
+              "description": "[REDACTED]",
+              "state": "done"
+            },
+            {
+              "description": "[REDACTED]",
+              "state": "done"
+            },
+            {
+              "description": "[REDACTED]",
+              "state": "done"
+            },
+            {
+              "description": "[REDACTED]",
+              "state": "done"
+            },
+            {
+              "description": "[REDACTED]",
+              "state": "done"
+            },
+            {
+              "description": "[REDACTED]",
+              "state": "done"
+            },
+            {
+              "description": "[REDACTED]",
+              "state": "done"
+            },
+            {
+              "description": "[REDACTED]",
+              "state": "done"
+            },
+            {
+              "description": "[REDACTED]",
+              "state": "done"
+            }
+          ]
+        },
+        "approvalConfig": {
+          "autoApprovalEnabled": true,
+          "outsideWorkspaceAllowed": false,
+          "allowed_permissions": [
+            "read",
+            "skill"
+          ],
+          "editApprovalPreviewMode": "editor",
+          "allowedExecutors": [
+            {
+              "toolId": "execute_command",
+              "approvedCommands": [],
+              "deniedCommands": []
+            }
+          ],
+          "taskCommandApprovals": [],
+          "forbiddenApprovalGroups": [],
+          "taskAllowedMcpTools": []
+        },
+        "costs": {
+          "cost": 3.112392,
+          "contextTokens": 79559,
+          "contextWindowBreakdown": {
+            "total": 12325,
+            "reportedTotal": 79559,
+            "breakdown": {
+              "roleDefinition": 34,
+              "staticSections": 563,
+              "skills": 1023,
+              "baseRules": 197,
+              "projectRules": 2121,
+              "customInstructions": 160,
+              "environment": 71,
+              "toolSystemPrompts": 2591,
+              "toolDefinitions": 5565,
+              "mcpToolDefinitions": 0
+            },
+            "loadedSkills": [
+              {
+                "name": "implement-pipeline-module",
+                "tokens": 278
+              }
+            ],
+            "key": "[REDACTED]"
+          }
+        }
+      },
+      "messages": [
+        {
+          "id": "7a83879febf8dee19f6ddf0305434c49",
+          "role": "system",
+          "createdAt": 1788067377582,
+          "data": {
+            "id": "7a83879febf8dee19f6ddf0305434c49",
+            "role": "system",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066762460
+            }
+          }
+        },
+        {
+          "id": "b7261302c52b5a333ed9a130d061fc90",
+          "role": "user",
+          "createdAt": 1788067377583,
+          "data": {
+            "id": "b7261302c52b5a333ed9a130d061fc90",
+            "role": "user",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066762460
+            },
+            "envContext": "[REDACTED]",
+            "availableTools": [
+              "GetSymbolsOverview",
+              "FindSymbol",
+              "FindReferencingSymbols",
+              "use_skill",
+              "apply_diff",
+              "create_html_artifact",
+              "insert_content",
+              "list_files",
+              "read_file",
+              "read_xlsx",
+              "search_and_replace",
+              "update_todo_list",
+              "switch_mode",
+              "write_file",
+              "execute_command",
+              "glob",
+              "grep",
+              "search_bob_docs",
+              "spawn_subagent",
+              "ask_followup_question",
+              "start_subtask",
+              "create_chart",
+              "start_workflow"
+            ]
+          }
+        },
+        {
+          "id": "151faaa021930d6ee01662de061dd1c4",
+          "role": "assistant",
+          "createdAt": 1788067377583,
+          "data": {
+            "id": "151faaa021930d6ee01662de061dd1c4",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066764651,
+              "spend": {
+                "cost": 0.03382,
+                "contextTokens": 16910,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_nIsLJTVlyj4pU95UrdeVdu",
+                "name": "use_skill",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_vfy9auPs7jYP0TbxfX3onR",
+                "name": "list_files",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_KznUn11WkG74TkuS4oaJB6",
+                "name": "list_files",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_MvjQTVzSLDateRtlzvoYNM",
+                "name": "list_files",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_9pVtWt2vXxCZ4TR4Czrzij",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_4aOX4AU9C7SubV25emFBMw",
+                "name": "read_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "61462c4d5492b23e304294304b57d3b6",
+          "role": "tool",
+          "createdAt": 1788067377583,
+          "data": {
+            "id": "61462c4d5492b23e304294304b57d3b6",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066764954,
+              "durationMs": 288
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_nIsLJTVlyj4pU95UrdeVdu",
+                "name": "use_skill",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "skill",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "e2e945aced8f0f87b88455a68f691f4c",
+          "role": "tool",
+          "createdAt": 1788067377583,
+          "data": {
+            "id": "e2e945aced8f0f87b88455a68f691f4c",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066764956,
+              "durationMs": 2
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_vfy9auPs7jYP0TbxfX3onR",
+                "name": "list_files",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "4fb642206b173e9e2c52538d3978a9a0",
+          "role": "tool",
+          "createdAt": 1788067377583,
+          "data": {
+            "id": "4fb642206b173e9e2c52538d3978a9a0",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066766734,
+              "durationMs": 2
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_KznUn11WkG74TkuS4oaJB6",
+                "name": "list_files",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "73e825f136daa729636ac922bb700184",
+          "role": "tool",
+          "createdAt": 1788067377584,
+          "data": {
+            "id": "73e825f136daa729636ac922bb700184",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066766735,
+              "durationMs": 3
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_MvjQTVzSLDateRtlzvoYNM",
+                "name": "list_files",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "da441ca67e7e040161013cf32284a8f3",
+          "role": "tool",
+          "createdAt": 1788067377584,
+          "data": {
+            "id": "da441ca67e7e040161013cf32284a8f3",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066769094,
+              "durationMs": 466
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_4aOX4AU9C7SubV25emFBMw",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "4497ca4ae1fdf0251351adb168422145",
+          "role": "tool",
+          "createdAt": 1788067377584,
+          "data": {
+            "id": "4497ca4ae1fdf0251351adb168422145",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066770889,
+              "durationMs": 2261
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_9pVtWt2vXxCZ4TR4Czrzij",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "701ebcf3c85ef5ecdd64f700170acc26",
+          "role": "assistant",
+          "createdAt": 1788067377584,
+          "data": {
+            "id": "701ebcf3c85ef5ecdd64f700170acc26",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066773674,
+              "spend": {
+                "cost": 0.06038,
+                "contextTokens": 30190,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_KE6Y33BhX4ZbDcvJ3GXreD",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_MWcYB0JOVUqbrRl2qRhkDT",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_bFdZBsHkFtnNBMxp32Dokj",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_oc0vmOz4dUSrRmLT2s4taH",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_EtoRsH3ubjfac45BVw18Yn",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_fjFFZRrRZPVZqTi40cM3qM",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_vZkj0BSLZr24vUi1t3GTAc",
+                "name": "read_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "834b4beda858073574dde47fcfea2a31",
+          "role": "tool",
+          "createdAt": 1788067377585,
+          "data": {
+            "id": "834b4beda858073574dde47fcfea2a31",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066774709,
+              "durationMs": 6
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_KE6Y33BhX4ZbDcvJ3GXreD",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "f3f63105460e6d5d3132a84d894f368e",
+          "role": "tool",
+          "createdAt": 1788067382008,
+          "data": {
+            "id": "f3f63105460e6d5d3132a84d894f368e",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066774710,
+              "durationMs": 7
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_MWcYB0JOVUqbrRl2qRhkDT",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "405364336be58e1279f667c492de9588",
+          "role": "tool",
+          "createdAt": 1788067382008,
+          "data": {
+            "id": "405364336be58e1279f667c492de9588",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066774711,
+              "durationMs": 8
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_oc0vmOz4dUSrRmLT2s4taH",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "050c849143a4a6887e887e051bd8ad09",
+          "role": "tool",
+          "createdAt": 1788067382008,
+          "data": {
+            "id": "050c849143a4a6887e887e051bd8ad09",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066774719,
+              "durationMs": 16
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_bFdZBsHkFtnNBMxp32Dokj",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "bf91c47acc3587fa93cc3a6d0020fcdd",
+          "role": "tool",
+          "createdAt": 1788067382008,
+          "data": {
+            "id": "bf91c47acc3587fa93cc3a6d0020fcdd",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066777885,
+              "durationMs": 4
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_EtoRsH3ubjfac45BVw18Yn",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "1e04f01d13f7e30e4176a91e6201e051",
+          "role": "tool",
+          "createdAt": 1788067382008,
+          "data": {
+            "id": "1e04f01d13f7e30e4176a91e6201e051",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066777886,
+              "durationMs": 5
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_vZkj0BSLZr24vUi1t3GTAc",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "115103dbd14186d19196541ac2f6800d",
+          "role": "tool",
+          "createdAt": 1788067382009,
+          "data": {
+            "id": "115103dbd14186d19196541ac2f6800d",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066782627,
+              "durationMs": 4746
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_fjFFZRrRZPVZqTi40cM3qM",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "cbb792994b1f71e2f1ad2d26b3a65653",
+          "role": "assistant",
+          "createdAt": 1788067382009,
+          "data": {
+            "id": "cbb792994b1f71e2f1ad2d26b3a65653",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066786022,
+              "spend": {
+                "cost": 0.070654,
+                "contextTokens": 35327,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_NJeDPQcxsULpcpktprHzlI",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_fnyCn6Ps7zhXEtbKYAjVlm",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_FqCufGruX4o304C4Ye4k7g",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_6J5EkRq4lulVy4T0SmcGnj",
+                "name": "read_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "4d86afc097ddc73ab3a875b26f720c66",
+          "role": "tool",
+          "createdAt": 1788067382009,
+          "data": {
+            "id": "4d86afc097ddc73ab3a875b26f720c66",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066787230,
+              "durationMs": 4
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_fnyCn6Ps7zhXEtbKYAjVlm",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "883c240933c46e65efa69bba34c1abef",
+          "role": "tool",
+          "createdAt": 1788067382009,
+          "data": {
+            "id": "883c240933c46e65efa69bba34c1abef",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066787234,
+              "durationMs": 8
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_NJeDPQcxsULpcpktprHzlI",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "cec18ea1de5625bdfd7384e6855cb32c",
+          "role": "tool",
+          "createdAt": 1788067382009,
+          "data": {
+            "id": "cec18ea1de5625bdfd7384e6855cb32c",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066787238,
+              "durationMs": 12
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_6J5EkRq4lulVy4T0SmcGnj",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "d621a74f4b1fdbc3f7f3f10351a0d723",
+          "role": "tool",
+          "createdAt": 1788067382009,
+          "data": {
+            "id": "d621a74f4b1fdbc3f7f3f10351a0d723",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066787240,
+              "durationMs": 14
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_FqCufGruX4o304C4Ye4k7g",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "9b0ffd9ca2bff9857444ea3ddf091a69",
+          "role": "assistant",
+          "createdAt": 1788067382010,
+          "data": {
+            "id": "9b0ffd9ca2bff9857444ea3ddf091a69",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066790915,
+              "spend": {
+                "cost": 0.090182,
+                "contextTokens": 45091,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_ZDTKUSbUxaws7tBRZ3V9dM",
+                "name": "execute_command",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_H2XxsrRtGL44N4TYIbSlXL",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_Zd0hArWixRXCjeVJzTg0kE",
+                "name": "execute_command",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_pQtvd8CUfNhAJ6OazRL8HI",
+                "name": "write_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_d6h0zbm5cWzv26k21q9u8P",
+                "name": "execute_command",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_pxj0hDaIbiX59dgETlWEfz",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_UCCBiHkPvEXUgbY2Sj68TL",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_66zgahag9WJYRICP4rOkuq",
+                "name": "read_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "c3c66d9a2aea3786233f8244b6c5b5b7",
+          "role": "tool",
+          "createdAt": 1788067382010,
+          "data": {
+            "id": "c3c66d9a2aea3786233f8244b6c5b5b7",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066823512,
+              "durationMs": 32256
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_ZDTKUSbUxaws7tBRZ3V9dM",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": true
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "74bda521ea3b797a8d90ae17a1d9e71a",
+          "role": "tool",
+          "createdAt": 1788067382010,
+          "data": {
+            "id": "74bda521ea3b797a8d90ae17a1d9e71a",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066823766,
+              "durationMs": 254
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_H2XxsrRtGL44N4TYIbSlXL",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "eddf65d48c3e3f0d0ae722a0be8a43bc",
+          "role": "tool",
+          "createdAt": 1788067382010,
+          "data": {
+            "id": "eddf65d48c3e3f0d0ae722a0be8a43bc",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066831562,
+              "durationMs": 4578
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_Zd0hArWixRXCjeVJzTg0kE",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": true
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "424484a5250747e26a3a16bae03a504c",
+          "role": "tool",
+          "createdAt": 1788067382011,
+          "data": {
+            "id": "424484a5250747e26a3a16bae03a504c",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066844123,
+              "durationMs": 7383
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_pQtvd8CUfNhAJ6OazRL8HI",
+                "name": "write_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "edit",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "123392e4fc5ec707facf37c384a407f5",
+          "role": "tool",
+          "createdAt": 1788067382011,
+          "data": {
+            "id": "123392e4fc5ec707facf37c384a407f5",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066849228,
+              "durationMs": 2886
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_d6h0zbm5cWzv26k21q9u8P",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "4689cf94d3f045665caf7d2b2e7df541",
+          "role": "tool",
+          "createdAt": 1788067382011,
+          "data": {
+            "id": "4689cf94d3f045665caf7d2b2e7df541",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066849232,
+              "durationMs": 2
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_pxj0hDaIbiX59dgETlWEfz",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "6b88e92adb4ef161deb748994ac69d74",
+          "role": "tool",
+          "createdAt": 1788067382012,
+          "data": {
+            "id": "6b88e92adb4ef161deb748994ac69d74",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066851588,
+              "durationMs": 99
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_UCCBiHkPvEXUgbY2Sj68TL",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "ec8ea35949b8b61e28c505ebb1d43576",
+          "role": "tool",
+          "createdAt": 1788067382012,
+          "data": {
+            "id": "ec8ea35949b8b61e28c505ebb1d43576",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066854509,
+              "durationMs": 7
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_66zgahag9WJYRICP4rOkuq",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "6226d5b8dc042dee559e2ce1315f99c1",
+          "role": "assistant",
+          "createdAt": 1788067382012,
+          "data": {
+            "id": "6226d5b8dc042dee559e2ce1315f99c1",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066859659,
+              "spend": {
+                "cost": 0.114044,
+                "contextTokens": 57022,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_JIh5bHYx7nLFylF2cwPE25",
+                "name": "update_todo_list",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "65a39a6049384d4df8ceee3acb69fadd",
+          "role": "tool",
+          "createdAt": 1788067382012,
+          "data": {
+            "id": "65a39a6049384d4df8ceee3acb69fadd",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066948602,
+              "durationMs": 88876
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_JIh5bHYx7nLFylF2cwPE25",
+                "name": "update_todo_list",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "todo",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "e9ccbdc89248710b1d828a949b83788f",
+          "role": "assistant",
+          "createdAt": 1788067382013,
+          "data": {
+            "id": "e9ccbdc89248710b1d828a949b83788f",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066952821,
+              "spend": {
+                "cost": 0.114822,
+                "contextTokens": 57411,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_zNAGhonjVey6hk78eNKnuR",
+                "name": "execute_command",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_56Qf7rR6z04Aoijs93CFUq",
+                "name": "execute_command",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "b97e7c2a12bee484e970203122f52030",
+          "role": "tool",
+          "createdAt": 1788067382013,
+          "data": {
+            "id": "b97e7c2a12bee484e970203122f52030",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066958582,
+              "durationMs": 4543
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_56Qf7rR6z04Aoijs93CFUq",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "3933be8d467f3a6b6e7683b3ac1b917e",
+          "role": "tool",
+          "createdAt": 1788067382013,
+          "data": {
+            "id": "3933be8d467f3a6b6e7683b3ac1b917e",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066958793,
+              "durationMs": 4755
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_zNAGhonjVey6hk78eNKnuR",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "465d92c1c15c565fb2ccba3c3ed9890a",
+          "role": "assistant",
+          "createdAt": 1788067382013,
+          "data": {
+            "id": "465d92c1c15c565fb2ccba3c3ed9890a",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066961360,
+              "spend": {
+                "cost": 0.118184,
+                "contextTokens": 59092,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_YSafGeuZUhjw74kHs1LOfV",
+                "name": "execute_command",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_ESfApmqVYEa1F9MrOCJY22",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_B2judXCgnLMBEqDbEMj6NU",
+                "name": "execute_command",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "a3213ecd46bb3439dfb5eccc4f6b2b82",
+          "role": "tool",
+          "createdAt": 1788067382013,
+          "data": {
+            "id": "a3213ecd46bb3439dfb5eccc4f6b2b82",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066966569,
+              "durationMs": 3694
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_YSafGeuZUhjw74kHs1LOfV",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": true
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "cdafd3239c3502fc4c2360b958f3c054",
+          "role": "tool",
+          "createdAt": 1788067382013,
+          "data": {
+            "id": "cdafd3239c3502fc4c2360b958f3c054",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066966577,
+              "durationMs": 7
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_ESfApmqVYEa1F9MrOCJY22",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "4230e2bf9572d9304eece3b8cb339c30",
+          "role": "tool",
+          "createdAt": 1788067382013,
+          "data": {
+            "id": "4230e2bf9572d9304eece3b8cb339c30",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066978395,
+              "durationMs": 10056
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_B2judXCgnLMBEqDbEMj6NU",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": true
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "cdf5cb7ad2456b5b610622d0753e15c0",
+          "role": "assistant",
+          "createdAt": 1788067382014,
+          "data": {
+            "id": "cdf5cb7ad2456b5b610622d0753e15c0",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066980999,
+              "spend": {
+                "cost": 0.118562,
+                "contextTokens": 59281,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_5J3ORtx9Zm3aPf6fAK96zM",
+                "name": "read_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "922445df7f02e0743eccaabd9502f271",
+          "role": "tool",
+          "createdAt": 1788067382014,
+          "data": {
+            "id": "922445df7f02e0743eccaabd9502f271",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066982147,
+              "durationMs": 6
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_5J3ORtx9Zm3aPf6fAK96zM",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "ccbb6842263ae280b3b36f1a1bda0942",
+          "role": "assistant",
+          "createdAt": 1788067382014,
+          "data": {
+            "id": "ccbb6842263ae280b3b36f1a1bda0942",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066984223,
+              "spend": {
+                "cost": 0.119532,
+                "contextTokens": 59766,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_zuv4dmeNeyep7PrzRK3xUu",
+                "name": "update_todo_list",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "2c7823939de0b9a86092b7a4476f96cd",
+          "role": "tool",
+          "createdAt": 1788067382014,
+          "data": {
+            "id": "2c7823939de0b9a86092b7a4476f96cd",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788066993418,
+              "durationMs": 5719
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_zuv4dmeNeyep7PrzRK3xUu",
+                "name": "update_todo_list",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "todo",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "56a3cbf36a8f8000b64253c7151cbcd3",
+          "role": "assistant",
+          "createdAt": 1788067382014,
+          "data": {
+            "id": "56a3cbf36a8f8000b64253c7151cbcd3",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067013938,
+              "spend": {
+                "cost": 0.128196,
+                "contextTokens": 64098,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_pw07prf899c2RoIuwRZBVa",
+                "name": "write_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "84e0729eddc2368e67cb605866cf417a",
+          "role": "tool",
+          "createdAt": 1788067382014,
+          "data": {
+            "id": "84e0729eddc2368e67cb605866cf417a",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067060286,
+              "durationMs": 14343
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_pw07prf899c2RoIuwRZBVa",
+                "name": "write_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "edit",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "0907c2fb2f8bfe26da623b28bcf4b1cf",
+          "role": "assistant",
+          "createdAt": 1788067382015,
+          "data": {
+            "id": "0907c2fb2f8bfe26da623b28bcf4b1cf",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067080774,
+              "spend": {
+                "cost": 0.136526,
+                "contextTokens": 68263,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_heZKLSjEwn2XnqZu5l67Rl",
+                "name": "write_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "2c4268cc373764a2e89ae80e970e7e39",
+          "role": "tool",
+          "createdAt": 1788067382015,
+          "data": {
+            "id": "2c4268cc373764a2e89ae80e970e7e39",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067111638,
+              "durationMs": 4537
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_heZKLSjEwn2XnqZu5l67Rl",
+                "name": "write_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "edit",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "d68378228a2eda621cebeac5b4c51c62",
+          "role": "assistant",
+          "createdAt": 1788067382016,
+          "data": {
+            "id": "d68378228a2eda621cebeac5b4c51c62",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067129037,
+              "spend": {
+                "cost": 0.13948,
+                "contextTokens": 69740,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_kMOiQFGEAF10XL8E3S8VmH",
+                "name": "write_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "6e7b275587e7b2a029e730b2d3a5e019",
+          "role": "tool",
+          "createdAt": 1788067382016,
+          "data": {
+            "id": "6e7b275587e7b2a029e730b2d3a5e019",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067184293,
+              "durationMs": 51118
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_kMOiQFGEAF10XL8E3S8VmH",
+                "name": "write_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "edit",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "2432d4396fa25a9035f818b84235b64a",
+          "role": "assistant",
+          "createdAt": 1788067382016,
+          "data": {
+            "id": "2432d4396fa25a9035f818b84235b64a",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067205044,
+              "spend": {
+                "cost": 0.151792,
+                "contextTokens": 75896,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_bzXlKUPjgBec1cHSs0JKaq",
+                "name": "write_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "33d02f905ed71938de49df1b19842806",
+          "role": "tool",
+          "createdAt": 1788067382016,
+          "data": {
+            "id": "33d02f905ed71938de49df1b19842806",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067244849,
+              "durationMs": 14816
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_bzXlKUPjgBec1cHSs0JKaq",
+                "name": "write_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "edit",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "9c1f42a771d5ef6706bfbccfdeb479ac",
+          "role": "assistant",
+          "createdAt": 1788067382017,
+          "data": {
+            "id": "9c1f42a771d5ef6706bfbccfdeb479ac",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067247400,
+              "spend": {
+                "cost": 0.152174,
+                "contextTokens": 76087,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_bmkB5PslF9I8OnD3GaQtdI",
+                "name": "execute_command",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "61dcdce84c33f6edfd9b75e30fc12db4",
+          "role": "tool",
+          "createdAt": 1788067382017,
+          "data": {
+            "id": "61dcdce84c33f6edfd9b75e30fc12db4",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067342226,
+              "durationMs": 94820
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_bmkB5PslF9I8OnD3GaQtdI",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "4da5dc4739d9386c223608df1192f86b",
+          "role": "assistant",
+          "createdAt": 1788067382017,
+          "data": {
+            "id": "4da5dc4739d9386c223608df1192f86b",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067345930,
+              "spend": {
+                "cost": 0.15521,
+                "contextTokens": 77605,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_G3FXErprAGZcopGnHbqUUv",
+                "name": "execute_command",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "1a5a701d8a7a7de35b06910c11584b55",
+          "role": "tool",
+          "createdAt": 1788067382018,
+          "data": {
+            "id": "1a5a701d8a7a7de35b06910c11584b55",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067352328,
+              "durationMs": 6382
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_G3FXErprAGZcopGnHbqUUv",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "59ce25627cf72e3ecacb47323816961c",
+          "role": "assistant",
+          "createdAt": 1788067382018,
+          "data": {
+            "id": "59ce25627cf72e3ecacb47323816961c",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067356344,
+              "spend": {
+                "cost": 0.155704,
+                "contextTokens": 77852,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_KmRDlSoWbp7dPRcOMSrVym",
+                "name": "update_todo_list",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "4f49ed9f444467b550bf9c29e3423e80",
+          "role": "tool",
+          "createdAt": 1788067382018,
+          "data": {
+            "id": "4f49ed9f444467b550bf9c29e3423e80",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067365730,
+              "durationMs": 9341
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_KmRDlSoWbp7dPRcOMSrVym",
+                "name": "update_todo_list",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "todo",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "95abe8c259c27b1cb25395b4c9e0d4d5",
+          "role": "assistant",
+          "createdAt": 1788067382018,
+          "data": {
+            "id": "95abe8c259c27b1cb25395b4c9e0d4d5",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067368287,
+              "spend": {
+                "cost": 0.15706,
+                "contextTokens": 78530,
+                "reasoningTokens": 0
+              }
+            },
+            "stop": true
+          }
+        },
+        {
+          "id": "62e3cb8d974a38e5557da21c6d707d3b",
+          "role": "user",
+          "createdAt": 1788067460331,
+          "data": {
+            "id": "62e3cb8d974a38e5557da21c6d707d3b",
+            "role": "user",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067460399
+            },
+            "envContext": "[REDACTED]",
+            "availableTools": [
+              "GetSymbolsOverview",
+              "FindSymbol",
+              "FindReferencingSymbols",
+              "use_skill",
+              "apply_diff",
+              "create_html_artifact",
+              "insert_content",
+              "list_files",
+              "read_file",
+              "read_xlsx",
+              "search_and_replace",
+              "update_todo_list",
+              "switch_mode",
+              "write_file",
+              "execute_command",
+              "glob",
+              "grep",
+              "search_bob_docs",
+              "spawn_subagent",
+              "ask_followup_question",
+              "start_subtask",
+              "create_chart",
+              "start_workflow"
+            ]
+          }
+        },
+        {
+          "id": "af8b3931d812463d6fa46da47382bfae",
+          "role": "assistant",
+          "createdAt": 1788067463603,
+          "data": {
+            "id": "af8b3931d812463d6fa46da47382bfae",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067463592,
+              "spend": {
+                "cost": 0.157354,
+                "contextTokens": 78677,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_60czwt9RRWsgyBBp9AcWDk",
+                "name": "read_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "9768b965df9ea29e6f136b1c9b244f5b",
+          "role": "tool",
+          "createdAt": 1788067463614,
+          "data": {
+            "id": "9768b965df9ea29e6f136b1c9b244f5b",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067463602,
+              "durationMs": 7
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_60czwt9RRWsgyBBp9AcWDk",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "7403b144c973139721e606878cf75ab6",
+          "role": "assistant",
+          "createdAt": 1788067468254,
+          "data": {
+            "id": "7403b144c973139721e606878cf75ab6",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067466308,
+              "spend": {
+                "cost": 0.1583,
+                "contextTokens": 79150,
+                "reasoningTokens": 0
+              }
+            },
+            "stop": true
+          }
+        },
+        {
+          "id": "632269651ac32034c7f94804d485bb43",
+          "role": "user",
+          "createdAt": 1788067710634,
+          "data": {
+            "id": "632269651ac32034c7f94804d485bb43",
+            "role": "user",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067711237
+            },
+            "envContext": "[REDACTED]",
+            "availableTools": [
+              "GetSymbolsOverview",
+              "FindSymbol",
+              "FindReferencingSymbols",
+              "use_skill",
+              "apply_diff",
+              "create_html_artifact",
+              "insert_content",
+              "list_files",
+              "read_file",
+              "read_xlsx",
+              "search_and_replace",
+              "update_todo_list",
+              "switch_mode",
+              "write_file",
+              "execute_command",
+              "glob",
+              "grep",
+              "search_bob_docs",
+              "spawn_subagent",
+              "ask_followup_question",
+              "start_subtask",
+              "create_chart",
+              "start_workflow"
+            ]
+          }
+        },
+        {
+          "id": "14fdd22a5897eb91d26716488367187a",
+          "role": "assistant",
+          "createdAt": 1788067718439,
+          "data": {
+            "id": "14fdd22a5897eb91d26716488367187a",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1788067713577,
+              "spend": {
+                "cost": 0.159118,
+                "contextTokens": 79559,
+                "reasoningTokens": 0
+              }
+            },
+            "stop": true
+          }
+        }
+      ]
+    }
+  ]
+}

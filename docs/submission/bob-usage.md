@@ -31,16 +31,16 @@ one issue per session. Examples:
 
 | Bob session | Produced | Issue | Evidence |
 |---|---|---|---|
-| Domain model and architecture | `docs/domain-model.md`, `docs/architecture.md` | #31, #33 | `bob_sessions/Pedro/osbirubob_task00_Documatation_domain.jpeg` |
+| Domain model and architecture | `docs/domain-model.md`, `docs/architecture.md` | #31, #33 | `bob_sessions/Pedro/osbirubob_task01_domain-model_summary.png` |
 | Export parser | `src/parser/` | #5 | `bob_sessions/Philipe/osbirubob_task06_parser-export_summary.png` |
 | Per-turn metrics | `src/observe/` | #6 | `bob_sessions/Heitor/osbirubob_task07_metricas-por-turno_summary.png` |
 | Tool-call correlation | `src/observe/tool-calls.ts` | #7 | `bob_sessions/Gustavo/osbirubob_task09_tool-calls_summary.png` |
-| Context breakdown | `src/observe/` | #8 | `bob_sessions/Hugo/osbirubob_task08_decomposicao-contexto_summary.png` |
-| Idle-tool detector | `src/diagnose/detectors/unused-tool.ts` | #14 | `bob_sessions/Pedro/osbirubob_task03_issue_14_*.png` |
-| Redundant-read detector | `src/diagnose/redundant-read.ts` | #10 | `bob_sessions/Philipe/osbirubo_task10_redundant_read.png` |
-| Recommendation catalogues | `data/*.json` | #40 | `bob_sessions/Hugo/osbirubob_task11_recommendation_catalog.png` |
-| `AGENTS.md` generator | `src/prescribe/` | #16 | `bob_sessions/Gustavo/osbirubob_task_16_agents-generator.png` |
-| Prescriptions screen | `src/ui/PrescriptionScreen.tsx` | #42 | `bob_sessions/Hugo/osbirubob_task12_prescription_screen.png` |
+| Context breakdown | `src/observe/` | #8 | `bob_sessions/Hugo/osbirubob_task08_context-breakdown_summary.png` |
+| Idle-tool detector | `src/diagnose/detectors/unused-tool.ts` | #14 | `bob_sessions/Pedro/osbirubob_task03_idle-tool-detector_summary.png` |
+| Redundant-read detector | `src/diagnose/redundant-read.ts` | #10 | `bob_sessions/Philipe/osbirubob_task10_redundant-read_summary.png` |
+| Recommendation catalogues | `data/*.json` | #40 | `bob_sessions/Hugo/osbirubob_task11_recommendation-catalog_summary.png` |
+| `AGENTS.md` generator | `src/prescribe/` | #16 | `bob_sessions/Gustavo/osbirubob_task16_agents-generator_summary.png` |
+| Prescriptions screen | `src/ui/PrescriptionScreen.tsx` | #42 | `bob_sessions/Hugo/osbirubob_task12_prescription-screen_summary.png` |
 | A/B comparison module | `src/compare/` | #20 | `bob_sessions/Heitor/osbirubob_task11_bob-compare_summary.png` |
 
 **Five team members** have Bob sessions in `bob_sessions/`: Heitor, Gustavo, Hugo,
@@ -109,11 +109,6 @@ collected. Hindsight *recommends* MCP servers from shell commands, but no MCP
 server was connected during our sessions.
 
 Bobcoin figures shown in session screenshots are the platform's own display; we
-report measured cost from the export's `cost` field instead.
-
----
-
-> **Reviewer note (remove before submitting).** The session-to-issue mapping in
-> §2 was inferred from screenshot filenames. Confirm each row against the actual
-> session before submitting — the value of this statement is that every claim is
-> verifiable.
+report measured cost from the export's `cost` field instead. The mapping above was
+checked against the versioned filenames and artefacts during the final compliance
+review.

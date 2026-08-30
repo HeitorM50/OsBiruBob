@@ -3,8 +3,8 @@
 **Issue:** #17 — Prescribe: overhead reduction (tool disabling + skill review)
 **Branch:** `issue/f4-17`
 **Gate commit:** `d367796a1892084421499c7a3fef9f5c1a852631`
-**Validation session export:** `bob_sessions/Pedro/bob-task-568bec1892efb287107ee97c4498d19c-2026-08-30.json`
-**Screenshot:** `bob_sessions/Pedro/osbirubob_task03_issue_18_GateAgent_md.png`
+**Validation session export:** `bob_sessions/Pedro/osbirubob_task05_f4-gate_export.json`
+**Screenshot:** `bob_sessions/Pedro/osbirubob_task05_f4-gate_summary.png`
 
 ---
 
@@ -51,7 +51,7 @@ is a natural result of the session type, not a prescribed intervention.
 ## Validation Metrics
 
 Pipeline: `parseSession → observe → diagnoseWithCatalogs`
-Export processed: `bob_sessions/Pedro/bob-task-568bec1892efb287107ee97c4498d19c-2026-08-30.json`
+Export processed: `bob_sessions/Pedro/osbirubob_task05_f4-gate_export.json`
 
 ### Before / After comparison
 
