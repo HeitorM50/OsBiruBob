@@ -45,6 +45,12 @@ jobs:
       - name: Build web app
         run: npm run build:web
 
+      - name: Verify self-contained offline build
+        run: |
+          test -f dist/web/index.html
+          test "$(find dist/web -maxdepth 1 -type f | wc -l)" -eq 1
+          ! grep -Eq '<script[^>]+src=|<link[^>]+rel="stylesheet"|fetch\(|XMLHttpRequest|new WebSocket' dist/web/index.html
+
       - name: Demo (builds CLI and runs it)
         run: npm run demo
 
