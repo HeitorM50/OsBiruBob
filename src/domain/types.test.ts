@@ -133,6 +133,7 @@ describe("domain type smoke tests", () => {
       detectedAt: 1787958446197,
       evidence: {
         type: "breakdown",
+        redactable: false,
         breakdownField: "projectRules",
         breakdownValue: 0,
       },

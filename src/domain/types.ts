@@ -461,13 +461,19 @@ export type FindingKind =
 export type ConfidenceLevel = "high" | "medium" | "low";
 
 export interface FindingEvidence {
-  type: "message" | "breakdown" | "cross-reference";
-  messageIds?: string[];
-  toolCallIds?: string[];
-  breakdownField?: keyof BreakdownDetail;
-  breakdownValue?: number;
-  unusedTools?: string[];
-  rawValue?: unknown;
+  type:       "message" | "breakdown" | "cross-reference" | "command";
+  /** true when this evidence carries user-provided content that must be redacted in output */
+  redactable: boolean;
+
+  messageIds?:       string[];
+  toolCallIds?:      string[];
+  turnIndices?:      number[];
+  fieldPath?:        string;
+  breakdownField?:   keyof BreakdownDetail;
+  breakdownValue?:   number;
+  unusedTools?:      string[];
+  externalCommands?: string[];
+  rawValue?:         unknown;
 }
 
 export interface Finding {
