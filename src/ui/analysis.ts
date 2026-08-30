@@ -46,7 +46,7 @@ export function analyzeExport(
         fileName,
         code: "empty-file",
         message:
-          "O arquivo está vazio. Selecione um export JSON gerado pela área Tasks do IBM Bob.",
+          "This file is empty. Select a JSON export generated from the Tasks area in IBM Bob.",
       },
     };
   }
@@ -60,8 +60,8 @@ export function analyzeExport(
         fileName,
         code: invalidJson ? "invalid-json" : "not-bob-export",
         message: invalidJson
-          ? "O conteúdo não é JSON válido. Exporte a sessão novamente e selecione o arquivo sem editá-lo."
-          : "O JSON não tem a estrutura esperada de um export de sessão do IBM Bob. No Bob, use Tasks → export JSON.",
+          ? "This content is not valid JSON. Export the session again and select the file without editing it."
+          : "This JSON does not match the structure of an IBM Bob session export. In Bob, use Tasks → export JSON.",
       },
     };
   }
@@ -80,7 +80,7 @@ export function analyzeExport(
         fileName,
         code: "analysis-failed",
         message:
-          "O export foi lido, mas a análise não pôde ser concluída. Tente exportar a sessão novamente.",
+          "The export was read, but the analysis could not be completed. Try exporting the session again.",
       },
     };
   }

@@ -24,18 +24,18 @@ export interface ComparisonScreenProps {
   onViewPrescriptions: () => void;
 }
 
-const integerFormatter = new Intl.NumberFormat("pt-BR", {
+const integerFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-const moneyFormatter = new Intl.NumberFormat("pt-BR", {
+const moneyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
   minimumFractionDigits: 6,
   maximumFractionDigits: 6,
 });
 
-const percentFormatter = new Intl.NumberFormat("pt-BR", {
+const percentFormatter = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,
 });
@@ -81,17 +81,17 @@ function deltaLabel(row: MetricRow): {
   className: string;
 } {
   if (row.valueA === undefined || row.delta === undefined) {
-    return { symbol: "—", text: "não medido", className: styles.neutral };
+    return { symbol: "—", text: "not measured", className: styles.neutral };
   }
 
   const absolute = signedValue(row.delta, row.kind);
   const ratio = percentage(row.delta, row.valueA);
-  const ratioText = ratio === null ? "base zero" : signedPercent(ratio);
+  const ratioText = ratio === null ? "zero baseline" : signedPercent(ratio);
 
   if (row.delta === 0) {
     return {
       symbol: "=",
-      text: `${absolute} · ${ratioText} · sem mudança`,
+      text: `${absolute} · ${ratioText} · no change`,
       className: styles.neutral,
     };
   }
@@ -100,7 +100,7 @@ function deltaLabel(row: MetricRow): {
   if (row.trend === "intentional-increase") {
     return {
       symbol,
-      text: `${absolute} · ${ratioText} · aumento intencional`,
+      text: `${absolute} · ${ratioText} · intentional increase`,
       className: styles.intentional,
     };
   }
@@ -108,7 +108,7 @@ function deltaLabel(row: MetricRow): {
   const improved = row.delta < 0;
   return {
     symbol,
-    text: `${absolute} · ${ratioText} · ${improved ? "melhora" : "piora"}`,
+    text: `${absolute} · ${ratioText} · ${improved ? "improvement" : "regression"}`,
     className: improved ? styles.improvement : styles.regression,
   };
 }
@@ -122,12 +122,12 @@ function Value({
   kind: ValueKind;
   display?: string;
 }): React.JSX.Element {
-  if (value === undefined) return <span className={styles.unavailable}>indisponível</span>;
+  if (value === undefined) return <span className={styles.unavailable}>unavailable</span>;
   return (
     <data
       value={String(value)}
       data-exact={String(value)}
-      title={`Valor exato: ${String(value)}`}
+      title={`Exact value: ${String(value)}`}
     >
       {display ?? formatValue(value, kind)}
     </data>
@@ -173,7 +173,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
 
   return [
     {
-      label: "Overhead fixo",
+      label: "Fixed overhead",
       valueA: metrics.fixedOverheadA,
       valueB: metrics.fixedOverheadB,
       delta: metrics.fixedOverheadDelta,
@@ -182,7 +182,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       emphasis: true,
     },
     {
-      label: "Ferramentas ociosas",
+      label: "Idle tools",
       valueA: metrics.idleToolsA,
       valueB: metrics.idleToolsB,
       delta: metrics.idleToolsDelta,
@@ -201,7 +201,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       trend: "lower-is-better",
     },
     {
-      label: "Contexto reportado",
+      label: "Reported context",
       valueA: metrics.contextTokensA,
       valueB: metrics.contextTokensB,
       delta: metrics.contextTokensDelta,
@@ -209,7 +209,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       trend: "lower-is-better",
     },
     {
-      label: "Tokens de conversa",
+      label: "Conversation tokens",
       valueA: metrics.conversationTokensA,
       valueB: metrics.conversationTokensB,
       delta: metrics.conversationTokensDelta,
@@ -217,7 +217,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       trend: "lower-is-better",
     },
     {
-      label: "Skill paga sem uso",
+      label: "Skill paid but unused",
       valueA: metrics.skillTokensA,
       valueB: metrics.skillTokensB,
       delta: metrics.skillTokensDelta,
@@ -233,7 +233,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       trend: "intentional-increase",
     },
     {
-      label: "Turnos",
+      label: "Assistant turns",
       valueA: metrics.assistantTurnsA,
       valueB: metrics.assistantTurnsB,
       delta: metrics.assistantTurnsDelta,
@@ -241,7 +241,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       trend: "lower-is-better",
     },
     {
-      label: "Intervenções humanas",
+      label: "Human interventions",
       valueA: metrics.humanInterventionsA,
       valueB: metrics.humanInterventionsB,
       delta: metrics.humanInterventionsDelta,
@@ -249,7 +249,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       trend: "lower-is-better",
     },
     {
-      label: "Tool calls com erro",
+      label: "Errored tool calls",
       valueA: metrics.erroredToolCallsA,
       valueB: metrics.erroredToolCallsB,
       delta: metrics.erroredToolCallsDelta,
@@ -257,7 +257,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       trend: "lower-is-better",
     },
     {
-      label: "Comandos externos",
+      label: "External commands",
       valueA: metrics.externalCommandsA,
       valueB: metrics.externalCommandsB,
       delta: metrics.externalCommandsDelta,
@@ -265,7 +265,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       trend: "lower-is-better",
     },
     {
-      label: "Duração",
+      label: "Duration",
       valueA: metrics.durationMsA,
       valueB: metrics.durationMsB,
       delta: metrics.durationMsDelta,
@@ -287,10 +287,10 @@ function MetricTable({
       <table className={styles.table} aria-label={label}>
         <thead>
           <tr>
-            <th scope="col">Métrica</th>
-            <th scope="col">Rodada A</th>
-            <th scope="col">Rodada B</th>
-            <th scope="col">Delta absoluto e percentual</th>
+            <th scope="col">Metric</th>
+            <th scope="col">Round A</th>
+            <th scope="col">Round B</th>
+            <th scope="col">Absolute and percentage delta</th>
           </tr>
         </thead>
         <tbody>
@@ -321,7 +321,7 @@ function ManualMetrics({ comparison }: { comparison: Comparison }): React.JSX.El
     comparison.metrics.buildFailuresB !== undefined &&
     comparison.metrics.buildFailuresDelta !== undefined;
   const buildRow: MetricRow = {
-    label: "Falhas de build",
+    label: "Build failures",
     valueA: comparison.metrics.buildFailuresA,
     valueB: comparison.metrics.buildFailuresB,
     delta: comparison.metrics.buildFailuresDelta,
@@ -332,27 +332,27 @@ function ManualMetrics({ comparison }: { comparison: Comparison }): React.JSX.El
   return (
     <section className={`${styles.tableCard} ${styles.manualCard}`}>
       <div className={styles.tableHeader}>
-        <h2>Preenchidas à mão <span className={styles.manualBadge}>LIDAS DE SCREENSHOT</span></h2>
-        <p>Não existem no export do Bob e nunca são misturadas com as calculadas.</p>
+        <h2>Filled in by hand <span className={styles.manualBadge}>READ FROM SCREENSHOT</span></h2>
+        <p>These do not exist in the Bob export and are never mixed with the calculated ones.</p>
       </div>
       <div className={styles.tableScroll}>
-        <table className={styles.table} aria-label="Métricas preenchidas manualmente">
+        <table className={styles.table} aria-label="Manually filled metrics">
           <thead>
             <tr>
-              <th scope="col">Métrica</th>
-              <th scope="col">Rodada A</th>
-              <th scope="col">Rodada B</th>
-              <th scope="col">Delta absoluto e percentual</th>
+              <th scope="col">Metric</th>
+              <th scope="col">Round A</th>
+              <th scope="col">Round B</th>
+              <th scope="col">Absolute and percentage delta</th>
             </tr>
           </thead>
           <tbody>
-            {["Tokens ↑", "Tokens ↓", "Cache ↓/↑ (razão)", "Context Length %"].map(
+            {["Tokens ↑", "Tokens ↓", "Cache ↓/↑ (ratio)", "Context Length %"].map(
               (label) => (
                 <tr key={label}>
                   <th scope="row">{label}</th>
-                  <td className={styles.unavailable}>indisponível</td>
-                  <td className={styles.unavailable}>indisponível</td>
-                  <td className={styles.neutral}>— não medido</td>
+                  <td className={styles.unavailable}>unavailable</td>
+                  <td className={styles.unavailable}>unavailable</td>
+                  <td className={styles.neutral}>— not measured</td>
                 </tr>
               )
             )}
@@ -365,10 +365,10 @@ function ManualMetrics({ comparison }: { comparison: Comparison }): React.JSX.El
               </tr>
             ) : (
               <tr>
-                <th scope="row">Falhas de build</th>
-                <td className={styles.unavailable}>indisponível</td>
-                <td className={styles.unavailable}>indisponível</td>
-                <td className={styles.neutral}>— não medido</td>
+                <th scope="row">Build failures</th>
+                <td className={styles.unavailable}>unavailable</td>
+                <td className={styles.unavailable}>unavailable</td>
+                <td className={styles.neutral}>— not measured</td>
               </tr>
             )}
           </tbody>
@@ -386,26 +386,26 @@ function MissingRoundB({
   return (
     <section className={styles.missingCard}>
       <div className={styles.missingContent}>
-        <h2>Só a Rodada A foi carregada</h2>
+        <h2>Only Round A has been loaded</h2>
         <p>
-          Isso é o caminho normal, não um erro: a Rodada B só existe depois de
-          aplicar as prescrições e rodar a mesma tarefa novamente.
+          This is the normal path, not an error: Round B only exists after you
+          apply the prescriptions and run the same task again.
         </p>
         <ol className={styles.missingSteps}>
-          <li><strong>Rodada A carregada</strong> — {roundA.totals.assistantTurns} turnos, {integerFormatter.format(roundAFixedOverhead(roundA))} de overhead fixo</li>
-          <li>Aplicar a configuração gerada pelo Hindsight</li>
-          <li>Rodar a mesma tarefa em uma conversa nova</li>
-          <li>Adicionar o segundo export</li>
+          <li><strong>Round A loaded</strong> — {roundA.totals.assistantTurns} turns, {integerFormatter.format(roundAFixedOverhead(roundA))} tokens of fixed overhead</li>
+          <li>Apply the configuration Hindsight generated</li>
+          <li>Run the same task in a new conversation</li>
+          <li>Add the second export</li>
         </ol>
         <div className={styles.actions}>
-          <button type="button" className={styles.primaryButton} onClick={onAddRoundB}>Adicionar Rodada B</button>
-          <button type="button" className={styles.secondaryButton} onClick={onViewPrescriptions}>Ver o que aplicar</button>
+          <button type="button" className={styles.primaryButton} onClick={onAddRoundB}>Add Round B</button>
+          <button type="button" className={styles.secondaryButton} onClick={onViewPrescriptions}>See what to apply</button>
         </div>
       </div>
       <aside className={styles.hypothesis}>
-        <span>Hipótese registrada</span>
-        <p>projectRules sai de 0<br />Overhead fixo cai<br />Ferramentas ociosas diminuem<br />Regressões também serão reportadas</p>
-        <small>Registrada antes da execução para não escolher a métrica depois de ver o número.</small>
+        <span>Registered hypothesis</span>
+        <p>projectRules leaves 0<br />Fixed overhead falls<br />Idle tools decrease<br />Regressions will be reported too</p>
+        <small>Registered before the run, so the metric is not chosen after seeing the number.</small>
       </aside>
     </section>
   );
@@ -415,12 +415,12 @@ function headline(comparison: Comparison): string {
   const { fixedOverheadA, fixedOverheadDelta } = comparison.metrics;
   const ratio = percentage(fixedOverheadDelta, fixedOverheadA);
   if (fixedOverheadDelta === 0) {
-    return "O overhead fixo não mudou. Empates e regressões continuam na tabela.";
+    return "Fixed overhead did not change. Ties and regressions stay in the table.";
   }
   if (ratio === null) {
-    return "O overhead fixo mudou a partir de uma base zero. Todos os resultados estão na tabela.";
+    return "Fixed overhead changed from a zero baseline. Every result is in the table.";
   }
-  return `O overhead fixo ${fixedOverheadDelta < 0 ? "caiu" : "aumentou"} ${percentFormatter.format(Math.abs(ratio))}%. Regressões e empates continuam visíveis.`;
+  return `Fixed overhead ${fixedOverheadDelta < 0 ? "fell" : "rose"} ${percentFormatter.format(Math.abs(ratio))}%. Regressions and ties stay visible.`;
 }
 
 export function ComparisonScreen({
@@ -433,8 +433,8 @@ export function ComparisonScreen({
     return (
       <main className={styles.wrapper}>
         <header className={styles.header}>
-          <p className={styles.eyebrow}>Comparativo A/B · mesma tarefa, mesmo commit</p>
-          <h1>A Rodada B ainda não foi carregada.</h1>
+          <p className={styles.eyebrow}>A/B comparison · same task, same commit</p>
+          <h1>Round B has not been loaded yet.</h1>
         </header>
         <MissingRoundB
           roundA={roundA}
@@ -453,7 +453,7 @@ export function ComparisonScreen({
   return (
     <main className={styles.wrapper}>
       <header className={styles.header}>
-        <p className={styles.eyebrow}>Comparativo A/B · mesma tarefa, mesmo commit</p>
+        <p className={styles.eyebrow}>A/B comparison · same task, same commit</p>
         <h1>{headline(comparison)}</h1>
       </header>
 
@@ -461,15 +461,15 @@ export function ComparisonScreen({
         className={comparison.valid ? styles.validityOk : styles.validityInvalid}
         role={comparison.valid ? "status" : "alert"}
       >
-        <strong>{comparison.valid ? "Experimento válido" : "Comparação experimental inválida"}</strong>
+        <strong>{comparison.valid ? "Valid experiment" : "Invalid experimental comparison"}</strong>
         <span>
           {comparison.valid
-            ? "As regras auditáveis do protocolo coincidem entre as rodadas."
-            : comparison.invalidReason ?? "O protocolo difere entre as rodadas."}
+            ? "The auditable protocol rules match across both rounds."
+            : comparison.invalidReason ?? "The protocol differs between the rounds."}
         </span>
       </section>
 
-      <section className={styles.summaryCards} aria-label="Destaques da comparação">
+      <section className={styles.summaryCards} aria-label="Comparison highlights">
         {[overhead, cost, projectRules].map((row) => {
           const delta = deltaLabel(row);
           return (
@@ -485,17 +485,17 @@ export function ComparisonScreen({
 
       <section className={styles.tableCard}>
         <div className={styles.tableHeader}>
-          <h2>Calculadas pelo Hindsight</h2>
-          <p>Derivadas do export, campo a campo. Auditáveis.</p>
+          <h2>Calculated by Hindsight</h2>
+          <p>Derived from the export, field by field. Auditable.</p>
         </div>
-        <MetricTable rows={rows} label="Métricas calculadas pelo Hindsight" />
+        <MetricTable rows={rows} label="Metrics calculated by Hindsight" />
       </section>
 
       <ManualMetrics comparison={comparison} />
 
       <footer className={styles.notes}>
-        <span>Melhora e piora aparecem como palavra e seta, além da cor.</span>
-        <span>Métricas sem mudança permanecem na tabela: delta zero também é resultado.</span>
+        <span>Improvement and regression appear as a word and an arrow, not colour alone.</span>
+        <span>Unchanged metrics stay in the table: a zero delta is a result too.</span>
       </footer>
     </main>
   );

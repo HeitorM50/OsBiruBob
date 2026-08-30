@@ -40,33 +40,33 @@ describe("ComparisonScreen", () => {
   it("renders the complete real A/B table with improvements, regressions and ties", () => {
     renderComparison(compare(reportA, reportB));
 
-    expect(screen.getByText("Experimento válido")).toBeTruthy();
+    expect(screen.getByText("Valid experiment")).toBeTruthy();
     const table = screen.getByRole("table", {
-      name: "Métricas calculadas pelo Hindsight",
+      name: "Metrics calculated by Hindsight",
     });
     const body = within(table);
 
     for (const label of [
-      "Overhead fixo",
-      "Ferramentas ociosas",
+      "Fixed overhead",
+      "Idle tools",
       "API Cost (USD)",
-      "Contexto reportado",
-      "Tokens de conversa",
-      "Skill paga sem uso",
+      "Reported context",
+      "Conversation tokens",
+      "Skill paid but unused",
       "projectRules",
-      "Turnos",
-      "Intervenções humanas",
-      "Tool calls com erro",
-      "Comandos externos",
-      "Duração",
+      "Assistant turns",
+      "Human interventions",
+      "Errored tool calls",
+      "External commands",
+      "Duration",
     ]) {
       expect(body.getByRole("rowheader", { name: label })).toBeTruthy();
     }
 
-    expect(body.getByText(/−2\.699 · −25,9% · melhora/)).toBeTruthy();
-    expect(body.getByText(/\+1 · \+20,0% · piora/)).toBeTruthy();
-    expect(body.getAllByText(/sem mudança/).length).toBeGreaterThan(0);
-    expect(body.getByText(/\+121 · base zero · aumento intencional/)).toBeTruthy();
+    expect(body.getByText(/−2,699 · −25.9% · improvement/)).toBeTruthy();
+    expect(body.getByText(/\+1 · \+20.0% · regression/)).toBeTruthy();
+    expect(body.getAllByText(/no change/).length).toBeGreaterThan(0);
+    expect(body.getByText(/\+121 · zero baseline · intentional increase/)).toBeTruthy();
     expect(body.getByText("18 de 23")).toBeTruthy();
     expect(body.getByText("12 de 17")).toBeTruthy();
   });
@@ -75,14 +75,14 @@ describe("ComparisonScreen", () => {
     renderComparison(compare(reportA, reportB));
 
     const manual = screen.getByRole("table", {
-      name: "Métricas preenchidas manualmente",
+      name: "Manually filled metrics",
     });
     expect(within(manual).getByRole("rowheader", { name: "Tokens ↑" })).toBeTruthy();
     expect(within(manual).getByRole("rowheader", { name: "Tokens ↓" })).toBeTruthy();
-    expect(within(manual).getByRole("rowheader", { name: "Cache ↓/↑ (razão)" })).toBeTruthy();
+    expect(within(manual).getByRole("rowheader", { name: "Cache ↓/↑ (ratio)" })).toBeTruthy();
     expect(within(manual).getByRole("rowheader", { name: "Context Length %" })).toBeTruthy();
-    expect(within(manual).getByRole("rowheader", { name: "Falhas de build" })).toBeTruthy();
-    expect(within(manual).getAllByText("indisponível")).toHaveLength(10);
+    expect(within(manual).getByRole("rowheader", { name: "Build failures" })).toBeTruthy();
+    expect(within(manual).getAllByText("unavailable")).toHaveLength(10);
     expect(manual.textContent).not.toContain(" 0 ");
   });
 
@@ -97,9 +97,9 @@ describe("ComparisonScreen", () => {
 
     const alert = screen.getByRole("alert");
     const table = screen.getByRole("table", {
-      name: "Métricas calculadas pelo Hindsight",
+      name: "Metrics calculated by Hindsight",
     });
-    expect(alert.textContent).toContain("Comparação experimental inválida");
+    expect(alert.textContent).toContain("Invalid experimental comparison");
     expect(alert.textContent).toContain("allowedPermissions set differs");
     expect(
       alert.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING
@@ -119,7 +119,7 @@ describe("ComparisonScreen", () => {
     };
     const { container } = renderComparison(zeroBase);
 
-    expect(container.textContent).toContain("base zero");
+    expect(container.textContent).toContain("zero baseline");
     expect(container.textContent).not.toContain("Infinity");
     expect(container.textContent).not.toContain("NaN");
   });
@@ -129,7 +129,7 @@ describe("ComparisonScreen", () => {
     const { container } = renderComparison(comparison);
     const exact = String(comparison.metrics.costDelta);
 
-    expect(screen.getAllByText(/US\$/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/\$/).length).toBeGreaterThan(0);
     expect(container.querySelector(`data[data-exact="${exact}"]`)).toBeTruthy();
   });
 
@@ -138,12 +138,12 @@ describe("ComparisonScreen", () => {
     const prescribe = vi.fn();
     renderComparison(null, add, prescribe);
 
-    expect(screen.getByRole("heading", { name: "A Rodada B ainda não foi carregada." })).toBeTruthy();
-    expect(screen.getByText(/Isso é o caminho normal, não um erro/)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Round B has not been loaded yet." })).toBeTruthy();
+    expect(screen.getByText(/This is the normal path, not an error/)).toBeTruthy();
     expect(screen.queryByRole("table")).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Adicionar Rodada B" }));
-    fireEvent.click(screen.getByRole("button", { name: "Ver o que aplicar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add Round B" }));
+    fireEvent.click(screen.getByRole("button", { name: "See what to apply" }));
     expect(add).toHaveBeenCalledOnce();
     expect(prescribe).toHaveBeenCalledOnce();
   });

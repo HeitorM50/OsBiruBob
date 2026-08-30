@@ -94,17 +94,17 @@ describe("Baseline rendering (rodada-a.json values)", () => {
   });
 
   // Three aggregate numbers
-  it("renders fixedOverhead 10.439", () => {
-    // pt-BR locale uses period as thousands separator
-    expect(html).toContain("10.439");
+  it("renders fixedOverhead 10,439", () => {
+    // en-US locale uses comma as thousands separator
+    expect(html).toContain("10,439");
   });
 
-  it("renders conversationTokens 7.145", () => {
-    expect(html).toContain("7.145");
+  it("renders conversationTokens 7,145", () => {
+    expect(html).toContain("7,145");
   });
 
-  it("renders reportedTotal 17.584", () => {
-    expect(html).toContain("17.584");
+  it("renders reportedTotal 17,584", () => {
+    expect(html).toContain("17,584");
   });
 
   // All ten breakdown sources present in the HTML
@@ -128,36 +128,36 @@ describe("Baseline rendering (rodada-a.json values)", () => {
   }
 
   // toolDefinitions is the largest at 5403 (51.8% of 10439)
-  it("toolDefinitions shows 5.403 tokens", () => {
-    expect(html).toContain("5.403");
+  it("toolDefinitions shows 5,403 tokens", () => {
+    expect(html).toContain("5,403");
   });
 
   it("toolDefinitions percentage is ~51.8% of fixedOverhead", () => {
-    // 5403/10439 = 51.756… → rounded to 51,8% in pt-BR format
-    expect(html).toContain("51,8%");
+    // 5403/10439 = 51.756… → rounded to 51.8%
+    expect(html).toContain("51.8%");
   });
 
   // Percentages are computed against fixedOverhead (10439), not reportedTotal
-  it("toolSystemPrompts shows 2.470 tokens", () => {
-    expect(html).toContain("2.470");
+  it("toolSystemPrompts shows 2,470 tokens", () => {
+    expect(html).toContain("2,470");
   });
 
   it("toolSystemPrompts percentage is ~23.7% of fixedOverhead (not reportedTotal)", () => {
     // 2470/10439 = 23.661…% → 23,7%
-    expect(html).toContain("23,7%");
+    expect(html).toContain("23.7%");
   });
 
-  it("skills shows 1.541 tokens", () => {
-    expect(html).toContain("1.541");
+  it("skills shows 1,541 tokens", () => {
+    expect(html).toContain("1,541");
   });
 
   it("skills percentage is ~14.8% of fixedOverhead", () => {
     // 1541/10439 = 14.762…% → 14,8%
-    expect(html).toContain("14,8%");
+    expect(html).toContain("14.8%");
   });
 
   it("roleDefinition shows 34 tokens", () => {
-    // Small enough that pt-BR adds no thousands separator
+    // Small enough that no thousands separator is added
     const tokensEl = html.match(/data-testid="breakdown-tokens-roleDefinition"[^>]*>([^<]+)</);
     expect(tokensEl).not.toBeNull();
     expect(tokensEl![1].trim()).toBe("34");
@@ -195,12 +195,12 @@ describe("projectRules === 0 alert", () => {
     expect(html).toContain(">0<");
   });
 
-  it("alert contains 'Não existe AGENTS.md neste projeto'", () => {
-    expect(html).toContain("Não existe AGENTS.md neste projeto");
+  it("alert contains 'This project has no AGENTS.md'", () => {
+    expect(html).toContain("This project has no AGENTS.md");
   });
 
-  it("projectRules row has ACHADO badge", () => {
-    expect(html).toContain("ACHADO");
+  it("projectRules row has FINDING badge", () => {
+    expect(html).toContain("FINDING");
   });
 
   it("projectRules row shows 0% share", () => {
@@ -209,7 +209,7 @@ describe("projectRules === 0 alert", () => {
       /data-testid="breakdown-pct-projectRules"[^>]*>([^<]+)</
     );
     expect(pctEl).not.toBeNull();
-    expect(pctEl![1].trim()).toBe("0,0%");
+    expect(pctEl![1].trim()).toBe("0.0%");
   });
 });
 
@@ -240,8 +240,8 @@ describe("projectRules > 0 — no alert rendered", () => {
     expect(html).not.toContain('data-testid="project-rules-alert"');
   });
 
-  it("does NOT contain 'Não existe AGENTS.md neste projeto'", () => {
-    expect(html).not.toContain("Não existe AGENTS.md neste projeto");
+  it("does NOT contain 'This project has no AGENTS.md'", () => {
+    expect(html).not.toContain("This project has no AGENTS.md");
   });
 
   it("still renders the projectRules row", () => {
@@ -257,9 +257,9 @@ describe("maxContextWindow null → pressure unavailable", () => {
   const ctx = makeContext({ maxContextWindow: null, pressure: null });
   const html = renderScreen(ctx);
 
-  it("shows indisponivel / unavailable message", () => {
-    // Component renders the Portuguese unavailability label
-    expect(html).toContain("Pressão indisponível");
+  it("shows the unavailable message", () => {
+    // Component renders the unavailability label
+    expect(html).toContain("Pressure unavailable");
   });
 
   it("does NOT show a percentage figure in pressure label", () => {
@@ -299,8 +299,8 @@ describe("maxContextWindow 270000 → pressure display", () => {
       /data-testid="pressure-label"[^>]*>([^<]+)</
     );
     expect(pressureEl).not.toBeNull();
-    // 17584/270000 = 6.512…% → pt-BR: "6,5%"
-    expect(pressureEl![1]).toContain("6,5%");
+    // 17584/270000 = 6.512…% → "6.5%"
+    expect(pressureEl![1]).toContain("6.5%");
   });
 
   it("pressure label mentions 270k window", () => {
@@ -365,7 +365,7 @@ describe("Zero fixedOverhead edge case", () => {
     }
     expect(values.length).toBe(10);
     for (const v of values) {
-      expect(v).toBe("0,0%");
+      expect(v).toBe("0.0%");
     }
   });
 

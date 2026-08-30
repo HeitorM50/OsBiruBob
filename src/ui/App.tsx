@@ -36,9 +36,9 @@ export interface AppProps {
 }
 
 function roundLabel(index: number): string {
-  if (index === 0) return "Rodada A";
-  if (index === 1) return "Rodada B";
-  return `Sessão ${index + 1}`;
+  if (index === 0) return "Round A";
+  if (index === 1) return "Round B";
+  return `Session ${index + 1}`;
 }
 
 function nextFrame(): Promise<void> {
@@ -90,7 +90,7 @@ export default function App({
               fileName: file.name,
               code: "analysis-failed" as const,
               message:
-                "Não foi possível ler o arquivo. Selecione-o novamente ou gere um novo export no IBM Bob.",
+                "The file could not be read. Select it again or generate a new export in IBM Bob.",
             },
           };
         }
@@ -173,12 +173,12 @@ export default function App({
             <span className={styles.brand}>Hindsight</span>
             <span className={styles.divider} aria-hidden="true" />
             <span className={styles.currentFile}>
-              {analyses[0]?.fileName ?? "nenhum arquivo"}
+              {analyses[0]?.fileName ?? "no file"}
             </span>
           </div>
 
-          <nav aria-label="Etapas da análise" className={styles.steps}>
-            {["Entrada", "Diagnóstico", "Achados", "Prescrições", "Comparativo"].map(
+          <nav aria-label="Analysis steps" className={styles.steps}>
+            {["Input", "Diagnosis", "Findings", "Prescriptions", "Comparison"].map(
               (step, index) => {
                 const isInput = index === 0;
                 const isFindings = index === 2;
@@ -223,15 +223,15 @@ export default function App({
           <div className={styles.headerActions}>
             <span className={styles.privacyCompact}>
               <span className={styles.statusDot} aria-hidden="true" />
-              O arquivo não sai deste navegador
+              The file never leaves this browser
             </span>
             <button
               type="button"
               className={styles.themeButton}
               onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-              aria-label="Alternar tema"
+              aria-label="Toggle theme"
             >
-              {theme === "light" ? "Tema escuro" : "Tema claro"}
+              {theme === "light" ? "Dark theme" : "Light theme"}
             </button>
           </div>
         </div>
@@ -276,11 +276,11 @@ export default function App({
       ) : (
         <main className={styles.main}>
           <section className={styles.intro}>
-            <h1>A retrospectiva que sua sessão de agente nunca teve</h1>
+            <h1>The retrospective your agent session never had</h1>
             <p>
-              Arraste o export JSON de uma sessão do IBM Bob. O Hindsight mostra
-              onde a configuração desperdiça contexto e dinheiro, gera a
-              configuração corrigida e prepara a comparação entre rodadas.
+              Drop the JSON export of an IBM Bob session. Hindsight shows where
+              the configuration wastes context and money, generates the corrected
+              configuration and sets up the comparison between rounds.
             </p>
           </section>
 
@@ -288,13 +288,13 @@ export default function App({
           <section className={styles.loadingPanel} aria-busy="true" aria-live="polite">
             <span className={styles.spinner} aria-hidden="true" />
             <h2>
-              Analisando <code>{loadingNames.join(", ")}</code>
+              Analyzing <code>{loadingNames.join(", ")}</code>
             </h2>
-            <p>Nenhum byte saiu da máquina.</p>
+            <p>Not a single byte left your machine.</p>
             <ol className={styles.loadingSteps}>
-              <li>Validando o formato do export</li>
-              <li>Extraindo métricas de contexto e ferramentas</li>
-              <li>Rodando os detectores disponíveis</li>
+              <li>Validating the export format</li>
+              <li>Extracting context and tool metrics</li>
+              <li>Running the available detectors</li>
             </ol>
           </section>
         ) : (
@@ -310,18 +310,18 @@ export default function App({
             data-testid="dropzone"
           >
             <div className={styles.dropIcon} aria-hidden="true">↓</div>
-            <h2>Arraste os arquivos de export aqui</h2>
-            <p>ou selecione do computador · JSON</p>
+            <h2>Drop your export files here</h2>
+            <p>or pick them from your computer · JSON</p>
             <div className={styles.dropActions}>
               <button type="button" className={styles.primaryButton} onClick={() => void loadExample()}>
-                Ver exemplo — sessão real embutida
+                See an example — real session, built in
               </button>
               <button
                 type="button"
                 className={styles.secondaryButton}
                 onClick={() => inputRef.current?.click()}
               >
-                Selecionar arquivos
+                Select files
               </button>
               <input
                 ref={inputRef}
@@ -337,38 +337,38 @@ export default function App({
                 }}
               />
             </div>
-            <small>Sem instalar nada, sem conta, sem API key.</small>
+            <small>Nothing to install, no account, no API key.</small>
           </section>
         )}
 
-        <section className={styles.capabilities} aria-label="Capacidades por quantidade de arquivos">
+        <section className={styles.capabilities} aria-label="Capabilities by number of files">
           <article className={styles.capabilityCard}>
-            <strong>1 arquivo</strong>
-            <span>Diagnóstico completo da sessão</span>
+            <strong>1 file</strong>
+            <span>Full session diagnosis</span>
           </article>
           <article className={styles.capabilityCard}>
-            <strong>2 arquivos</strong>
-            <span>Comparativo A/B da mesma tarefa</span>
+            <strong>2 files</strong>
+            <span>A/B comparison of the same task</span>
           </article>
           <article className={styles.privacyCard}>
-            <strong><span className={styles.statusDot} aria-hidden="true" />Processamento 100% local</strong>
+            <strong><span className={styles.statusDot} aria-hidden="true" />100% local processing</strong>
             <span>
-              O export pode conter código, caminhos e comandos. Nenhum arquivo é
-              enviado ou armazenado; a análise roda offline neste navegador.
+              The export can contain code, paths and commands. No file is uploaded
+              or stored; the analysis runs offline in this browser.
             </span>
           </article>
         </section>
 
         {errors.length > 0 && (
-          <section className={styles.errorList} aria-label="Arquivos rejeitados" aria-live="polite">
+          <section className={styles.errorList} aria-label="Rejected files" aria-live="polite">
             {errors.map((error) => (
               <article className={styles.errorCard} key={error.id}>
                 <span className={styles.errorIcon} aria-hidden="true">!</span>
                 <div>
                   <h2>
                     {error.code === "not-bob-export"
-                      ? "JSON válido, mas não é um export de sessão do Bob"
-                      : "Não conseguimos ler esse arquivo"}
+                      ? "Valid JSON, but not a Bob session export"
+                      : "We could not read this file"}
                   </h2>
                   <p><code>{error.fileName}</code> — {error.message}</p>
                 </div>
@@ -378,14 +378,14 @@ export default function App({
         )}
 
         {analyses.length > 0 && (
-          <section className={styles.results} aria-label="Arquivos analisados">
+          <section className={styles.results} aria-label="Analyzed files">
             <div className={styles.resultsHeader}>
               <div>
-                <span className={styles.eyebrow}>Entrada concluída</span>
-                <h2>{analyses.length} {analyses.length === 1 ? "sessão analisada" : "sessões analisadas"}</h2>
+                <span className={styles.eyebrow}>Input complete</span>
+                <h2>{analyses.length} {analyses.length === 1 ? "session analyzed" : "sessions analyzed"}</h2>
               </div>
               <button type="button" className={styles.clearButton} onClick={clearAnalyses}>
-                Limpar análises
+                Clear analyses
               </button>
             </div>
 
@@ -394,11 +394,11 @@ export default function App({
                 <li key={analysis.id} className={styles.analysisCard}>
                   <div>
                     <span className={styles.roundBadge}>{roundLabel(index)}</span>
-                    {analysis.source === "demo" && <span className={styles.demoBadge}>Exemplo</span>}
+                    {analysis.source === "demo" && <span className={styles.demoBadge}>Example</span>}
                   </div>
                   <code>{analysis.fileName}</code>
                   <span>
-                    {analysis.report.totals.taskCount} task · {analysis.report.totals.assistantTurns} turnos · {analysis.diagnosis.findings.length} achados
+                    {analysis.report.totals.taskCount} task · {analysis.report.totals.assistantTurns} turns · {analysis.diagnosis.findings.length} findings
                   </span>
                 </li>
               ))}
@@ -406,13 +406,13 @@ export default function App({
 
             <div className={styles.readiness} role="status">
               <p>
-                <strong>Diagnóstico pronto.</strong>{" "}
+                <strong>Diagnosis ready.</strong>{" "}
                 {canCompare
-                  ? "Rodadas A e B identificadas; o comparativo está habilitado para a tela #23."
-                  : "Adicione uma Rodada B para habilitar o comparativo."}
+                  ? "Rounds A and B identified; the comparison is enabled."
+                  : "Add a Round B to enable the comparison."}
               </p>
               {hasCrossSessionEvidence && (
-                <p>Há três ou mais sessões disponíveis para análises recorrentes futuras.</p>
+                <p>Three or more sessions available for future recurring analyses.</p>
               )}
             </div>
           </section>

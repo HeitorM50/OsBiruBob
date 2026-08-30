@@ -193,7 +193,7 @@ function createFinding(
       estimatedWastedTokens,
     },
     prescriptionHint: "agents-md-section",
-    description: `O arquivo "${path}" foi lido em ${turnIndices.length} turnos distintos (${turnIndices.join(", ")}) sem modificação intermediária.`,
+    description: `File "${path}" was read across ${turnIndices.length} distinct turns (${turnIndices.join(", ")}) with no modification in between.`,
     tokenImpact: estimatedWastedTokens,
   };
 }

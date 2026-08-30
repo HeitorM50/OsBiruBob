@@ -5,7 +5,7 @@ Hindsight. Serve para o time trabalhar sem gastar Bobcoin gerando sessão nova s
 para inspecionar um campo.
 
 **Documentado a partir de um export real**, não da documentação: [`fixtures/sample-export.json`](../fixtures/sample-export.json)
-é cópia fiel de [`benchmark/rodada-a.json`](../benchmark/rodada-a.json), o baseline
+é a versão **redigida** de [`benchmark/rodada-a.json`](../benchmark/rodada-a.json), o baseline
 do experimento. `version: 1`.
 
 > **A árvore do briefing estava aproximada.** Onde a realidade diverge, este

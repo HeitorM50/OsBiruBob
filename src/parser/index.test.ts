@@ -70,7 +70,10 @@ describe("parseSession — fixtures/sample-export.json (baseline copy)", () => {
     result = parseSession(content);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.workspace).toBe("file:/home/heitor/Projects/bob-demo");
+    // The demo fixture is redacted before shipping: it is inlined into the
+    // published bundle, so absolute paths from the machine that produced the
+    // export must not travel with it. See scripts/redact-demo-fixture.jq.
+    expect(result.value.workspace).toBe("file:/workspace/bob-demo");
   });
 
   it("task has parentId=null (not a subtask)", () => {

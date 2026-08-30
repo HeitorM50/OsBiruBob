@@ -120,8 +120,8 @@ function createFinding(
     },
     prescriptionHint: "agents-md-section",
     description: interventionCount === 1
-      ? `Intervenção humana no turno ${minTurn}. Conteúdo: "${interventions[0].content.slice(0, 100)}..."`
-      : `${interventionCount} intervenções humanas entre turnos ${minTurn}-${maxTurn}. Regras faltando no AGENTS.md.`,
+      ? `Human intervention at turn ${minTurn}. Content: "${interventions[0].content.slice(0, 100)}..."`
+      : `${interventionCount} human interventions between turns ${minTurn}-${maxTurn}. Rules missing from AGENTS.md.`,
     tokenImpact: estimatedWastedTokens,
     // Preservar conteúdo para F4 consumir (mas marcar como redactable)
     prescription: contents.join("\n\n"),

@@ -26,32 +26,32 @@ const CORE_FINDING_KINDS: readonly FindingKind[] = [
 ];
 
 const GROUP_LABELS: Readonly<Record<string, string>> = {
-  "project-rules-absent": "Configuração ausente",
-  "unused-tool": "Overhead pago sem uso",
-  "skill-overhead": "Overhead pago sem uso",
-  "mcp-candidate": "Shell que poderia ser ferramenta",
-  "redundant-read": "Releitura redundante",
-  "retry-after-error": "Retry após falha",
-  "human-intervention": "Intervenção humana",
+  "project-rules-absent": "Missing configuration",
+  "unused-tool": "Overhead paid but unused",
+  "skill-overhead": "Overhead paid but unused",
+  "mcp-candidate": "Shell that could be a tool",
+  "redundant-read": "Redundant re-read",
+  "retry-after-error": "Retry after failure",
+  "human-intervention": "Human intervention",
 };
 
 const KIND_LABELS: Readonly<Record<string, string>> = {
-  "project-rules-absent": "Regras de projeto ausentes",
-  "unused-tool": "Ferramentas ociosas",
-  "skill-overhead": "Overhead de Skill",
-  "mcp-candidate": "Candidato a servidor MCP",
-  "redundant-read": "Releitura redundante",
-  "retry-after-error": "Retry após falha",
-  "human-intervention": "Intervenção humana",
+  "project-rules-absent": "Project rules missing",
+  "unused-tool": "Idle tools",
+  "skill-overhead": "Skill overhead",
+  "mcp-candidate": "MCP server candidate",
+  "redundant-read": "Redundant re-read",
+  "retry-after-error": "Retry after failure",
+  "human-intervention": "Human intervention",
 };
 
 const ZERO_DESCRIPTIONS: Readonly<Record<string, string>> = {
   "redundant-read":
-    "Cada path aparece uma única vez nas chamadas de ferramenta. O agente não releu arquivo nenhum.",
+    "Every path appears exactly once across the tool calls. The agent did not re-read any file.",
   "retry-after-error":
-    "Nenhum isError: true foi reportado. Não houve tentativa após falha.",
+    "No isError: true was reported. There was no retry after a failure.",
   "human-intervention":
-    "Nenhuma intervenção humana posterior ao prompt inicial foi reportada.",
+    "No human intervention after the initial prompt was reported.",
 };
 
 const LEVEL_ORDER: Readonly<Record<ConfidenceLevel, number>> = {
@@ -61,9 +61,9 @@ const LEVEL_ORDER: Readonly<Record<ConfidenceLevel, number>> = {
 };
 
 const CONFIDENCE_LABELS: Readonly<Record<ConfidenceLevel, string>> = {
-  high: "ALTA ●●●",
-  medium: "MÉDIA ●●○",
-  low: "BAIXA ●○○",
+  high: "HIGH ●●●",
+  medium: "MEDIUM ●●○",
+  low: "LOW ●○○",
 };
 
 type SeverityLevel = ConfidenceLevel;
@@ -260,15 +260,15 @@ function EvidenceBlock({
               className={styles.revealButton}
               onClick={onRequestReveal}
             >
-              Mostrar conteúdo bruto…
+              Show raw content…
             </button>
           )}
           {pending && (
             <div className={styles.revealWarning} role="alert">
               <p className={styles.revealWarningText}>
-                <strong>Atenção:</strong> esta ação pode expor conteúdo de mensagens,
-                argumentos de ferramentas, o prompt completo em task.title e caminhos
-                absolutos. Revele apenas se o ambiente ao redor for seguro.
+                <strong>Warning:</strong> this action may expose message content,
+                tool arguments, the full prompt in task.title and absolute paths.
+                Only reveal it if your surroundings are safe.
               </p>
               <div className={styles.revealWarningActions}>
                 <button
@@ -277,21 +277,21 @@ function EvidenceBlock({
                   onClick={onConfirmReveal}
                   autoFocus
                 >
-                  Entendi — mostrar este item
+                  Understood — show this item
                 </button>
                 <button
                   type="button"
                   className={styles.revealCancelButton}
                   onClick={onCancelReveal}
                 >
-                  Cancelar
+                  Cancel
                 </button>
               </div>
             </div>
           )}
           {revealed && (
             <button type="button" className={styles.revealButton} onClick={onHide}>
-              Ocultar conteúdo bruto
+              Hide raw content
             </button>
           )}
         </div>
@@ -351,25 +351,25 @@ function FindingRow({
           )}
           {hasImpact && (
             <span className={styles.estimateHint}>
-              Hipótese/estimativa — não é valor medido:
-              {finding.tokenImpact !== undefined && ` ${finding.tokenImpact} tokens estimados`}
-              {finding.costImpact !== undefined && ` · $${finding.costImpact} de custo estimado`}
+              Hypothesis/estimate — not a measured value:
+              {finding.tokenImpact !== undefined && ` ${finding.tokenImpact} estimated tokens`}
+              {finding.costImpact !== undefined && ` · $${finding.costImpact} estimated cost`}
             </span>
           )}
         </span>
         <span className={styles.badges}>
-          {hasImpact && <span className={styles.badgeEstimate}>ESTIMATIVA</span>}
+          {hasImpact && <span className={styles.badgeEstimate}>ESTIMATE</span>}
           <span
             className={`${styles.badge} ${levelClass(finding.confidence)}`}
             aria-label={`Confidence: ${finding.confidence}`}
           >
-            CONFIANÇA {CONFIDENCE_LABELS[finding.confidence]}
+            CONFIDENCE {CONFIDENCE_LABELS[finding.confidence]}
           </span>
           <span
             className={`${styles.badge} ${severity ? levelClass(severity) : styles.badgeUnavailable}`}
             aria-label={`Severity: ${severity ?? "unavailable"}`}
           >
-            {severity ? `SEVERIDADE ${severity.toUpperCase()}` : "SEVERIDADE INDISPONÍVEL"}
+            {severity ? `SEVERITY ${severity.toUpperCase()}` : "SEVERITY UNAVAILABLE"}
           </span>
         </span>
       </button>
@@ -447,44 +447,44 @@ export function FindingsScreen({ findings }: FindingsScreenProps): React.JSX.Ele
   return (
     <main className={styles.wrapper}>
       <header className={styles.header}>
-        <p className={styles.headerSub}>Achados · {CORE_FINDING_KINDS.length} detectores</p>
+        <p className={styles.headerSub}>Findings · {CORE_FINDING_KINDS.length} detectors</p>
         <h1 className={styles.headerTitle}>
           {findings.length === 0
-            ? "Nenhum achado encontrado."
-            : `${findings.length} ${findings.length === 1 ? "achado" : "achados"}, cada um rastreável até um campo do export.`}
+            ? "No findings."
+            : `${findings.length} ${findings.length === 1 ? "finding" : "findings"}, each traceable to a field in the export.`}
         </h1>
         <p className={styles.headerDesc}>
-          A tela apresenta somente os Findings recebidos. Evidência ausente é marcada
-          como indisponível; nenhum detector é reexecutado na interface.
+          This screen only presents the Findings it receives. Missing evidence is
+          marked unavailable; no detector is re-run in the interface.
         </p>
       </header>
 
       <div className={styles.toolbar}>
         <span className={styles.toolbarStat}>
-          {findings.length} disparados · {zeroKinds.length} zerados
+          {findings.length} fired · {zeroKinds.length} at zero
         </span>
         <span className={styles.toolbarDivider} aria-hidden="true" />
         <span className={styles.toolbarNote}>
-          Conteúdo sensível vem redigido por padrão e só é revelado por item.
+          Sensitive content is redacted by default and revealed one item at a time.
         </span>
       </div>
 
       {groups.length > 0 && (
-        <nav className={styles.typeNav} aria-label="Tipos de achado">
+        <nav className={styles.typeNav} aria-label="Finding types">
           {groups.map((group) => (
             <a key={group.kind} href={`#finding-group-${group.kind}`}>
               {KIND_LABELS[group.kind] ?? group.kind} ({group.findings.length})
             </a>
           ))}
-          {zeroKinds.length > 0 && <a href="#finding-zero-groups">Detectores zerados</a>}
+          {zeroKinds.length > 0 && <a href="#finding-zero-groups">Detectors at zero</a>}
         </nav>
       )}
 
       {findings.length === 0 && (
         <section className={styles.emptyState} aria-label="Overall empty state">
-          <p className={styles.emptyStateText}>Nenhum achado para exibir.</p>
+          <p className={styles.emptyStateText}>No findings to display.</p>
           <p className={styles.emptyStateHint}>
-            Zero resultados é informação válida; os estados por tipo continuam abaixo.
+            Zero results is valid information; the per-type states continue below.
           </p>
         </section>
       )}
@@ -522,7 +522,7 @@ export function FindingsScreen({ findings }: FindingsScreenProps): React.JSX.Ele
       {zeroKinds.length > 0 && (
         <section id="finding-zero-groups" aria-labelledby="zero-groups-title">
           <h2 id="zero-groups-title" className={styles.zeroSectionTitle}>
-            Detectores que não encontraram nada
+            Detectors that found nothing
           </h2>
           <div className={styles.zeroGrid}>
             {zeroKinds.map((kind) => <ZeroDetectorCard key={kind} kind={kind} />)}

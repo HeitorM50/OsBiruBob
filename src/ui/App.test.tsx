@@ -20,13 +20,13 @@ describe("App input screen", () => {
   it("renders the prototype-based entry and permanent privacy guarantee", () => {
     render(<App />);
 
-    expect(screen.getByRole("heading", { name: "A retrospectiva que sua sessão de agente nunca teve" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Ver exemplo/ })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Selecionar arquivos" })).toBeTruthy();
-    expect(screen.getByText("Processamento 100% local")).toBeTruthy();
-    expect(screen.getByText(/Nenhum arquivo é enviado ou armazenado/)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "The retrospective your agent session never had" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /See an example/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Select files" })).toBeTruthy();
+    expect(screen.getByText("100% local processing")).toBeTruthy();
+    expect(screen.getByText(/No file is uploaded/)).toBeTruthy();
     expect(
-      (screen.getByRole("button", { name: "2 · Diagnóstico" }) as HTMLButtonElement)
+      (screen.getByRole("button", { name: "2 · Diagnosis" }) as HTMLButtonElement)
         .disabled
     ).toBe(true);
   });
@@ -36,30 +36,30 @@ describe("App input screen", () => {
     vi.stubGlobal("fetch", fetchSpy);
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: /Ver exemplo/ }));
+    fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
 
-    expect(await screen.findByText("Rodada A")).toBeTruthy();
-    expect(screen.getByText("Exemplo")).toBeTruthy();
-    expect(screen.getByText(/1 task · 5 turnos · 4 achados/)).toBeTruthy();
-    expect(screen.getByText(/Adicione uma Rodada B/)).toBeTruthy();
+    expect(await screen.findByText("Round A")).toBeTruthy();
+    expect(screen.getByText("Example")).toBeTruthy();
+    expect(screen.getByText(/1 task · 5 turns · 4 findings/)).toBeTruthy();
+    expect(screen.getByText(/Add a Round B/)).toBeTruthy();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("treats a comparison with only Round A as a normal next step", async () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: /Ver exemplo/ }));
-    expect(await screen.findByText("Rodada A")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
+    expect(await screen.findByText("Round A")).toBeTruthy();
 
     const comparisonStep = screen.getByRole("button", {
-      name: "5 · Comparativo",
+      name: "5 · Comparison",
     }) as HTMLButtonElement;
     expect(comparisonStep.disabled).toBe(false);
     fireEvent.click(comparisonStep);
 
     expect(
       screen.getByRole("heading", {
-        name: "A Rodada B ainda não foi carregada.",
+        name: "Round B has not been loaded yet.",
       })
     ).toBeTruthy();
     expect(screen.queryByRole("table")).toBeNull();
@@ -77,12 +77,12 @@ describe("App input screen", () => {
       },
     });
 
-    expect(await screen.findByText("Rodada B")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "5 · Comparativo" }));
+    expect(await screen.findByText("Round B")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "5 · Comparison" }));
 
-    expect(screen.getByText("Experimento válido")).toBeTruthy();
+    expect(screen.getByText("Valid experiment")).toBeTruthy();
     expect(
-      screen.getByRole("table", { name: "Métricas calculadas pelo Hindsight" })
+      screen.getByRole("table", { name: "Metrics calculated by Hindsight" })
     ).toBeTruthy();
     expect(screen.getByText("18 de 23")).toBeTruthy();
     expect(screen.getByText("12 de 17")).toBeTruthy();
@@ -91,12 +91,12 @@ describe("App input screen", () => {
   it("opens the traceable prescriptions screen for the analyzed baseline", async () => {
     render(<App />);
     const prescriptionsStep = screen.getByRole("button", {
-      name: "4 · Prescrições",
+      name: "4 · Prescriptions",
     }) as HTMLButtonElement;
     expect(prescriptionsStep.disabled).toBe(true);
 
-    fireEvent.click(screen.getByRole("button", { name: /Ver exemplo/ }));
-    expect(await screen.findByText("Rodada A")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
+    expect(await screen.findByText("Round A")).toBeTruthy();
     expect(prescriptionsStep.disabled).toBe(false);
 
     fireEvent.click(prescriptionsStep);
@@ -117,10 +117,10 @@ describe("App input screen", () => {
       screen.getByRole("tabpanel", { name: "Subagents" }).textContent
     ).toContain("Context pressure is 6.5%");
 
-    fireEvent.click(screen.getByRole("button", { name: "1 · Entrada" }));
+    fireEvent.click(screen.getByRole("button", { name: "1 · Input" }));
     expect(
       screen.getByRole("heading", {
-        name: "A retrospectiva que sua sessão de agente nunca teve",
+        name: "The retrospective your agent session never had",
       })
     ).toBeTruthy();
   });
@@ -128,28 +128,28 @@ describe("App input screen", () => {
   it("opens Findings with detector output from the analyzed export", async () => {
     render(<App />);
     const findingsStep = screen.getByRole("button", {
-      name: "3 · Achados",
+      name: "3 · Findings",
     }) as HTMLButtonElement;
     expect(findingsStep.disabled).toBe(true);
 
-    fireEvent.click(screen.getByRole("button", { name: /Ver exemplo/ }));
-    expect(await screen.findByText("Rodada A")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
+    expect(await screen.findByText("Round A")).toBeTruthy();
     expect(findingsStep.disabled).toBe(false);
 
     fireEvent.click(findingsStep);
     expect(
       screen.getByRole("heading", {
-        name: "4 achados, cada um rastreável até um campo do export.",
+        name: "4 findings, each traceable to a field in the export.",
       })
     ).toBeTruthy();
-    expect(screen.getByText("Regras de projeto ausentes")).toBeTruthy();
-    expect(screen.getByText("Ferramentas ociosas")).toBeTruthy();
-    expect(screen.getByText("Overhead de Skill")).toBeTruthy();
-    expect(screen.getByText("Candidato a servidor MCP")).toBeTruthy();
+    expect(screen.getByText("Project rules missing")).toBeTruthy();
+    expect(screen.getByText("Idle tools")).toBeTruthy();
+    expect(screen.getByText("Skill overhead")).toBeTruthy();
+    expect(screen.getByText("MCP server candidate")).toBeTruthy();
     expect(screen.getAllByText("No findings of this type.")).toHaveLength(3);
 
-    fireEvent.click(screen.getByRole("button", { name: "1 · Entrada" }));
-    expect(screen.getByText("Rodada A")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "1 · Input" }));
+    expect(screen.getByText("Round A")).toBeTruthy();
   });
 
   it("accepts files through the selector and drag-and-drop, assigning A and B", async () => {
@@ -159,18 +159,18 @@ describe("App input screen", () => {
     const selector = screen.getByLabelText("Selecionar exports JSON do IBM Bob");
     fireEvent.change(selector, { target: { files: [exportFile("round-a.json")] } });
 
-    expect(await screen.findByText("Rodada A")).toBeTruthy();
+    expect(await screen.findByText("Round A")).toBeTruthy();
     expect(screen.getAllByText("round-a.json")).toHaveLength(2);
-    expect(screen.getByText(/Adicione uma Rodada B/)).toBeTruthy();
+    expect(screen.getByText(/Add a Round B/)).toBeTruthy();
 
     const dropzone = screen.getByTestId("dropzone");
     fireEvent.dragEnter(dropzone);
     fireEvent.dragLeave(dropzone);
     fireEvent.drop(dropzone, { dataTransfer: { files: [exportFile("round-b.json")] } });
 
-    expect(await screen.findByText("Rodada B")).toBeTruthy();
+    expect(await screen.findByText("Round B")).toBeTruthy();
     expect(screen.getByText("round-b.json")).toBeTruthy();
-    expect(screen.getByText(/comparativo está habilitado/)).toBeTruthy();
+    expect(screen.getByText(/comparison is enabled/)).toBeTruthy();
     expect(readText).toHaveBeenCalledTimes(2);
   });
 
@@ -181,9 +181,9 @@ describe("App input screen", () => {
       dataTransfer: { files: [exportFile("a.json"), exportFile("b.json"), exportFile("c.json")] },
     });
 
-    expect(await screen.findByText("Sessão 3")).toBeTruthy();
-    expect(screen.getByText("3 sessões analisadas")).toBeTruthy();
-    expect(screen.getByText(/análises recorrentes futuras/)).toBeTruthy();
+    expect(await screen.findByText("Session 3")).toBeTruthy();
+    expect(screen.getByText("3 sessions analyzed")).toBeTruthy();
+    expect(screen.getByText(/future recurring analyses/)).toBeTruthy();
     expect(screen.queryByText(/Skill recomendada/)).toBeNull();
   });
 
@@ -194,12 +194,12 @@ describe("App input screen", () => {
 
     fireEvent.drop(screen.getByTestId("dropzone"), { dataTransfer: { files: [exportFile("large.json")] } });
 
-    expect(screen.getByText(/Analisando/)).toBeTruthy();
+    expect(screen.getByText(/Analyzing/)).toBeTruthy();
     expect(screen.getByText(/large.json/)).toBeTruthy();
-    expect(screen.getByText("Nenhum byte saiu da máquina.")).toBeTruthy();
+    expect(screen.getByText("Not a single byte left your machine.")).toBeTruthy();
 
     await act(async () => resolveRead?.(sampleExport));
-    expect(await screen.findByText("Rodada A")).toBeTruthy();
+    expect(await screen.findByText("Round A")).toBeTruthy();
   });
 
   it("keeps valid files from a mixed batch and reports each rejected file", async () => {
@@ -214,18 +214,18 @@ describe("App input screen", () => {
       dataTransfer: { files: [exportFile("valid.json"), exportFile("broken.json"), exportFile("package.json")] },
     });
 
-    expect(await screen.findByText("Rodada A")).toBeTruthy();
+    expect(await screen.findByText("Round A")).toBeTruthy();
     expect(screen.getAllByText("valid.json")).toHaveLength(2);
     expect(screen.getByText(/broken.json/)).toBeTruthy();
     expect(screen.getByText(/package.json/)).toBeTruthy();
-    expect(screen.getByText("JSON válido, mas não é um export de sessão do Bob")).toBeTruthy();
+    expect(screen.getByText("Valid JSON, but not a Bob session export")).toBeTruthy();
   });
 
   it("turns read errors into a safe message", async () => {
     render(<App readText={async () => Promise.reject(new Error("private details"))} />);
     fireEvent.drop(screen.getByTestId("dropzone"), { dataTransfer: { files: [exportFile("unreadable.json")] } });
 
-    expect(await screen.findByText(/Não foi possível ler o arquivo/)).toBeTruthy();
+    expect(await screen.findByText(/The file could not be read/)).toBeTruthy();
     expect(screen.queryByText(/private details/)).toBeNull();
   });
 
@@ -246,9 +246,9 @@ describe("App input screen", () => {
     exportWithPayload.tasks[0].messages[0].data.content = payload;
     render(<App exampleContent={JSON.stringify(exportWithPayload)} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /Ver exemplo/ }));
+    fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
 
-    expect(await screen.findByText("Rodada A")).toBeTruthy();
+    expect(await screen.findByText("Round A")).toBeTruthy();
     expect(document.querySelector("script[data-export-xss='yes']")).toBeNull();
     expect(document.body.textContent).not.toContain(payload);
   });
@@ -258,34 +258,34 @@ describe("App input screen", () => {
     fireEvent.drop(screen.getByTestId("dropzone"), { dataTransfer: { files: [exportFile("private-session.json")] } });
     expect(await screen.findByText("private-session.json")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: /Ver exemplo/ }));
+    fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
     expect(await screen.findByText("sample-export.json")).toBeTruthy();
     expect(screen.queryByText("private-session.json")).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Limpar análises" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear analyses" }));
     expect(screen.queryByLabelText("Arquivos analisados")).toBeNull();
-    expect(screen.getAllByText("nenhum arquivo").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("no file").length).toBeGreaterThan(0);
   });
 
   it("does not persist analyses across remounts and supports the ephemeral theme", async () => {
     const first = render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Alternar tema" }));
-    expect(screen.getByRole("button", { name: "Alternar tema" }).textContent).toBe("Tema claro");
-    fireEvent.click(screen.getByRole("button", { name: /Ver exemplo/ }));
-    expect(await screen.findByText("Rodada A")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Toggle theme" }));
+    expect(screen.getByRole("button", { name: "Toggle theme" }).textContent).toBe("Light theme");
+    fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
+    expect(await screen.findByText("Round A")).toBeTruthy();
     first.unmount();
 
     render(<App />);
     expect(screen.queryByLabelText("Arquivos analisados")).toBeNull();
-    expect(screen.getByRole("button", { name: "Alternar tema" }).textContent).toBe("Tema escuro");
+    expect(screen.getByRole("button", { name: "Toggle theme" }).textContent).toBe("Dark theme");
   });
 
   it("shows a controlled error when the embedded example is invalid", async () => {
     render(<App exampleContent="" />);
-    fireEvent.click(screen.getByRole("button", { name: /Ver exemplo/ }));
+    fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
 
-    expect(await screen.findByText(/O arquivo está vazio/)).toBeTruthy();
-    expect(screen.queryByText("Rodada A")).toBeNull();
+    expect(await screen.findByText(/This file is empty/)).toBeTruthy();
+    expect(screen.queryByText("Round A")).toBeNull();
   });
 
   it("ignores an empty selection", async () => {
