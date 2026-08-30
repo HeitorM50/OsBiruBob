@@ -17,6 +17,9 @@
  *   contextTokensA   = 17584
  *   contextTokensB   = 13551
  *   contextTokensDelta = -4033
+ *   conversationTokensDelta = -1334
+ *   idle tools       = 18/23 → 12/17
+ *   skillTokensDelta = -715
  *   assistantTurnsA  = 5
  *   assistantTurnsB  = 6
  *   assistantTurnsDelta = +1
@@ -199,6 +202,24 @@ describe("compare — characterisation (rodada-a vs rodada-b)", () => {
     expect(m.contextTokensB).toBe(13551);
     expect(m.contextTokensDelta).toBe(-4033);
 
+    // Conversation tokens
+    expect(m.conversationTokensA).toBe(7145);
+    expect(m.conversationTokensB).toBe(5811);
+    expect(m.conversationTokensDelta).toBe(-1334);
+
+    // Tool inventory
+    expect(m.availableToolsA).toBe(23);
+    expect(m.availableToolsB).toBe(17);
+    expect(m.availableToolsDelta).toBe(-6);
+    expect(m.idleToolsA).toBe(18);
+    expect(m.idleToolsB).toBe(12);
+    expect(m.idleToolsDelta).toBe(-6);
+
+    // Skill overhead
+    expect(m.skillTokensA).toBe(1541);
+    expect(m.skillTokensB).toBe(826);
+    expect(m.skillTokensDelta).toBe(-715);
+
     // Assistant turns
     expect(m.assistantTurnsA).toBe(5);
     expect(m.assistantTurnsB).toBe(6);
@@ -209,9 +230,23 @@ describe("compare — characterisation (rodada-a vs rodada-b)", () => {
     expect(m.humanInterventionsB).toBe(0);
     expect(m.humanInterventionsDelta).toBe(0);
 
+    // Errors, commands and duration
+    expect(m.erroredToolCallsA).toBe(0);
+    expect(m.erroredToolCallsB).toBe(0);
+    expect(m.erroredToolCallsDelta).toBe(0);
+    expect(m.externalCommandsA).toBe(3);
+    expect(m.externalCommandsB).toBe(4);
+    expect(m.externalCommandsDelta).toBe(1);
+    expect(m.durationMsA).toBe(reportA.tasks[0].durationMs);
+    expect(m.durationMsB).toBe(reportB.tasks[0].durationMs);
+    expect(m.durationMsDelta).toBe(
+      reportB.tasks[0].durationMs - reportA.tasks[0].durationMs
+    );
+
     // Project rules tokens
     expect(m.projectRulesTokensA).toBe(0);
     expect(m.projectRulesTokensB).toBe(121);
+    expect(m.projectRulesTokensDelta).toBe(121);
   });
 });
 
@@ -297,6 +332,18 @@ describe("compare — buildFailures is absent", () => {
     expect(m.buildFailuresA).toBeUndefined();
     expect(m.buildFailuresB).toBeUndefined();
     expect(m.buildFailuresDelta).toBeUndefined();
+  });
+
+  it("keeps inventory unavailable when availableTools was not exported", () => {
+    const result = compare(makeReport({}), makeReport({ sessionId: "sess-b" }));
+    const metrics = result.metrics;
+
+    expect(metrics.availableToolsA).toBeUndefined();
+    expect(metrics.availableToolsB).toBeUndefined();
+    expect(metrics.availableToolsDelta).toBeUndefined();
+    expect(metrics.idleToolsA).toBeUndefined();
+    expect(metrics.idleToolsB).toBeUndefined();
+    expect(metrics.idleToolsDelta).toBeUndefined();
   });
 });
 
