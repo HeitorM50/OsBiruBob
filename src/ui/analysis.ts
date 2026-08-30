@@ -36,7 +36,8 @@ export type AnalysisResult =
 export function analyzeExport(
   raw: string,
   fileName: string,
-  source: AnalysisSource
+  source: AnalysisSource,
+  maxContextWindow: number | null = null
 ): AnalysisResult {
   if (raw.trim().length === 0) {
     return {
@@ -66,7 +67,7 @@ export function analyzeExport(
   }
 
   try {
-    const report = observe(parsed.value);
+    const report = observe(parsed.value, maxContextWindow);
     const diagnosis = diagnoseWithCatalogs(report);
     return {
       ok: true,

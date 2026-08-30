@@ -44,6 +44,43 @@ describe("App input screen", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it("opens the traceable prescriptions screen for the analyzed baseline", async () => {
+    render(<App />);
+    const prescriptionsStep = screen.getByRole("button", {
+      name: "4 · Prescrições",
+    }) as HTMLButtonElement;
+    expect(prescriptionsStep.disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: /Ver exemplo/ }));
+    expect(await screen.findByText("Rodada A")).toBeTruthy();
+    expect(prescriptionsStep.disabled).toBe(false);
+
+    fireEvent.click(prescriptionsStep);
+    expect(
+      screen.getByRole("heading", {
+        name: "Corrected configuration, ready to copy.",
+      })
+    ).toBeTruthy();
+    expect(screen.getAllByRole("tab")).toHaveLength(5);
+    expect(screen.getByText("new file")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: "MCPs" }));
+    expect(screen.getByText("Docker MCP Server")).toBeTruthy();
+    expect(screen.getByText(/2 matching commands/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Subagents" }));
+    expect(
+      screen.getByRole("tabpanel", { name: "Subagents" }).textContent
+    ).toContain("Context pressure is 6.5%");
+
+    fireEvent.click(screen.getByRole("button", { name: "1 · Entrada" }));
+    expect(
+      screen.getByRole("heading", {
+        name: "A retrospectiva que sua sessão de agente nunca teve",
+      })
+    ).toBeTruthy();
+  });
+
   it("accepts files through the selector and drag-and-drop, assigning A and B", async () => {
     const readText = vi.fn(async () => sampleExport);
     render(<App readText={readText} />);

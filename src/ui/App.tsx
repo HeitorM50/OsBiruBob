@@ -1,58 +1,23 @@
 import React, { useId, useRef, useState } from "react";
 import sampleExport from "../../fixtures/sample-export.json?raw";
 import {
+  prescribeAgentsMd,
+  prescribeMcpEnablement,
+  prescribeOverheadReduction,
+} from "../prescribe";
+import {
   analyzeExport,
   type AnalysisError,
   type AnalyzedExport,
 } from "./analysis";
 import { readFileText } from "./file-reader";
 import styles from "./App.module.css";
-import ContextWindowScreen from "./ContextWindowScreen";
-import type { ContextSummary } from "../domain/types";
+import { PrescriptionScreen } from "./PrescriptionScreen";
 
-// ---------------------------------------------------------------------------
-// Baseline example from fixtures/sample-export.json (rodada-a baseline).
-// Used as the demo / placeholder state when no file has been loaded.
-// Values are read-only constants — not derived at runtime from the file.
-// maxContextWindow is supplied by the UI (not present in the export).
-// ---------------------------------------------------------------------------
-const BASELINE_CONTEXT: ContextSummary = {
-  fixedOverhead: 10439,
-  reportedTotal: 17584,
-  conversationTokens: 7145,
-  reportedTotalInconsistent: false,
-  breakdown: {
-    roleDefinition:     34,
-    staticSections:     563,
-    skills:             1541,
-    baseRules:          197,
-    projectRules:       0,
-    customInstructions: 160,
-    environment:        71,
-    toolSystemPrompts:  2470,
-    toolDefinitions:    5403,
-    mcpToolDefinitions: 0,
-  },
-  breakdownPct: {
-    roleDefinition:     (34   / 10439) * 100,
-    staticSections:     (563  / 10439) * 100,
-    skills:             (1541 / 10439) * 100,
-    baseRules:          (197  / 10439) * 100,
-    projectRules:       0,
-    customInstructions: (160  / 10439) * 100,
-    environment:        (71   / 10439) * 100,
-    toolSystemPrompts:  (2470 / 10439) * 100,
-    toolDefinitions:    (5403 / 10439) * 100,
-    mcpToolDefinitions: 0,
-  },
-  breakdownSumDelta: 0,
-  breakdownSumConsistent: true,
-  loadedSkills: [],
-  maxContextWindow: 270000,
-  pressure: 17584 / 270000,
-};
+const DEMO_MAX_CONTEXT_WINDOW = 270_000;
 
 type Theme = "light" | "dark";
+type Screen = "input" | "prescriptions";
 
 interface LoadedAnalysis extends AnalyzedExport {
   id: number;
@@ -85,6 +50,7 @@ export default function App({
   const inputRef = useRef<HTMLInputElement>(null);
   const nextId = useRef(1);
   const [theme, setTheme] = useState<Theme>("light");
+  const [activeScreen, setActiveScreen] = useState<Screen>("input");
   const [analyses, setAnalyses] = useState<LoadedAnalysis[]>([]);
   const [errors, setErrors] = useState<InputError[]>([]);
   const [loadingNames, setLoadingNames] = useState<string[]>([]);
@@ -149,7 +115,12 @@ export default function App({
     setLoadingNames(["sample-export.json"]);
     await nextFrame();
 
-    const result = analyzeExport(exampleContent, "sample-export.json", "demo");
+    const result = analyzeExport(
+      exampleContent,
+      "sample-export.json",
+      "demo",
+      DEMO_MAX_CONTEXT_WINDOW
+    );
     if (result.ok) setAnalyses([withId(result.value)]);
     else setErrors([errorWithId(result.error)]);
     setLoadingNames([]);
@@ -161,6 +132,7 @@ export default function App({
     setErrors([]);
     setLoadingNames([]);
     setDragActive(false);
+    setActiveScreen("input");
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -169,6 +141,19 @@ export default function App({
     if (loading) return;
     void loadFiles(Array.from(event.dataTransfer.files));
   }
+
+  const selectedAnalysis = analyses[0];
+  const prescriptions = selectedAnalysis
+    ? [
+        ...prescribeAgentsMd(selectedAnalysis.diagnosis.findings),
+        ...prescribeOverheadReduction(selectedAnalysis.diagnosis.findings),
+        ...prescribeMcpEnablement(selectedAnalysis.diagnosis.findings),
+      ]
+    : [];
+  const contextPressure =
+    selectedAnalysis?.report.tasks
+      .map((task) => task.context.pressure)
+      .find((pressure) => pressure !== null) ?? null;
 
   return (
     <div className={styles.app} data-theme={theme}>
@@ -184,17 +169,32 @@ export default function App({
 
           <nav aria-label="Etapas da análise" className={styles.steps}>
             {["Entrada", "Diagnóstico", "Achados", "Prescrições", "Comparativo"].map(
-              (step, index) => (
-                <button
-                  key={step}
-                  type="button"
-                  className={index === 0 ? styles.activeStep : styles.step}
-                  disabled={index !== 0}
-                  aria-current={index === 0 ? "step" : undefined}
-                >
-                  {index + 1} · {step}
-                </button>
-              )
+              (step, index) => {
+                const isInput = index === 0;
+                const isPrescriptions = index === 3;
+                const enabled =
+                  isInput || (isPrescriptions && selectedAnalysis !== undefined);
+                const active =
+                  (isInput && activeScreen === "input") ||
+                  (isPrescriptions && activeScreen === "prescriptions");
+                return (
+                  <button
+                    key={step}
+                    type="button"
+                    className={active ? styles.activeStep : styles.step}
+                    disabled={!enabled}
+                    aria-current={active ? "step" : undefined}
+                    onClick={() => {
+                      if (isInput) setActiveScreen("input");
+                      if (isPrescriptions && selectedAnalysis) {
+                        setActiveScreen("prescriptions");
+                      }
+                    }}
+                  >
+                    {index + 1} · {step}
+                  </button>
+                );
+              }
             )}
           </nav>
 
@@ -214,19 +214,32 @@ export default function App({
           </div>
         </div>
         <div className={styles.progressTrack} aria-hidden="true">
-          <div className={styles.progressValue} />
+          <div
+            className={styles.progressValue}
+            style={{ width: activeScreen === "prescriptions" ? "80%" : "20%" }}
+          />
         </div>
       </header>
 
-      <main className={styles.main}>
-        <section className={styles.intro}>
-          <h1>A retrospectiva que sua sessão de agente nunca teve</h1>
-          <p>
-            Arraste o export JSON de uma sessão do IBM Bob. O Hindsight mostra
-            onde a configuração desperdiça contexto e dinheiro, gera a
-            configuração corrigida e prepara a comparação entre rodadas.
-          </p>
-        </section>
+      {activeScreen === "prescriptions" && selectedAnalysis ? (
+        <main className={styles.prescriptionMain}>
+          <PrescriptionScreen
+            prescriptions={prescriptions}
+            findings={selectedAnalysis.diagnosis.findings}
+            existingAgentsMd={null}
+            contextPressure={contextPressure}
+          />
+        </main>
+      ) : (
+        <main className={styles.main}>
+          <section className={styles.intro}>
+            <h1>A retrospectiva que sua sessão de agente nunca teve</h1>
+            <p>
+              Arraste o export JSON de uma sessão do IBM Bob. O Hindsight mostra
+              onde a configuração desperdiça contexto e dinheiro, gera a
+              configuração corrigida e prepara a comparação entre rodadas.
+            </p>
+          </section>
 
         {loading ? (
           <section className={styles.loadingPanel} aria-busy="true" aria-live="polite">
@@ -361,7 +374,8 @@ export default function App({
             </div>
           </section>
         )}
-      </main>
+        </main>
+      )}
     </div>
   );
 }

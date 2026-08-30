@@ -7,6 +7,9 @@
   --ink-3: #7b838c; --line: #eef0f2; --line-2: #dcdfe3;
   --soft: #f4f6f8; --accent: #a3401f; --accent-soft: #fbf3f0;
   --accent-line: #d9a893; --good: #1f6b45; --focus: #2f5d8c;
+  --ink2: var(--ink-2); --ink3: var(--ink-3); --line2: var(--line-2);
+  --acc: var(--accent); --accsoft: var(--accent-soft);
+  --bar1: var(--ink); --bar2: var(--ink-2); --goodsoft: color-mix(in srgb, var(--good) 8%, var(--panel));
   min-height: 100vh; background: var(--bg); color: var(--ink);
 }
 
@@ -38,6 +41,7 @@
 .progressValue { width: 20%; height: 2px; background: var(--ink); }
 
 .main { max-width: 1180px; margin: 0 auto; padding: 64px 28px 56px; }
+.prescriptionMain { min-height: calc(100vh - 60px); }
 .intro { max-width: 680px; margin: 0 auto 40px; text-align: center; }
 .intro h1 { margin: 0; font-size: clamp(2rem, 5vw, 2.375rem); font-weight: 600; line-height: 1.1; letter-spacing: -0.035em; text-wrap: pretty; }
 .intro p { margin: 16px 0 0; color: var(--ink-2); font-size: 16px; line-height: 1.6; text-wrap: pretty; }
