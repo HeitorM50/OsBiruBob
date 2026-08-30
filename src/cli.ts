@@ -21,7 +21,8 @@ import { parseSession } from "./parser/index";
 import { observe } from "./observe/index";
 import { toPublicReport } from "./observe/public-report";
 import { diagnoseWithCatalogs } from "./diagnose/index";
-import type { ObserveReport } from "./domain/types";
+import { compare } from "./compare/index";
+import type { ObserveReport, Comparison } from "./domain/types";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -41,19 +42,26 @@ function usage(): void {
       "Usage:",
       "  npx tsx src/cli.ts --input <path/to/export.json> [--json]",
       "  npx tsx src/cli.ts --demo [--json]",
+      "  npx tsx src/cli.ts --compare <fileA> <fileB>",
       "",
       "Options:",
-      "  --input <file>   Path to the Bob session export JSON",
-      "  --demo           Run against fixtures/sample-export.json",
-      "  --json           Emit the full ObserveReport JSON to stdout",
-      "  --help           Show this help",
+      "  --input <file>        Path to the Bob session export JSON",
+      "  --demo                Run against fixtures/sample-export.json",
+      "  --json                Emit the full ObserveReport JSON to stdout",
+      "  --compare <a> <b>     Compare two exports and print a delta table",
+      "  --help                Show this help",
       "",
     ].join("\n")
   );
 }
 
 /** Parse CLI args — returns the input file path and flags. */
-function parseArgs(argv: string[]): { inputPath: string; emitJson: boolean } {
+function parseArgs(argv: string[]): {
+  inputPath: string | null;
+  emitJson: boolean;
+  compareA: string | null;
+  compareB: string | null;
+} {
   const args = argv.slice(2);
 
   if (args.includes("--help")) {
@@ -63,6 +71,8 @@ function parseArgs(argv: string[]): { inputPath: string; emitJson: boolean } {
 
   let inputPath: string | null = null;
   let emitJson = false;
+  let compareA: string | null = null;
+  let compareB: string | null = null;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--demo") {
@@ -74,16 +84,25 @@ function parseArgs(argv: string[]): { inputPath: string; emitJson: boolean } {
       }
       inputPath = next;
       i++;
+    } else if (args[i] === "--compare") {
+      const a = args[i + 1];
+      const b = args[i + 2];
+      if (!a || a.startsWith("--") || !b || b.startsWith("--")) {
+        die("--compare requires two file path arguments: --compare <fileA> <fileB>");
+      }
+      compareA = a;
+      compareB = b;
+      i += 2;
     } else if (args[i] === "--json") {
       emitJson = true;
     }
   }
 
-  if (inputPath === null) {
-    die("No input file specified. Use --input <file> or --demo");
+  if (compareA === null && inputPath === null) {
+    die("No input file specified. Use --input <file>, --demo, or --compare <a> <b>");
   }
 
-  return { inputPath, emitJson };
+  return { inputPath, emitJson, compareA, compareB };
 }
 
 // ---------------------------------------------------------------------------
@@ -215,11 +234,106 @@ export function runObserve(
 }
 
 // ---------------------------------------------------------------------------
+// formatComparison — human-readable delta table
+// ---------------------------------------------------------------------------
+
+/**
+ * Format a Comparison as a human-readable CLI table.
+ * Sensitive data (session IDs are not content — they are safe to show truncated).
+ */
+function formatComparison(cmp: Comparison): string {
+  const lines: string[] = [];
+  const m = cmp.metrics;
+
+  lines.push("");
+  lines.push("┌─ Hindsight — Comparison ─────────────────────────────────────┐");
+  lines.push("");
+  lines.push(`  Session A   ${cmp.sessionIdA.slice(0, 12)}…`);
+  lines.push(`  Session B   ${cmp.sessionIdB.slice(0, 12)}…`);
+  lines.push(`  Valid       ${cmp.valid ? "yes ✓" : `no — ${cmp.invalidReason ?? "unknown reason"}`}`);
+
+  lines.push("");
+  lines.push("  ── Calculated metrics ────────────────────────────────────────");
+
+  const sign = (n: number): string => (n > 0 ? `+${n}` : String(n));
+  const signF = (n: number, decimals: number): string =>
+    (n > 0 ? "+" : "") + n.toFixed(decimals);
+
+  lines.push(`  ${"Metric".padEnd(28)} ${"Round A".padStart(12)} ${"Round B".padStart(12)} ${"Delta".padStart(12)}`);
+  lines.push(`  ${"─".repeat(28)} ${"─".repeat(12)} ${"─".repeat(12)} ${"─".repeat(12)}`);
+  lines.push(
+    `  ${"Cost (USD)".padEnd(28)} ${`$${m.costA.toFixed(6)}`.padStart(12)} ${`$${m.costB.toFixed(6)}`.padStart(12)} ${signF(m.costDelta, 6).padStart(12)}`
+  );
+  lines.push(
+    `  ${"Fixed overhead (tokens)".padEnd(28)} ${String(m.fixedOverheadA).padStart(12)} ${String(m.fixedOverheadB).padStart(12)} ${sign(m.fixedOverheadDelta).padStart(12)}`
+  );
+  lines.push(
+    `  ${"Context tokens".padEnd(28)} ${String(m.contextTokensA).padStart(12)} ${String(m.contextTokensB).padStart(12)} ${sign(m.contextTokensDelta).padStart(12)}`
+  );
+  lines.push(
+    `  ${"Assistant turns".padEnd(28)} ${String(m.assistantTurnsA).padStart(12)} ${String(m.assistantTurnsB).padStart(12)} ${sign(m.assistantTurnsDelta).padStart(12)}`
+  );
+  lines.push(
+    `  ${"Human interventions".padEnd(28)} ${String(m.humanInterventionsA).padStart(12)} ${String(m.humanInterventionsB).padStart(12)} ${sign(m.humanInterventionsDelta).padStart(12)}`
+  );
+
+  if (m.projectRulesTokensA !== undefined || m.projectRulesTokensB !== undefined) {
+    const a = m.projectRulesTokensA !== undefined ? String(m.projectRulesTokensA) : "n/a";
+    const b = m.projectRulesTokensB !== undefined ? String(m.projectRulesTokensB) : "n/a";
+    lines.push(
+      `  ${"Project rules (tokens)".padEnd(28)} ${a.padStart(12)} ${b.padStart(12)} ${"—".padStart(12)}`
+    );
+  }
+
+  lines.push("");
+  lines.push("  ── Metrics unavailable in export ─────────────────────────────");
+  lines.push("  build failures          not derivable from export — set manually");
+
+  lines.push("");
+  lines.push("└──────────────────────────────────────────────────────────────┘");
+  lines.push("");
+
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
 // main — CLI entry point (Node only)
 // ---------------------------------------------------------------------------
 
 function main(): void {
-  const { inputPath, emitJson } = parseArgs(process.argv);
+  const { inputPath, emitJson, compareA, compareB } = parseArgs(process.argv);
+
+  // ── Compare mode ──────────────────────────────────────────────────────────
+  if (compareA !== null && compareB !== null) {
+    let contentA: string;
+    let contentB: string;
+
+    try {
+      contentA = readFileSync(compareA, "utf-8");
+    } catch (err) {
+      die(`Cannot read file "${compareA}": ${err instanceof Error ? err.message : String(err)}`);
+    }
+    try {
+      contentB = readFileSync(compareB, "utf-8");
+    } catch (err) {
+      die(`Cannot read file "${compareB}": ${err instanceof Error ? err.message : String(err)}`);
+    }
+
+    const resultA = runObserve(contentA);
+    if (!resultA.ok) die(`Parse failed for file A: ${resultA.message}`);
+
+    const resultB = runObserve(contentB);
+    if (!resultB.ok) die(`Parse failed for file B: ${resultB.message}`);
+
+    const cmp = compare(resultA.report, resultB.report);
+    process.stdout.write(formatComparison(cmp));
+    return;
+  }
+
+  // ── Single-file observe mode ──────────────────────────────────────────────
+  if (inputPath === null) {
+    die("No input file specified. Use --input <file>, --demo, or --compare <a> <b>");
+  }
 
   // Read file — the ONLY fs operation in the entire pipeline
   let content: string;

@@ -131,39 +131,68 @@ favorece. Se o overhead **não** cair, isso entra no resultado do mesmo jeito.
 
 Preencher e commitar. É esta tabela que vai para o vídeo.
 
-### Do export — preenchida pelo Hindsight
+### Do export — gerada pelo Hindsight
+
+```bash
+npx tsx src/cli.ts --compare benchmark/rodada-a.json benchmark/rodada-b.json
+```
+
+`Comparison.valid === true` — protocolo do experimento auditado.
 
 | Métrica | Rodada A (baseline) | Rodada B (otimizada) | Delta |
-|---|---|---|---|
-| API Cost | 0.336902 | | |
-| **Overhead fixo** | **10.439** | | |
-| Tokens de conversa | 7.145 | | |
-| Contexto reportado | 17.584 | | |
-| **Ferramentas ociosas** | **18 de 23 (78%)** | | |
-| Skill paga sem uso | 1.541 | | |
-| `projectRules` | 0 | | |
-| Turnos | 5 | | |
-| Intervenções humanas | 0 | | |
-| Tool calls com erro | 0 | | |
-| Comandos externos | 3 | | |
+|---|---:|---:|---:|
+| API Cost | $0,336902 | $0,270606 | **−$0,066296 (−19,7%)** |
+| **Overhead fixo** | **10.439** | **7.740** | **−2.699 (−25,9%)** |
+| Tokens de conversa | 7.145 | 5.811 | −1.334 (−18,7%) |
+| Contexto reportado | 17.584 | 13.551 | −4.033 (−22,9%) |
+| **Ferramentas ociosas** | **18 de 23 (78%)** | **12 de 17 (71%)** | −6 ferramentas |
+| Skill paga sem uso | 1.541 | 826 | −715 (−46,4%) |
+| `projectRules` | **0** | **121** | +121 |
+| Turnos | 5 | 6 | **+1 (regressão)** |
+| Intervenções humanas | 0 | 0 | 0 |
+| Tool calls com erro | 0 | 0 | 0 |
+| Comandos externos | 3 | 4 | +1 |
+| Duração | 566 s | 1.338 s | **+772 s (regressão)** |
 
 ### Só do screenshot — preenchimento manual
 
 | Métrica | Rodada A (baseline) | Rodada B (otimizada) | Delta |
 |---|---|---|---|
-| Tokens ↑ | | | |
-| Tokens ↓ | | | |
-| Cache ↓/↑ (razão) | | | |
-| Context Length % | 7% (18.4k / 270.0k) | | |
-| Falhas de build | 0 | | |
+| Tokens ↑ | indisponível | indisponível | — |
+| Tokens ↓ | indisponível | indisponível | — |
+| Cache ↓/↑ (razão) | indisponível | indisponível | — |
+| Context Length % | 7% (18.4k / 270.0k) | 5% (13.6k / 270.0k) | −2 p.p. |
+| Falhas de build | 0 | 0 | 0 |
 
-As linhas em negrito são as candidatas ao pitch. A escolha final só é feita depois
-de ver os números da Rodada B — mas as métricas de execução (turnos, intervenções,
-erros) já vieram zeradas no baseline, então o delta honesto e compreensível em dez
-segundos deve sair do overhead de contexto.
+O summary desta versão do Bob não exibe Tokens ↑/↓ nem Cache ↑/↓. A limitação é
+**simétrica** entre as rodadas, então não compromete a comparação — mas essas
+métricas ficam registradas como indisponíveis, nunca como zero.
 
-**Reportar também o que não melhorou.** Uma métrica que ficou igual, ou que
-regrediu, entra na tabela do mesmo jeito.
+### Métrica principal escolhida
+
+**Redução de overhead de contexto: −25,9%.** Apoio: custo, −19,7%.
+
+Escolhida depois de ver os números, e não por ser a mais favorável: tem delta grande,
+causa rastreável (`projectRules` saiu de zero, `toolSystemPrompts` caiu 81,5%) e
+cabe em dez segundos — "o agente carregava 10.439 tokens antes de ler uma linha do
+seu código; agora carrega 7.740".
+
+Turnos e intervenções foram descartados: o baseline já tinha zero retry, zero erro e
+zero intervenção, e turnos **regrediram**.
+
+### A hipótese registrada errou
+
+O portão da F4 exigia registrar a hipótese antes de executar. A previsão era que
+desligar ferramentas derrubaria `toolDefinitions`. **Não derrubou** — ficou em 5.403
+nas duas rodadas. Quem caiu foi `toolSystemPrompts`, −81,5%, responsável por 75% da
+economia total.
+
+A estimativa de 235 tokens por ferramenta previa 1.410 tokens de economia ao remover
+6 ferramentas; a economia real em `toolDefinitions` foi **zero**. É a confirmação
+prática do invariante I-6: estimativa é hipótese, e a Rodada B é o que a mede.
+
+**O que não melhorou está na tabela.** Turnos e duração regrediram e continuam
+reportados. Análise completa em [`docs/analise-rodada-b.md`](../docs/analise-rodada-b.md).
 
 ---
 
