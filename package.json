@@ -14,7 +14,7 @@
     "preview":    "vite preview",
     "test":       "vitest run",
     "test:watch": "vitest",
-    "test:cov":   "vitest run --coverage",
+    "test:cov": "vitest run --coverage",
     "demo":       "npm run build && node dist/cli.js --input fixtures/sample-export.json --demo",
     "typecheck":  "tsc --noEmit"
   },
@@ -30,6 +30,7 @@
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",
     "@vitest/coverage-v8": "^1.6.1",
+    "jsdom": "^26.1.0",
     "tsup": "^8.5.0",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
