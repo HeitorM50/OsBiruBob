@@ -8,13 +8,15 @@
  * Forbidden imports: prescribe, compare, CLI/UI.
  */
 
-import type { Finding, ObserveReport } from "../domain/types";
+import type { DiagnoseResult, Finding, ObserveReport } from "../domain/types";
+import { loadMcpCatalog, loadToolCatalog } from "../catalog";
 import { detectUnusedTools } from "./detectors/unused-tool";
 import { detectProjectRulesAbsent } from "./project-rules-absent";
 import { detectRetryAfterError } from "./retry-after-error";
 import { detectRedundantReads } from "./redundant-read";
 import { detectSkillOverhead } from "./skill-overhead";
 import { detectHumanIntervention } from "./human-intervention";
+import { detectMcpCandidates } from "./mcp-candidate";
 
 /** Standard detectors — each takes only an ObserveReport and returns Finding[]. */
 const DETECTORS: ReadonlyArray<(report: ObserveReport) => Finding[]> = [
@@ -22,26 +24,59 @@ const DETECTORS: ReadonlyArray<(report: ObserveReport) => Finding[]> = [
   detectRetryAfterError,
   detectRedundantReads,
   detectSkillOverhead,
-  detectUnusedTools,
   detectHumanIntervention,
 ];
 
+export interface DiagnoseCatalogOverrides {
+  mcp?: unknown;
+  tools?: unknown;
+}
+
 /**
- * Run all registered detectors over the ObserveReport and return every
- * Finding produced.  Each detector is pure; errors in one detector do not
- * abort the others.
- *
- * Note: detectMcpCandidates requires an external catalogue argument and is
- * therefore NOT included in this orchestration. Callers that have catalogue
- * data should invoke it directly and merge its findings.
+ * Run all registered detectors with the bundled recommendation catalogs.
+ * Catalog failures suppress only their related findings and are recorded in
+ * unavailableMetrics.
  */
-export function diagnose(report: ObserveReport): Finding[] {
+export function diagnoseWithCatalogs(
+  report: ObserveReport,
+  overrides: DiagnoseCatalogOverrides = {}
+): DiagnoseResult {
   const findings: Finding[] = [];
+  const unavailableMetrics: string[] = [];
   for (const detector of DETECTORS) {
     const result = detector(report);
     findings.push(...result);
   }
-  return findings;
+
+  const mcpCatalog = Object.prototype.hasOwnProperty.call(overrides, "mcp")
+    ? loadMcpCatalog(overrides.mcp)
+    : loadMcpCatalog();
+  if (mcpCatalog.ok) {
+    const mcpResult = detectMcpCandidates(report, mcpCatalog.entries);
+    findings.push(...mcpResult.findings);
+    unavailableMetrics.push(...mcpResult.unavailableMetrics);
+  } else {
+    unavailableMetrics.push(mcpCatalog.reason);
+  }
+
+  const toolCatalog = Object.prototype.hasOwnProperty.call(overrides, "tools")
+    ? loadToolCatalog(overrides.tools)
+    : loadToolCatalog();
+  if (toolCatalog.ok) {
+    findings.push(...detectUnusedTools(report, toolCatalog.entries));
+  } else {
+    unavailableMetrics.push(toolCatalog.reason);
+  }
+
+  return { findings, unavailableMetrics };
+}
+
+/** Backward-compatible finding-only diagnostic pipeline. */
+export function diagnose(
+  report: ObserveReport,
+  overrides: DiagnoseCatalogOverrides = {}
+): Finding[] {
+  return diagnoseWithCatalogs(report, overrides).findings;
 }
 
 export { detectUnusedTools };

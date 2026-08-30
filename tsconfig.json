@@ -12,6 +12,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "skipLibCheck": true,
+    "resolveJsonModule": true,
     "jsx": "react-jsx"
   },
   "include": [

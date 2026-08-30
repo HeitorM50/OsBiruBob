@@ -624,3 +624,10 @@ export interface McpCatalogEntry {
   docsUrl?: string;
   minHits?: number;
 }
+
+export interface ToolCatalogEntry {
+  name: string;
+  group: string;
+  purpose: string;
+  essential?: boolean;
+}

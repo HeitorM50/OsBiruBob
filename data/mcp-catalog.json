@@ -1,0 +1,82 @@
+[
+  {
+    "id": "docker-mcp",
+    "label": "Docker MCP Server",
+    "binaries": ["docker", "docker-compose"],
+    "matchesHttp": false,
+    "replaces": "Replaces shell invocations of `docker` and `docker-compose` with structured MCP tool calls.",
+    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
+    "docsUrl": "https://github.com/ckreiling/mcp-server-docker",
+    "minHits": 2
+  },
+  {
+    "id": "git-mcp",
+    "label": "Git MCP Server",
+    "binaries": ["git"],
+    "matchesHttp": false,
+    "replaces": "Replaces shell invocations of `git` (log, diff, status, commit, etc.) with structured MCP tool calls.",
+    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
+    "docsUrl": "https://github.com/modelcontextprotocol/servers/tree/main/src/git",
+    "minHits": 2
+  },
+  {
+    "id": "gh-mcp",
+    "label": "GitHub MCP Server",
+    "binaries": ["gh"],
+    "matchesHttp": false,
+    "replaces": "Replaces shell invocations of the `gh` CLI (issues, PRs, releases) with structured MCP tool calls.",
+    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
+    "docsUrl": "https://github.com/github/github-mcp-server",
+    "minHits": 2
+  },
+  {
+    "id": "kubectl-mcp",
+    "label": "Kubernetes MCP Server",
+    "binaries": ["kubectl"],
+    "matchesHttp": false,
+    "replaces": "Replaces shell invocations of `kubectl` with structured MCP tool calls for cluster management.",
+    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
+    "docsUrl": "https://github.com/strowk/mcp-k8s-go",
+    "minHits": 2
+  },
+  {
+    "id": "database-mcp",
+    "label": "Database MCP Server",
+    "binaries": ["psql", "mysql", "sqlite3"],
+    "matchesHttp": false,
+    "replaces": "Replaces shell invocations of `psql`, `mysql`, or `sqlite3` with structured MCP tool calls for database queries.",
+    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
+    "docsUrl": "https://github.com/modelcontextprotocol/servers/tree/main/src/postgres",
+    "minHits": 2
+  },
+  {
+    "id": "aws-mcp",
+    "label": "AWS MCP Server",
+    "binaries": ["aws"],
+    "matchesHttp": false,
+    "replaces": "Replaces shell invocations of the `aws` CLI with structured MCP tool calls for AWS resource management.",
+    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
+    "docsUrl": "https://github.com/aws/amazon-q-developer-cli",
+    "minHits": 2
+  },
+  {
+    "id": "npm-mcp",
+    "label": "NPM MCP Server",
+    "binaries": ["npm", "npx", "yarn", "pnpm"],
+    "matchesHttp": false,
+    "replaces": "Replaces shell invocations of `npm`, `npx`, `yarn`, or `pnpm` for package management with structured MCP tool calls.",
+    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
+    "docsUrl": "https://github.com/modelcontextprotocol/servers",
+    "minHits": 2
+  },
+  {
+    "id": "http-mcp",
+    "label": "HTTP Fetch MCP Server",
+    "binaries": ["curl", "wget", "http", "httpie"],
+    "matchesHttp": true,
+    "replaces": "Replaces shell HTTP requests via `curl`, `wget`, or `httpie` with structured MCP tool calls.",
+    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
+    "docsUrl": "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch",
+    "minHits": 2
+  }
+]
