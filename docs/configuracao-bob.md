@@ -26,9 +26,9 @@ que não tinha o `AGENTS.md` deste projeto e responde a outro experimento.
 Artefatos versionados:
 
 - [`osbirubob_task00_selfhost-before_export.json`](../bob_sessions/Heitor/osbirubob_task00_selfhost-before_export.json)
-- [`osbirubob_task00_selfhost-before_summary.png`](../bob_sessions/Heitor/osbirubob_task00_selfhost-before_summary.png)
+- [`osbirubob_task04_selfhost-before_summary.png`](../bob_sessions/Heitor/osbirubob_task04_selfhost-before_summary.png)
 - [`osbirubob_task00_selfhost-after_export.json`](../bob_sessions/Heitor/osbirubob_task00_selfhost-after_export.json)
-- [`osbirubob_task00_selfhost-after_summary.png`](../bob_sessions/Heitor/osbirubob_task00_selfhost-after_summary.png)
+- [`osbirubob_task05_selfhost-after_summary.png`](../bob_sessions/Heitor/osbirubob_task05_selfhost-after_summary.png)
 
 ## Configuração aplicada
 
@@ -151,10 +151,11 @@ osbirubob_taskNN_selfhost-after_export.json
 osbirubob_taskNN_selfhost-after_summary.png
 ```
 
-Nesta execução, `task00` identifica a calibração self-hosting e os arquivos ficam
-sob `bob_sessions/Heitor/`. Os exports brutos e screenshots originais usam os
-sufixos `.raw-export.json` e `.raw-summary.png`; permanecem locais e ignorados pelo
-Git.
+Nesta execução, os exports legados da calibração self-hosting ainda usam `task00`.
+Os screenshots seguem a sequência cronológica global do time: `task04` para
+`selfhost-before` e `task05` para `selfhost-after`, sob `bob_sessions/Heitor/`.
+Exports brutos e screenshots originais usam os sufixos `.raw-export.json` e
+`.raw-summary.png`; permanecem locais e ignorados pelo Git.
 
 Antes de commitar, o comando abaixo deve terminar com status zero. Ele verifica a
 redação obrigatória e não imprime o valor encontrado:

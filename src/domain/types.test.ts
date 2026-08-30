@@ -134,10 +134,18 @@ describe("domain type smoke tests", () => {
       evidence: {
         type: "breakdown",
         redactable: false,
+        fieldPath:
+          "tasks[0].task.costs.contextWindowBreakdown.breakdown.projectRules",
         breakdownField: "projectRules",
         breakdownValue: 0,
       },
       confidence: "high",
+      metric: {
+        total: 10_439,
+        breakdown: { projectRules: 0 },
+        breakdownPct: { projectRules: 0 },
+      },
+      prescriptionHint: "agents-md-file",
     };
     expect(finding.evidence.breakdownValue).toBe(0);
   });

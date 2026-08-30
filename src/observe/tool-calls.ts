@@ -32,12 +32,14 @@ export interface ToolCallExtraction {
 }
 
 /**
- * A ToolCallRecord ready for public output: arguments replaced with
+ * A ToolCallRecord ready for public output: sensitive fields replaced with
  * [REDACTED] by default to prevent accidental leakage of paths or code.
  */
-export type PublicToolCallRecord = Omit<ToolCallRecord, "arguments"> & {
+export type PublicToolCallRecord = Omit<ToolCallRecord, "arguments" | "errorMessage"> & {
   /** Always "[REDACTED]" unless the caller explicitly opts in via includeRaw. */
   arguments: Record<string, unknown> | "[REDACTED]";
+  /** Redacted when an error exists unless the caller explicitly opts in. */
+  errorMessage: string | "[REDACTED]" | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -187,6 +189,7 @@ export function extractToolCalls(
     messageId: string;
     signatureId: string;
     isError: boolean;
+    errorMessage: string | null;
     permission: ToolPermission;
     durationMs: number | null;
     isOutsideWorkspace: boolean;
@@ -204,6 +207,7 @@ export function extractToolCalls(
       messageId: msg.id,
       signatureId: sigId,
       isError: usage.signature.isError,
+      errorMessage: usage.signature.isError ? msg.data.content : null,
       permission: usage.permission,
       durationMs: msg.data._meta.durationMs ?? null,
       isOutsideWorkspace: usage.isOutsideWorkspace,
@@ -256,6 +260,7 @@ export function extractToolCalls(
         assistantMessageId: entry.assistantMessageId,
         resultMessageId: null,
         isError: null,
+        errorMessage: null,
         permission: null,
         durationMs: null,
         isOutsideWorkspace: null,
@@ -280,6 +285,7 @@ export function extractToolCalls(
         assistantMessageId: entry.assistantMessageId,
         resultMessageId: null,
         isError: null,
+        errorMessage: null,
         permission: null,
         durationMs: null,
         isOutsideWorkspace: null,
@@ -296,6 +302,7 @@ export function extractToolCalls(
       assistantMessageId: entry.assistantMessageId,
       resultMessageId: result.messageId,
       isError: result.isError,
+      errorMessage: result.errorMessage,
       permission: result.permission,
       durationMs: result.durationMs,
       isOutsideWorkspace: result.isOutsideWorkspace,
@@ -340,7 +347,7 @@ export interface ToPublicOptions {
  * Produce a public-safe projection of a single ToolCallRecord.
  *
  * - Does not mutate the input record.
- * - Arguments are "[REDACTED]" unless includeRaw === true.
+ * - Arguments and error messages are "[REDACTED]" unless includeRaw === true.
  * - Creates a new object; the caller can safely serialize or log it.
  */
 export function toPublicToolCallRecord(
@@ -355,6 +362,12 @@ export function toPublicToolCallRecord(
     assistantMessageId: record.assistantMessageId,
     resultMessageId: record.resultMessageId,
     isError: record.isError,
+    errorMessage:
+      record.errorMessage === null
+        ? null
+        : options.includeRaw === true
+          ? record.errorMessage
+          : "[REDACTED]",
     permission: record.permission,
     durationMs: record.durationMs,
     isOutsideWorkspace: record.isOutsideWorkspace,

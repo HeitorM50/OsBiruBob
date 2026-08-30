@@ -56,13 +56,21 @@ export function detectUnusedTools(report: ObserveReport): Finding[] {
       kind: "unused-tool",
       detectedAt: Date.now(),
       confidence: "high",
-      prescription: "disable-tool",
+      prescriptionHint: "disable-tool",
       description:
         `${inv.idle.length} of ${inv.available.length} available tools were never ` +
         `called (idle ratio ${idleRatio.toFixed(4)}). ` +
         `Estimated token overhead per turn: ~${tokenImpact !== null ? Math.round(tokenImpact) : "unknown"} ` +
         `tokens (estimate — individual per-tool token costs are not measured).`,
       tokenImpact: tokenImpact !== null ? tokenImpact : undefined,
+      metric: {
+        idleRatio,
+        availableCount: inv.available.length,
+        usedCount: inv.used.length,
+        idleCount: inv.idle.length,
+        tokenImpactEstimate: tokenImpact,
+        tokenImpactIsEstimate: true,
+      },
       evidence: {
         type: "breakdown",
         redactable: false,

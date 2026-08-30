@@ -66,6 +66,7 @@ function makeTool(
   signatureId: string,
   opts: {
     isError?: boolean;
+    content?: string;
     permission?: string;
     durationMs?: number;
     isOutsideWorkspace?: boolean;
@@ -77,7 +78,7 @@ function makeTool(
     data: {
       id,
       role: "tool",
-      content: "",
+      content: opts.content ?? "",
       _meta: {
         timestamp,
         durationMs: opts.durationMs,
@@ -217,6 +218,7 @@ describe("extractToolCalls — out-of-order results (correlation by ID only)", (
     const resultA = makeTool("result-msg-A", 400, "call-A", {
       permission: "edit",
       isError: true,
+      content: "Synthetic tool failure",
     });
 
     const { records, anomalies } = extractToolCalls("task-1", [
@@ -234,6 +236,7 @@ describe("extractToolCalls — out-of-order results (correlation by ID only)", (
     expect(recA?.resultMessageId).toBe("result-msg-A");
     expect(recA?.permission).toBe("edit");
     expect(recA?.isError).toBe(true);
+    expect(recA?.errorMessage).toBe("Synthetic tool failure");
 
     // Call B should be correlated with result-msg-B (permission: read, isError: false)
     const recB = records.find((r) => r.callId === "call-B");
@@ -241,6 +244,7 @@ describe("extractToolCalls — out-of-order results (correlation by ID only)", (
     expect(recB?.resultMessageId).toBe("result-msg-B");
     expect(recB?.permission).toBe("read");
     expect(recB?.isError).toBe(false);
+    expect(recB?.errorMessage).toBeNull();
   });
 
   it("result ordering does not determine call ordering within a turn", () => {
@@ -279,6 +283,10 @@ describe("extractToolCalls — unmatched call", () => {
 
   it("isError === null (not false)", () => {
     expect(records[0].isError).toBeNull();
+  });
+
+  it("errorMessage === null", () => {
+    expect(records[0].errorMessage).toBeNull();
   });
 
   it("permission === null", () => {
@@ -502,6 +510,7 @@ describe("toPublicToolCallRecord — safe serialization", () => {
     assistantMessageId: "asst-msg-1",
     resultMessageId: "tool-msg-1",
     isError: false,
+    errorMessage: null,
     permission: "edit",
     durationMs: 123,
     isOutsideWorkspace: false,
@@ -524,6 +533,22 @@ describe("toPublicToolCallRecord — safe serialization", () => {
   it("includeRaw option returns the original arguments", () => {
     const pub = toPublicToolCallRecord(record, { includeRaw: true });
     expect(pub.arguments).toEqual({ path: "/home/user/secret.ts", content: "secret code here" });
+  });
+
+  it("redacts error messages by default and exposes them only with includeRaw", () => {
+    const erroredRecord: ToolCallRecord = {
+      ...record,
+      isError: true,
+      errorMessage: "failed at /private/workspace/file.ts",
+    };
+
+    expect(toPublicToolCallRecord(erroredRecord).errorMessage).toBe("[REDACTED]");
+    expect(JSON.stringify(toPublicToolCallRecord(erroredRecord))).not.toContain(
+      "/private/workspace/file.ts"
+    );
+    expect(
+      toPublicToolCallRecord(erroredRecord, { includeRaw: true }).errorMessage
+    ).toBe("failed at /private/workspace/file.ts");
   });
 
   it("the input record is not mutated by default projection", () => {

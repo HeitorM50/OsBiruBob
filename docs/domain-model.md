@@ -462,6 +462,7 @@ interface ToolCallRecord {
 
   resultMessageId:    string | null;
   isError:            boolean | null;
+  errorMessage:       string | null;
   permission:         "read" | "edit" | "execute" | "todo" | null;
   durationMs:         number | null;
   isOutsideWorkspace: boolean | null;
@@ -470,7 +471,8 @@ interface ToolCallRecord {
 
 - Campos do resultado são `null` quando a chamada não tem resultado correspondente
   (chamada órfã). `isError: null` **não é** `false` — é ausência de dado.
-- `arguments` é `redactable`: pode conter caminho, comando ou código.
+- `arguments` e `errorMessage` são `redactable`: podem conter caminho, comando
+  ou código. `errorMessage` é `null` quando não há erro confirmado.
 
 ### `ToolInventory`
 
@@ -642,6 +644,8 @@ interface Finding {
   detectedAt: number;
   evidence:   FindingEvidence;
   confidence: ConfidenceLevel;
+  metric:     Record<string, unknown>;
+  prescriptionHint: PrescriptionKind;
 
   prescription?: string;
   description?:  string;
@@ -663,7 +667,20 @@ interface FindingEvidence {
   breakdownValue?:   number;
   unusedTools?:      string[];
   externalCommands?: string[];
+  catalogEntryId?:   string;
+  replaces?:         string;
+  rationale?:        string;
   rawValue?:         unknown;
+}
+```
+
+Detectores que dependem de dados externos curados retornam também o motivo de
+indisponibilidade, sem mutar o `ObserveReport`:
+
+```typescript
+interface DiagnoseResult {
+  findings: Finding[];
+  unavailableMetrics: string[];
 }
 ```
 
@@ -680,10 +697,16 @@ interface FindingEvidence {
   a interface apontar para a linha exata do export.
 - `turnIndices` é 0-based **sobre turnos `assistant`** (`TurnMetrics.index`), não sobre
   `messages[]`.
+- `catalogEntryId`, `replaces` e `rationale` vêm dos catálogos versionados e são
+  dados confiáveis. Em `mcp-candidate`, `externalCommands` continua redigível.
 - `confidence` reflete a certeza do detector, não a gravidade do problema:
   - `"high"`: padrão determinístico (ex.: `isError: true` seguido da mesma tool).
   - `"medium"`: heurística com falso-positivo possível (ex.: `durationMs` alto).
   - `"low"`: correlação fraca ou sinal indireto.
+- `metric` preserva os valores medidos que dão contexto ao achado. Detectores de
+  breakdown incluem o total, os valores por origem e seus percentuais sem arredondar.
+- `prescriptionHint` indica deterministicamente qual tipo de prescrição pode tratar
+  o achado; não significa que uma `Prescription` já tenha sido criada.
 - `prescription` é uma referência para frente — pode ser `undefined` quando o
   `Finding` é criado antes da prescrição ser gerada.
 - `tokenImpact` e `costImpact` são estimativas, não compromissos. Nunca arredondar. (I-3)
@@ -901,7 +924,8 @@ interface ToolCatalogEntry {
 ### Regras comuns
 
 - Catálogo ausente ou inválido **degrada, não quebra**: o detector correspondente
-  não emite achado e o relatório registra o motivo.
+  retorna `DiagnoseResult` sem achados e registra o motivo em
+  `unavailableMetrics`.
 - Nenhuma entrada de catálogo contém segredo, URL interna ou caminho de máquina.
 - Catálogo é entrada confiável (versionada no repositório), ao contrário do export.
 

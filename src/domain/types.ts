@@ -304,7 +304,8 @@ export interface TurnMetrics {
   stop: boolean;
 }
 
-// Model 6 — ObserveReport (full)
+// ---------------------------------------------------------------------------
+// Model 6 — ToolCallRecord
 // ---------------------------------------------------------------------------
 
 /**
@@ -317,78 +318,43 @@ export interface TurnMetrics {
  * - Correlation is exclusively by ID (I-4). Never by position.
  */
 export interface ToolCallRecord {
-  callId:             string;
-  name:               string;
+  callId: string;
+  name: string;
   /** Potentially sensitive (paths, code, commands) — redact before display. */
-  arguments:          Record<string, unknown>;
+  arguments: Record<string, unknown>;
   /** 0-based index over assistant messages (same numbering as TurnMetrics.index). */
-  turnIndex:          number;
+  turnIndex: number;
   assistantMessageId: string;
 
   /** null when there is no matching result for this call. */
-  resultMessageId:    string | null;
+  resultMessageId: string | null;
   /** null when no result; never treated as false (absence ≠ success). */
-  isError:            boolean | null;
+  isError: boolean | null;
+  /** Error result content; null for successful or unmatched calls. Redactable. */
+  errorMessage: string | null;
   /** null when no result; preserves unknown future string values. */
-  permission:         ToolPermission | null;
+  permission: ToolPermission | null;
   /** null when no result or result has no durationMs. */
-  durationMs:         number | null;
+  durationMs: number | null;
   /** null when no result. */
   isOutsideWorkspace: boolean | null;
 }
 
-export interface ToolInventory {
-  available:              string[];
-  used:                   string[];
-  idle:                   string[];
-  idleRatio:              number;
-  toolDefinitionTokens:   number;
-  estimatedTokensPerTool: number | null;
-}
-
-export interface ExternalCommandRecord {
-  callId:     string;
-  turnIndex:  number;
-  raw:        string;
-  binaries:   string[];
-  isHttp:     boolean;
-  targetHost: string | null;
-}
-
-export interface HumanIntervention {
-  messageId:      string;
-  afterTurnIndex: number;
-  timestamp:      EpochMs;
-  content:        string;
-}
-
-export interface ApprovalSummary {
-  autoApprovalEnabled: boolean;
-  allowedPermissions:  Array<"read" | "edit" | "execute" | "todo">;
-  approvedCommands:    string[];
-}
-
-export interface SessionTotals {
-  taskCount:          number;
-  subtaskCount:       number;
-  cost:               number;
-  assistantTurns:     number;
-  toolCalls:          number;
-  erroredToolCalls:   number;
-  humanInterventions: number;
-}
+// ---------------------------------------------------------------------------
+// Model 6 — ObserveAnomaly
+// ---------------------------------------------------------------------------
 
 /**
  * Structural anomaly detected during observation — not a diagnostic finding.
  * Produced in src/observe/tool-calls.ts, collected into ObserveReport.
  *
  * Kinds:
- * - "unmatched-tool-call"      — assistant emitted a call with no matching result
- * - "orphan-tool-result"       — result message has no matching call anywhere
- * - "duplicate-tool-call-id"   — same callId appears in >1 assistant toolCalls[]
+ * - "unmatched-tool-call"    — assistant emitted a call with no matching result
+ * - "orphan-tool-result"     — result message has no matching call anywhere
+ * - "duplicate-tool-call-id" — same callId appears in >1 assistant toolCalls[]
  * - "duplicate-tool-result-id" — same resultId (signature.id) in >1 tool messages
- * - "unknown-field"            — unexpected field in the export (forward-compat)
- * - "version-mismatch"         — export version ≠ 1
+ * - "unknown-field"          — unexpected field in the export (forward-compat)
+ * - "version-mismatch"       — export version ≠ 1
  *
  * Never include arguments, message content, or absolute paths in `detail`.
  */
@@ -400,51 +366,100 @@ export interface ObserveAnomaly {
     | "duplicate-tool-result-id"
     | "unknown-field"
     | "version-mismatch"
-    | (string & Record<never, never>); // forward-compatible open union
-  taskId?:    string;
+    | (string & Record<never, never>); // forward-compatible
+  taskId?: string;
   messageId?: string;
-  callId?:    string;
+  callId?: string;
   fieldPath?: string;
   /** Human-readable detail — must NOT contain arguments, content, or paths. */
-  detail:     string;
-}
-
-export interface TaskReport {
-  taskId:     string;
-  parentId:   string | null;
-  isSubtask:  boolean;
-  title:      string;
-  modeId:     string;
-  createdAt:  EpochMs;
-  updatedAt:  EpochMs;
-  durationMs: number;
-  completed:  boolean;
-
-  cost:          number;
-  contextTokens: number;
-
-  context:            ContextSummary;
-  turns:              TurnMetrics[];
-  toolCalls:          ToolCallRecord[];
-  toolInventory:      ToolInventory;
-  externalCommands:   ExternalCommandRecord[];
-  humanInterventions: HumanIntervention[];
-  approval:           ApprovalSummary;
-}
-
-export interface ObserveReport {
-  sessionId:  string;
-  exportedAt: EpochMs;
-  workspace:  string;
-  tasks:      TaskReport[];
-  totals:     SessionTotals;
-
-  unavailableMetrics: string[];
-  anomalies:          ObserveAnomaly[];
+  detail: string;
 }
 
 // ---------------------------------------------------------------------------
-// Model 6 — Finding
+// Model 6 — ObserveReport (full contract)
+// ---------------------------------------------------------------------------
+
+export interface ToolInventory {
+  available: string[];
+  used: string[];
+  idle: string[];
+  /** null when available is empty (no tools to compute a ratio). */
+  idleRatio: number | null;
+  toolDefinitionTokens: number;
+  /** null when available is empty — labelled (estimate) in presentation. */
+  estimatedTokensPerTool: number | null;
+}
+
+export interface ExternalCommandRecord {
+  callId: string;
+  turnIndex: number;
+  /** Potentially sensitive command text — redact before display. */
+  raw: string;
+  /** Always true — marks raw as redactable. */
+  rawRedactable: true;
+  binaries: string[];
+  isHttp: boolean;
+  targetHost: string | null;
+}
+
+export interface HumanIntervention {
+  messageId: string;
+  afterTurnIndex: number;
+  timestamp: EpochMs;
+  /** Potentially sensitive message content — redact before display. */
+  content: string;
+}
+
+export interface ApprovalSummary {
+  autoApprovalEnabled: boolean;
+  allowedPermissions: Array<"read" | "edit" | "execute" | "todo">;
+  approvedCommands: string[];
+}
+
+export interface SessionTotals {
+  taskCount: number;
+  subtaskCount: number;
+  cost: number;
+  assistantTurns: number;
+  toolCalls: number;
+  erroredToolCalls: number;
+  humanInterventions: number;
+}
+
+export interface TaskReport {
+  taskId: string;
+  parentId: string | null;
+  isSubtask: boolean;
+  title: string;
+  modeId: string;
+  createdAt: EpochMs;
+  updatedAt: EpochMs;
+  durationMs: number;
+  completed: boolean;
+  cost: number;
+  contextTokens: number;
+  context: ContextSummary;
+  turns: TurnMetrics[];
+  toolCalls: ToolCallRecord[];
+  /** null when availableTools is absent from the first user message. */
+  toolInventory: ToolInventory | null;
+  externalCommands: ExternalCommandRecord[];
+  humanInterventions: HumanIntervention[];
+  approval: ApprovalSummary;
+}
+
+export interface ObserveReport {
+  sessionId: string;
+  exportedAt: EpochMs;
+  workspace: string;
+  tasks: TaskReport[];
+  totals: SessionTotals;
+  unavailableMetrics: string[];
+  anomalies: ObserveAnomaly[];
+}
+
+// ---------------------------------------------------------------------------
+// Model 7 — Finding
 // ---------------------------------------------------------------------------
 
 export type FindingKind =
@@ -454,6 +469,7 @@ export type FindingKind =
   | "project-rules-absent"
   | "unused-tool"
   | "skill-overhead"
+  | "mcp-candidate"
   | "unmatched-tool-call"
   | "orphan-tool-result"
   | (string & Record<never, never>); // open for extension
@@ -461,19 +477,22 @@ export type FindingKind =
 export type ConfidenceLevel = "high" | "medium" | "low";
 
 export interface FindingEvidence {
-  type:       "message" | "breakdown" | "cross-reference" | "command";
-  /** true when this evidence carries user-provided content that must be redacted in output */
+  type: "message" | "breakdown" | "cross-reference" | "command";
+  /** Whether this evidence can expose user-controlled or private data. */
   redactable: boolean;
-
-  messageIds?:       string[];
-  toolCallIds?:      string[];
-  turnIndices?:      number[];
-  fieldPath?:        string;
-  breakdownField?:   keyof BreakdownDetail;
-  breakdownValue?:   number;
-  unusedTools?:      string[];
+  messageIds?: string[];
+  toolCallIds?: string[];
+  turnIndices?: number[];
+  fieldPath?: string;
+  breakdownField?: keyof BreakdownDetail;
+  breakdownValue?: number;
+  unusedTools?: string[];
   externalCommands?: string[];
-  rawValue?:         unknown;
+  /** Trusted catalogue metadata used to explain an MCP recommendation. */
+  catalogEntryId?: string;
+  replaces?: string;
+  rationale?: string;
+  rawValue?: unknown;
 }
 
 export interface Finding {
@@ -484,12 +503,22 @@ export interface Finding {
   detectedAt: EpochMs;
   evidence: FindingEvidence;
   confidence: ConfidenceLevel;
+  /** Detector-specific measured values. Never rounded in the domain. */
+  metric: Record<string, unknown>;
+  /** Prescription kind that can address this finding; no prescription is created here. */
+  prescriptionHint: PrescriptionKind;
   prescription?: string;
   description?: string;
   /** Estimated token impact — no rounding (I-3). */
   tokenImpact?: number;
   /** Estimated cost impact — no rounding (I-3). */
   costImpact?: number;
+}
+
+/** Result of a diagnostic pass, including reasons a signal was unavailable. */
+export interface DiagnoseResult {
+  findings: Finding[];
+  unavailableMetrics: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -501,6 +530,7 @@ export type PrescriptionKind =
   | "agents-md-file"
   | "disable-tool"
   | "disable-skill"
+  | "enable-mcp"
   | "custom-mode"
   | (string & Record<never, never>);
 
@@ -578,4 +608,19 @@ export interface Comparison {
   prescriptionIds?: string[];
   notes?: string;
   invalidReason?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Model 10 — Recommendation catalogues
+// ---------------------------------------------------------------------------
+
+export interface McpCatalogEntry {
+  id: string;
+  label: string;
+  binaries: string[];
+  matchesHttp: boolean;
+  replaces: string;
+  rationale: string;
+  docsUrl?: string;
+  minHits?: number;
 }
