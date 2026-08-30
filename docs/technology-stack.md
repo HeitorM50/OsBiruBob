@@ -52,6 +52,7 @@ ferramenta de desenvolvimento sobre o mesmo core.
 |---|---|---|
 | UI | Biblioteca de componentes | **[React](https://react.dev/)** `^18` |
 | UI | Bundler e dev server | **[Vite](https://vite.dev/)** `^5` + `@vitejs/plugin-react` |
+| UI | Build offline | `vite-plugin-singlefile` — HTML autocontido, inclusive em `file://` |
 | UI | Estilo | CSS Modules — nativo do Vite, zero dependência |
 | CLI | Parsing de argumentos | `process.argv` manual — a CLI tem poucas flags |
 | CLI | Bundler | **[tsup](https://tsup.egoist.dev/)** `^8` |
@@ -62,7 +63,7 @@ ferramenta de desenvolvimento sobre o mesmo core.
 
 | Alvo | Comando | Saída | Papel |
 |---|---|---|---|
-| **Web** | `npm run build:web` | `dist/web/` — HTML, JS, CSS estáticos | O produto |
+| **Web** | `npm run build:web` | `dist/web/index.html` — artefato estático autocontido | O produto |
 | **CLI** | `npm run build` | `dist/cli.js` — bundle CJS | Desenvolvimento e CI |
 
 Entry points: `src/ui/main.tsx` para a web, `src/cli.ts` para o terminal.
@@ -276,6 +277,9 @@ npm run demo
 | `chalk` | prod | `^5` | Output colorido no terminal (só CLI) |
 | `vite` | dev | `^5` | Dev server e build estático da web |
 | `@vitejs/plugin-react` | dev | `^4` | Suporte a React no Vite |
+| `vite-plugin-singlefile` | dev | `^2` | Incorpora JS, CSS, fixture e catálogos no HTML offline |
+| `@testing-library/react` | dev | `^16` | Testes de interação dos componentes React |
+| `jsdom` | dev | `^24` | DOM local para testes da interface, sem navegador ou rede |
 | `@types/react` | dev | `^18` | Tipos do React |
 | `@types/react-dom` | dev | `^18` | Tipos do React DOM |
 | `tsup` | dev | `^8` | Build da CLI |
