@@ -49,14 +49,12 @@ jobs:
         run: |
           test -f dist/web/index.html
           test "$(find dist/web -maxdepth 1 -type f | wc -l)" -eq 1
-          ! grep -Eq '<script[^>]+src=|<link[^>]+rel="stylesheet"|fetch\(|XMLHttpRequest|new WebSocket' dist/web/index.html
+          ! grep -Eq '<script[^>]+src=|<link[^>]+rel="stylesheet"|fetch\(|new[[:space:]]+XMLHttpRequest|new[[:space:]]+WebSocket' dist/web/index.html
 
       - name: Demo (builds CLI and runs it)
         run: npm run demo
 
   # ── Job 2: build static app and deploy to GitHub Pages ─────────────────────
-  # Runs only on pushes to main after Pages is explicitly enabled through the
-  # PAGES_ENABLED repository variable.
   # Requires the repository Pages source to be set to "GitHub Actions" in
   # Settings → Pages before the first deploy.
   deploy:
@@ -65,8 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'push' &&
-      github.ref == 'refs/heads/main' &&
-      vars.PAGES_ENABLED == 'true'
+      github.ref == 'refs/heads/main'
 
     permissions:
       contents: read
@@ -102,7 +99,7 @@ jobs:
         run: npm run build:web
 
       - name: Configure Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
