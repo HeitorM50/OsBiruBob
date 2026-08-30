@@ -14,6 +14,7 @@ import { detectProjectRulesAbsent } from "./project-rules-absent";
 import { detectRetryAfterError } from "./retry-after-error";
 import { detectRedundantReads } from "./redundant-read";
 import { detectSkillOverhead } from "./skill-overhead";
+import { detectHumanIntervention } from "./human-intervention";
 
 /** Standard detectors — each takes only an ObserveReport and returns Finding[]. */
 const DETECTORS: ReadonlyArray<(report: ObserveReport) => Finding[]> = [
@@ -22,6 +23,7 @@ const DETECTORS: ReadonlyArray<(report: ObserveReport) => Finding[]> = [
   detectRedundantReads,
   detectSkillOverhead,
   detectUnusedTools,
+  detectHumanIntervention,
 ];
 
 /**
