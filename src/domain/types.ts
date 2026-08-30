@@ -486,6 +486,14 @@ export interface FindingEvidence {
   type: "message" | "breakdown" | "cross-reference" | "command";
   /** Whether this evidence can expose user-controlled or private data. */
   redactable: boolean;
+  /**
+   * True when `Finding.description` itself is safe to display even though the
+   * evidence is redactable. Detectors that interpolate a path, a command or
+   * message content into the description must leave this unset — the default is
+   * to redact. Only a description built purely from catalogue metadata and
+   * counts may set it.
+   */
+  descriptionSafe?: boolean;
   messageIds?: string[];
   toolCallIds?: string[];
   turnIndices?: number[];

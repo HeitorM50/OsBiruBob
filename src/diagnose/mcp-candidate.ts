@@ -51,6 +51,9 @@ export function detectMcpCandidates(
         evidence: {
           type: "command",
           redactable: true,
+          // The description is built from the catalogue label and a count only;
+          // no command text reaches it. The commands themselves stay redacted.
+          descriptionSafe: true,
           toolCallIds: commands.map((command) => command.callId),
           turnIndices: unique(commands.map((command) => command.turnIndex)),
           externalCommands: commands.map((command) => command.raw),

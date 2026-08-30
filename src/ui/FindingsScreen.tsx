@@ -346,7 +346,9 @@ function FindingRow({
           </span>
           {finding.description && (
             <span className={styles.findingDescription}>
-              {sensitive && !revealed ? "[REDACTED]" : finding.description}
+              {sensitive && !revealed && !finding.evidence.descriptionSafe
+                ? "[REDACTED]"
+                : finding.description}
             </span>
           )}
           {hasImpact && (

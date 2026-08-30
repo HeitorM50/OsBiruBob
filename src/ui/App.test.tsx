@@ -120,6 +120,22 @@ describe("App input screen", () => {
     expect(screen.getByTestId("breakdown-tokens-projectRules").textContent).toBe("0");
   });
 
+  it("scrolls back to the top when the active step changes", async () => {
+    const scrollTo = vi.fn();
+    vi.stubGlobal("scrollTo", scrollTo);
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
+    expect(await screen.findByText("Round A")).toBeTruthy();
+
+    scrollTo.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "2 · Diagnosis" }));
+
+    // Each step is a page of its own: opening one while the previous page was
+    // scrolled down must not land the reader on blank space.
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "auto" });
+  });
+
   it("opens the traceable prescriptions screen for the analyzed baseline", async () => {
     render(<App />);
     const prescriptionsStep = screen.getByRole("button", {

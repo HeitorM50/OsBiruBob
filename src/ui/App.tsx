@@ -1,4 +1,4 @@
-import React, { useId, useMemo, useRef, useState } from "react";
+import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import sampleExport from "../../fixtures/sample-export.json?raw";
 import rodadaBExport from "../../benchmark/rodada-b.json?raw";
 import { compare } from "../compare";
@@ -58,6 +58,13 @@ export default function App({
   const nextId = useRef(1);
   const [theme, setTheme] = useState<Theme>("light");
   const [activeScreen, setActiveScreen] = useState<Screen>("input");
+
+  // Each step is a separate page, not a section of one long document. Without
+  // this, switching steps while scrolled down keeps the old offset and the new
+  // screen opens on blank space or halfway through its content.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [activeScreen]);
   const [analyses, setAnalyses] = useState<LoadedAnalysis[]>([]);
   const [errors, setErrors] = useState<InputError[]>([]);
   const [loadingNames, setLoadingNames] = useState<string[]>([]);

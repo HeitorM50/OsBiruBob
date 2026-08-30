@@ -186,8 +186,10 @@ function StackedBar({ segments, fixedOverhead }: StackedBarProps): React.JSX.Ele
     );
   }
 
-  // Only show labels for segments >= 5% (the top ones) in the bar itself
-  const MIN_LABEL_PCT = 5;
+  // Only label a segment when its band is actually wide enough to hold the text.
+  // At 5% the band is ~60px and clips "staticSections" to "s.." with the value
+  // cut in half; every value stays readable in the legend and the table below.
+  const MIN_LABEL_PCT = 10;
 
   return (
     <div className={styles.barOuter} role="img" aria-label="Context window breakdown">

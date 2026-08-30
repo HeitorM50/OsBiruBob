@@ -60,6 +60,23 @@ describe("FindingsScreen baseline", () => {
     expect(screen.getByText("MCP server candidate")).toBeTruthy();
   });
 
+  it("shows the MCP description while keeping its commands redacted", () => {
+    render(<FindingsScreen findings={loadBaselineFindings()} />);
+
+    // The description is built from catalogue metadata and a count, so it is
+    // safe to show. Redacting it left the most novel finding reading only
+    // "[REDACTED]" in the demo.
+    expect(
+      screen.getByText(/could replace repeated shell commands/)
+    ).toBeTruthy();
+
+    // The commands behind it stay hidden until explicitly revealed.
+    expandFinding(/MCP server candidate/);
+    expect(
+      screen.getByRole("button", { name: /Show raw content/ })
+    ).toBeTruthy();
+  });
+
   it("shows explicit empty states for rereads, retries, and interventions", () => {
     render(<FindingsScreen findings={loadBaselineFindings()} />);
     for (const kind of ["redundant-read", "retry-after-error", "human-intervention"]) {
