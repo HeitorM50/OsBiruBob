@@ -207,6 +207,17 @@ describe("detectUnusedTools — baseline characterization (rodada-a.json)", () =
   });
 });
 
+describe("detectUnusedTools — deterministic metadata", () => {
+  it("uses report.exportedAt and produces identical Findings for identical input", () => {
+    const report = loadReport("benchmark/rodada-a.json");
+    const first = detectUnusedTools(report);
+    const second = detectUnusedTools(report);
+
+    expect(first).toEqual(second);
+    expect(first[0].detectedAt).toBe(report.exportedAt);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // 2. Complete tool usage — zero idle tools → zero findings
 // ---------------------------------------------------------------------------

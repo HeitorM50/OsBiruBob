@@ -75,14 +75,12 @@ export function detectUnusedTools(
       sessionId: report.sessionId,
       taskId: task.taskId,
       kind: "unused-tool",
-      detectedAt: Date.now(),
+      detectedAt: report.exportedAt,
       confidence: "high",
       prescriptionHint: "disable-tool",
       description:
-        `${disableCandidates.length} of ${inv.available.length} available tools were never ` +
-        `called (idle ratio ${idleRatio.toFixed(4)}). ` +
-        `Estimated token overhead per turn: ~${tokenImpact !== null ? Math.round(tokenImpact) : "unknown"} ` +
-        `tokens (estimate — individual per-tool token costs are not measured).`,
+        "Some available tools were unused in this task. Potential token savings " +
+        "are estimates because individual per-tool costs are not measured.",
       tokenImpact: tokenImpact !== null ? tokenImpact : undefined,
       metric: {
         idleRatio,
