@@ -115,7 +115,10 @@ export default function App({
       .filter((result) => !result.ok)
       .map((result) => errorWithId(result.error));
 
-    if (accepted.length > 0) setAnalyses((current) => [...current, ...accepted]);
+    if (accepted.length > 0) {
+      setAnalyses((current) => [...current, ...accepted]);
+      setActiveScreen("diagnosis");
+    }
     setErrors(rejected);
     setLoadingNames([]);
   }
@@ -146,11 +149,14 @@ export default function App({
     const newErrors = [];
     if (resultA.ok) newAnalyses.push(withId(resultA.value));
     else newErrors.push(errorWithId(resultA.error));
-    
+
     if (resultB.ok) newAnalyses.push(withId(resultB.value));
     else newErrors.push(errorWithId(resultB.error));
 
-    if (newAnalyses.length > 0) setAnalyses(newAnalyses);
+    if (newAnalyses.length > 0) {
+      setAnalyses(newAnalyses);
+      setActiveScreen("diagnosis");
+    }
     if (newErrors.length > 0) setErrors(newErrors);
     setLoadingNames([]);
   }

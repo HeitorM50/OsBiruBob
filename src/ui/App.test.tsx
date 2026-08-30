@@ -45,6 +45,15 @@ describe("App input screen", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it("automatically advances to the diagnosis screen after a successful analysis", async () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
+
+    expect(await screen.findByTestId("context-window-screen")).toBeTruthy();
+    expect(screen.getByTestId("project-rules-alert")).toBeTruthy();
+  });
+
   it("treats a comparison with only Round A as a normal next step", async () => {
     const readText = vi.fn(async () => sampleExport);
     render(<App readText={readText} />);
