@@ -8,7 +8,11 @@
  * tokenImpact is an ESTIMATE (I-6): per-tool tokens are not individually measured.
  */
 
-import type { Finding, ObserveReport } from "../../domain/types";
+import type {
+  Finding,
+  ObserveReport,
+  ToolCatalogEntry,
+} from "../../domain/types";
 
 /** Stable prefix for finding ids produced by this detector. */
 const DETECTOR_ID_PREFIX = "unused-tool";
@@ -27,8 +31,12 @@ function makeFindingId(sessionId: string, taskId: string): string {
  * Trigger: toolInventory is present AND available.length > 0 AND idle.length > 0.
  * If toolInventory is absent/null, emit nothing — absence is not zero (I-6).
  */
-export function detectUnusedTools(report: ObserveReport): Finding[] {
+export function detectUnusedTools(
+  report: ObserveReport,
+  catalog: readonly ToolCatalogEntry[] = []
+): Finding[] {
   const findings: Finding[] = [];
+  const catalogByName = new Map(catalog.map((entry) => [entry.name, entry]));
 
   for (const task of report.tasks) {
     const inv = task.toolInventory;
@@ -40,13 +48,26 @@ export function detectUnusedTools(report: ObserveReport): Finding[] {
     }
 
     const idleRatio = inv.idle.length / inv.available.length;
+    const idleTools = inv.idle.map((name) => {
+      const entry = catalogByName.get(name);
+      return {
+        name,
+        group: entry?.group ?? "outros",
+        purpose: entry?.purpose ?? null,
+        essential: entry?.essential ?? false,
+      };
+    });
+    const disableCandidates = idleTools.filter((tool) => !tool.essential);
+    if (disableCandidates.length === 0) {
+      continue;
+    }
 
     // tokenImpact is an estimate: per-tool token counts are not individually
     // measured in the export.  The export only provides an aggregate for all
     // tool definitions.  Label the value as estimated (I-6).
     const tokenImpact =
       inv.estimatedTokensPerTool !== null
-        ? inv.idle.length * inv.estimatedTokensPerTool
+        ? disableCandidates.length * inv.estimatedTokensPerTool
         : null;
 
     const finding: Finding = {
@@ -58,7 +79,7 @@ export function detectUnusedTools(report: ObserveReport): Finding[] {
       confidence: "high",
       prescriptionHint: "disable-tool",
       description:
-        `${inv.idle.length} of ${inv.available.length} available tools were never ` +
+        `${disableCandidates.length} of ${inv.available.length} available tools were never ` +
         `called (idle ratio ${idleRatio.toFixed(4)}). ` +
         `Estimated token overhead per turn: ~${tokenImpact !== null ? Math.round(tokenImpact) : "unknown"} ` +
         `tokens (estimate — individual per-tool token costs are not measured).`,
@@ -68,18 +89,22 @@ export function detectUnusedTools(report: ObserveReport): Finding[] {
         availableCount: inv.available.length,
         usedCount: inv.used.length,
         idleCount: inv.idle.length,
+        disableCandidateCount: disableCandidates.length,
+        idleTools,
         tokenImpactEstimate: tokenImpact,
         tokenImpactIsEstimate: true,
       },
       evidence: {
         type: "breakdown",
         redactable: false,
-        unusedTools: inv.idle,
+        unusedTools: disableCandidates.map((tool) => tool.name),
         rawValue: {
           idleRatio,
           availableCount: inv.available.length,
           usedCount: inv.used.length,
           idleCount: inv.idle.length,
+          disableCandidateCount: disableCandidates.length,
+          idleTools,
           tokenImpactEstimate: tokenImpact,
           tokenImpactIsEstimate: true,
         },
