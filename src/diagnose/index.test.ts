@@ -8,7 +8,7 @@ import {
 import type { ObserveReport } from "../domain/types";
 import { observe } from "../observe";
 import { parseSession } from "../parser";
-import { diagnose } from "./index";
+import { diagnoseWithCatalogs } from "./index";
 
 function loadBaselineReport(): ObserveReport {
   const raw = readFileSync(
@@ -24,7 +24,7 @@ describe("diagnose — recommendation catalogs", () => {
   const baseline = loadBaselineReport();
 
   it("uses the bundled catalogs for MCP and unused-tool findings", () => {
-    const result = diagnose(baseline);
+    const result = diagnoseWithCatalogs(baseline);
     const mcpFinding = result.findings.find(
       (finding) => finding.kind === "mcp-candidate"
     );
@@ -44,7 +44,10 @@ describe("diagnose — recommendation catalogs", () => {
   });
 
   it("records reasons and emits no related findings for absent catalogs", () => {
-    const result = diagnose(baseline, { mcp: null, tools: undefined });
+    const result = diagnoseWithCatalogs(baseline, {
+      mcp: null,
+      tools: undefined,
+    });
 
     expect(result.unavailableMetrics).toEqual([
       MCP_CATALOG_ABSENT,
@@ -67,7 +70,7 @@ describe("diagnose — recommendation catalogs", () => {
     inventory.idle = ["future_tool"];
     inventory.idleRatio = 1;
 
-    const result = diagnose(report, { mcp: [] });
+    const result = diagnoseWithCatalogs(report, { mcp: [] });
     const finding = result.findings.find(
       (candidate) => candidate.kind === "unused-tool"
     );
@@ -92,7 +95,7 @@ describe("diagnose — recommendation catalogs", () => {
     inventory.idle = ["read_file"];
     inventory.idleRatio = 1;
 
-    const result = diagnose(report, { mcp: [] });
+    const result = diagnoseWithCatalogs(report, { mcp: [] });
 
     expect(
       result.findings.some((finding) => finding.kind === "unused-tool")

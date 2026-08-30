@@ -41,7 +41,7 @@ configuração de compilação — nenhum override por pacote.
 |---|---|
 | Framework | **[Vitest](https://vitest.dev/)** `^1` |
 | Cobertura | `@vitest/coverage-v8` (built-in, sem configuração extra) |
-| Convenção de arquivos | `src/**/*.test.ts` |
+| Convenção de arquivos | `src/**/*.test.ts`, `src/**/*.test.tsx` |
 
 ### 1.5 Interface, CLI e Build
 
@@ -243,13 +243,7 @@ npm run demo
 
 ---
 
-## 4. Estrutura esperada de `package.json` (scripts)
-
-> **Estado atual:** o `package.json` ainda tem apenas os scripts da CLI
-> (`dev`, `build`, `test`, `test:watch`, `test:cov`, `demo`, `typecheck`).
-> `dev:web`, `build:web` e `preview` entram junto com as dependências de UI, no
-> início da F6 — adicioná-los antes criaria comandos que falham. A correção do
-> `demo` (prefixar com `npm run build`) entra na mesma mudança.
+## 4. Estrutura de `package.json` (scripts)
 
 ```json
 {

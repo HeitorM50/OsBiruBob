@@ -505,7 +505,9 @@ describe("catalog loading — static, synchronous, offline", () => {
     expect(diagnoseSource).toContain(
       'import { loadMcpCatalog, loadToolCatalog } from "../catalog"'
     );
-    expect(cliSource).toContain('import { diagnose } from "./diagnose/index"');
+    expect(cliSource).toContain(
+      'import { diagnoseWithCatalogs } from "./diagnose/index"'
+    );
   });
 
   it("loadMcpCatalog() is synchronous (returns a plain object, not a Promise)", () => {

@@ -20,7 +20,7 @@ import { join } from "path";
 import { parseSession } from "./parser/index";
 import { observe } from "./observe/index";
 import { toPublicReport } from "./observe/public-report";
-import { diagnose } from "./diagnose/index";
+import { diagnoseWithCatalogs } from "./diagnose/index";
 import type { ObserveReport } from "./domain/types";
 
 // ---------------------------------------------------------------------------
@@ -97,7 +97,7 @@ function parseArgs(argv: string[]): { inputPath: string; emitJson: boolean } {
  */
 function formatReport(report: ObserveReport): string {
   const lines: string[] = [];
-  const diagnosis = diagnose(report);
+  const diagnosis = diagnoseWithCatalogs(report);
 
   lines.push("");
   lines.push("┌─ Hindsight — ObserveReport ──────────────────────────────────┐");

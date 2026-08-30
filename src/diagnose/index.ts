@@ -37,7 +37,7 @@ export interface DiagnoseCatalogOverrides {
  * Catalog failures suppress only their related findings and are recorded in
  * unavailableMetrics.
  */
-export function diagnose(
+export function diagnoseWithCatalogs(
   report: ObserveReport,
   overrides: DiagnoseCatalogOverrides = {}
 ): DiagnoseResult {
@@ -69,6 +69,14 @@ export function diagnose(
   }
 
   return { findings, unavailableMetrics };
+}
+
+/** Backward-compatible finding-only diagnostic pipeline. */
+export function diagnose(
+  report: ObserveReport,
+  overrides: DiagnoseCatalogOverrides = {}
+): Finding[] {
+  return diagnoseWithCatalogs(report, overrides).findings;
 }
 
 export { detectUnusedTools };
