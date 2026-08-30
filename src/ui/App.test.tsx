@@ -62,6 +62,7 @@ describe("App input screen", () => {
       })
     ).toBeTruthy();
     expect(screen.getAllByRole("tab")).toHaveLength(5);
+    expect(screen.getByText("new file")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("tab", { name: "MCPs" }));
     expect(screen.getByText("Docker MCP Server")).toBeTruthy();

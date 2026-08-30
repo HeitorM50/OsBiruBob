@@ -1,6 +1,5 @@
 import React, { useId, useRef, useState } from "react";
 import sampleExport from "../../fixtures/sample-export.json?raw";
-import existingAgentsMd from "../../AGENTS.md?raw";
 import {
   prescribeAgentsMd,
   prescribeMcpEnablement,
@@ -227,7 +226,7 @@ export default function App({
           <PrescriptionScreen
             prescriptions={prescriptions}
             findings={selectedAnalysis.diagnosis.findings}
-            existingAgentsMd={existingAgentsMd}
+            existingAgentsMd={null}
             contextPressure={contextPressure}
           />
         </main>
