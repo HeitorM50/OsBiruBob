@@ -1,0 +1,511 @@
+/*
+ * ContextWindowScreen.module.css
+ *
+ * Mirrors the prototype palette and layout from prototipo/Hindsight.html
+ * (the sc-if value="{{ isDiag }}" section).
+ *
+ * Design tokens (matching prototype CSS custom properties):
+ *   --bg:       #fcfcfd
+ *   --panel:    #fff
+ *   --ink:      #14181c
+ *   --ink2:     #4a525b
+ *   --ink3:     #7b838c
+ *   --line:     #eef0f2
+ *   --line2:    #dcdfe3
+ *   --soft:     #f4f6f8
+ *   --bar1:     #20262c  (toolDefinitions — darkest)
+ *   --bar2:     #4d5762  (toolSystemPrompts — hatch)
+ *   --bar3:     #8e99a5  (skills)
+ *   --bar4:     #c3cad1  (staticSections — hatch)
+ *   --bar5:     #d8dde2  (baseRules)
+ *   --bar6:     #e2e6ea  (customInstructions — hatch)
+ *   --bar7:     #e7eaee  (environment)
+ *   --bar8:     #eef0f2  (roleDefinition)
+ *   --acc:      #a3401f  (alert / projectRules)
+ *   --accsoft:  #fbf3f0
+ *   --accline:  #d9a893
+ *   --good:     #1f6b45
+ */
+
+/* ------------------------------------------------------------------ screen */
+
+.screen {
+  max-width: 900px;
+  padding: 44px 28px 56px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
+  color: #14181c;
+  /* Prevent horizontal overflow on narrow viewports */
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* Section label */
+.sectionLabel {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7b838c;
+  margin-bottom: 14px;
+}
+
+/* Main heading */
+.heading {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 40px);
+  line-height: 1.08;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  text-wrap: pretty;
+}
+
+/* Lead paragraph */
+.lead {
+  margin: 16px 0 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #4a525b;
+  max-width: 64ch;
+  text-wrap: pretty;
+}
+
+/* --------------------------------------------------------------- aggregates */
+
+.aggregates {
+  display: flex;
+  gap: 40px;
+  padding: 40px 0 34px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.aggregateItem {
+  min-width: 0;
+}
+
+.aggregateLabel {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7b838c;
+  margin-bottom: 8px;
+  white-space: nowrap;
+}
+
+.aggregateValue {
+  font-size: clamp(36px, 5vw, 60px);
+  line-height: 0.92;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.aggregateValueMuted {
+  color: #4a525b;
+}
+
+.aggregateSub {
+  font-size: 13px;
+  color: #7b838c;
+  margin-top: 8px;
+  max-width: 26ch;
+  line-height: 1.4;
+}
+
+.aggregatePlus {
+  font-size: 24px;
+  color: #c3cad1;
+  font-weight: 300;
+  padding-bottom: 34px;
+  flex: none;
+}
+
+/* ---------------------------------------------------------------- stacked bar */
+
+.barOuter {
+  display: flex;
+  height: 76px;
+  border-radius: 6px;
+  overflow: hidden;
+  min-width: 0;
+  width: 100%;
+}
+
+.barEmpty {
+  padding: 20px;
+  border: 1px dashed #dcdfe3;
+  border-radius: 6px;
+  color: #7b838c;
+  font-size: 14px;
+  text-align: center;
+}
+
+.barSegment {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 13px 14px;
+  overflow: hidden;
+  border-left: 2px solid #fff;
+  flex-shrink: 0;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.barSegment:first-child {
+  border-left: none;
+}
+
+/* Named bar patterns — each visually distinct without relying on color alone */
+
+/* solid-1: darkest — toolDefinitions */
+.bar-solid-1 {
+  background: #20262c;
+  color: #fcfcfd;
+}
+
+/* hatch-2: dark hatch — toolSystemPrompts */
+.bar-hatch-2 {
+  background: repeating-linear-gradient(
+    45deg,
+    #4d5762 0 6px,
+    #586371 6px 12px
+  );
+  color: #fcfcfd;
+}
+
+/* solid-3: mid gray — skills */
+.bar-solid-3 {
+  background: #8e99a5;
+  color: #fcfcfd;
+}
+
+/* hatch-4: light hatch — staticSections */
+.bar-hatch-4 {
+  background: repeating-linear-gradient(
+    45deg,
+    #c3cad1 0 5px,
+    #ced4da 5px 10px
+  );
+}
+
+/* solid-5: light gray — baseRules */
+.bar-solid-5 {
+  background: #d8dde2;
+}
+
+/* hatch-6: very light hatch — customInstructions */
+.bar-hatch-6 {
+  background: repeating-linear-gradient(
+    45deg,
+    #e2e6ea 0 4px,
+    #eaedf0 4px 8px
+  );
+}
+
+/* solid-7: near-white — environment */
+.bar-solid-7 {
+  background: #e7eaee;
+}
+
+/* solid-8: palest — roleDefinition */
+.bar-solid-8 {
+  background: #eef0f2;
+}
+
+/* solid-acc: accent/alert — projectRules */
+.bar-solid-acc {
+  background: #a3401f;
+  color: #fcfcfd;
+}
+
+/* solid-muted: muted for zero/mcp */
+.bar-solid-muted {
+  background: #eef0f2;
+}
+
+.barSegmentName {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barSegmentValue {
+  font-size: 13px;
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.barNote {
+  display: flex;
+  justify-content: flex-start;
+  font-size: 12px;
+  color: #7b838c;
+  margin-top: 8px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* ---------------------------------------------------------------- alert card */
+
+.projectRulesAlert {
+  margin-top: 24px;
+  border: 1px solid #d9a893;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.projectRulesAlertSide {
+  flex: none;
+  width: 190px;
+  background: #fbf3f0;
+  padding: 28px 24px;
+  border-right: 1px solid #d9a893;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Responsive: on narrow viewports, side collapses to full width */
+@media (max-width: 500px) {
+  .projectRulesAlertSide {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #d9a893;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+  }
+}
+
+.projectRulesZero {
+  font-size: 72px;
+  line-height: 0.82;
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  color: #a3401f;
+}
+
+.projectRulesKey {
+  font-size: 12px;
+  font-family: ui-monospace, Menlo, monospace;
+  color: #a3401f;
+  margin-top: 12px;
+}
+
+.projectRulesAlertBody {
+  padding: 26px 28px;
+  flex: 1;
+  min-width: 260px;
+}
+
+.projectRulesAlertTitle {
+  margin: 0 0 8px;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #14181c;
+}
+
+.projectRulesAlertText {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #4a525b;
+  max-width: 66ch;
+  text-wrap: pretty;
+}
+
+.projectRulesAlertMeta {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.badgeHigh {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  background: #a3401f;
+  color: #fff;
+  padding: 4px 9px;
+  border-radius: 3px;
+}
+
+.fieldPath {
+  font-size: 11px;
+  font-family: ui-monospace, Menlo, monospace;
+  color: #4a525b;
+  background: #f4f6f8;
+  border: 1px solid #eef0f2;
+  padding: 4px 9px;
+  border-radius: 3px;
+}
+
+/* ------------------------------------------------------------------- table */
+
+.tableSection {
+  margin-top: 34px;
+}
+
+.tableSectionTitle {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #14181c;
+}
+
+.tableSectionSub {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #7b838c;
+}
+
+.tableScroll {
+  overflow-x: auto;
+  border-bottom: 1px solid #eef0f2;
+  /* Allows horizontal scroll on the table without overflowing the page */
+  -webkit-overflow-scrolling: touch;
+}
+
+.tableInner {
+  min-width: 520px;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 1fr 100px 70px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7b838c;
+  padding: 0 12px 10px;
+  border-bottom: 1px solid #dcdfe3;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 1fr 100px 70px;
+  align-items: center;
+  font-size: 14px;
+  padding: 11px 12px;
+  border-bottom: 1px solid #eef0f2;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableRowName {
+  color: #14181c;
+}
+
+.tableRowNameBold {
+  font-weight: 500;
+  color: #14181c;
+}
+
+.tableRowValueBold {
+  font-weight: 600;
+}
+
+.tableRowPct {
+  color: #4a525b;
+}
+
+.tableRight {
+  text-align: right;
+}
+
+/* projectRules = 0 alert row */
+.tableRowAlert {
+  display: grid;
+  grid-template-columns: 1fr 100px 70px;
+  align-items: center;
+  font-size: 14px;
+  padding: 13px 12px;
+  border-bottom: 1px solid #eef0f2;
+  background: #fbf3f0;
+  border-left: 3px solid #a3401f;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableRowAlertName {
+  font-weight: 600;
+  color: #a3401f;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.tableAlertValue {
+  color: #a3401f;
+  font-weight: 600;
+}
+
+.findingBadge {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  border: 1px solid #d9a893;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #a3401f;
+}
+
+/* mcpToolDefinitions = 0 muted row */
+.tableRowMuted {
+  display: grid;
+  grid-template-columns: 1fr 100px 70px;
+  align-items: center;
+  font-size: 14px;
+  padding: 11px 12px;
+  font-variant-numeric: tabular-nums;
+  color: #7b838c;
+}
+
+.tableRowMutedName {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.mcpNote {
+  font-size: 11px;
+  color: #7b838c;
+}
+
+/* ------------------------------------------------------- responsive overrides */
+
+@media (max-width: 600px) {
+  .screen {
+    padding: 28px 16px 40px;
+  }
+
+  .aggregates {
+    gap: 24px;
+    padding: 28px 0 24px;
+  }
+
+  .aggregatePlus {
+    padding-bottom: 20px;
+  }
+
+  .barOuter {
+    height: 60px;
+  }
+
+  .barSegment {
+    padding: 8px 10px;
+  }
+}
