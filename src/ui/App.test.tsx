@@ -13,13 +13,16 @@ describe("App", () => {
     expect(html).toContain("Hindsight");
   });
 
-  it("drop area has aria-disabled", () => {
+  it("integrates the prescriptions screen with the bundled baseline", () => {
     const html = renderToStaticMarkup(React.createElement(App));
-    expect(html).toContain('aria-disabled="true"');
+    expect(html).toContain("Corrected configuration, ready to copy.");
+    expect(html).toContain('role="tablist"');
+    expect(html.match(/role="tab"/g)).toHaveLength(5);
+    expect(html).toContain("Docker MCP Server");
   });
 
-  it("button is disabled", () => {
+  it("states that processing stays in the browser", () => {
     const html = renderToStaticMarkup(React.createElement(App));
-    expect(html).toContain(" disabled");
+    expect(html).toContain("The file never leaves this browser");
   });
 });
