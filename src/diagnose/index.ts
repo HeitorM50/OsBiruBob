@@ -52,3 +52,4 @@ export {
   MCP_CATALOG_ABSENT,
   MCP_CATALOG_INVALID,
 } from "./mcp-candidate";
+export { detectHumanIntervention } from "./human-intervention";
