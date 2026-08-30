@@ -9,4 +9,5 @@
  */
 
 export { detectProjectRulesAbsent } from "./project-rules-absent";
+export { detectRedundantReads } from "./redundant-read";
 export { detectSkillOverhead } from "./skill-overhead";
