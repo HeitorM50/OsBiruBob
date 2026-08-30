@@ -186,6 +186,13 @@ produzir um `Comparison` com deltas absolutos e percentuais.
 - Estados de carregamento, erro, export inválido e ausência de Rodada B são
   apresentados com mensagem compreensível.
 
+#### Referência visual da F6
+
+`prototipo/Hindsight.html` é a fonte de verdade visual para as telas da F6:
+estrutura em cinco etapas, paleta, tipografia, espaçamento, estados e padrões de
+interação devem partir dele. Os números e textos simulados do protótipo não são
+fonte de domínio — a implementação sempre renderiza os contratos reais do core.
+
 #### Entrada
 
 Arquivos entram por drag-and-drop ou seletor, lidos com `FileReader` — **nunca

@@ -7,6 +7,7 @@
  *   2. No network calls (fetch(, new XMLHttpRequest, new WebSocket)
  *   3. No unsafe HTML rendering (dangerouslySetInnerHTML, innerHTML, eval()
  *   4. No forbidden packages in package.json (HTTP clients, LLM SDKs, telemetry)
+ *   5. No browser persistence for private session data
  */
 
 import { describe, it, expect } from "vitest";
@@ -123,6 +124,27 @@ describe("boundaries", () => {
       for (const [pattern, label] of patterns) {
         if (pattern.test(content)) {
           violations.push(`${rel}: forbidden unsafe rendering '${label}'`);
+        }
+      }
+    }
+
+    expect(violations, violations.join("\n")).toHaveLength(0);
+  });
+
+  it("no browser persistence in production source", () => {
+    const patterns: Array<[RegExp, string]> = [
+      [/\blocalStorage\b/, "localStorage"],
+      [/\bsessionStorage\b/, "sessionStorage"],
+      [/\bindexedDB\b/, "indexedDB"],
+    ];
+    const violations: string[] = [];
+
+    for (const f of productionFiles()) {
+      const rel = relPath(f);
+      const content = withoutComments(fs.readFileSync(f, "utf8"));
+      for (const [pattern, label] of patterns) {
+        if (pattern.test(content)) {
+          violations.push(`${rel}: forbidden browser persistence '${label}'`);
         }
       }
     }
