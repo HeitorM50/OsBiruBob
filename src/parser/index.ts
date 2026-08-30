@@ -52,12 +52,39 @@ const MessageMetaSchema = z
 // We use a single schema for all roles and let the discriminated union fall
 // out naturally from the role field. Role-specific optional fields are not
 // required for parser correctness — the downstream observe module reads them.
+// notAi:true messages are internal Bob workflow messages that lack a timestamp.
+// They are tolerated at the schema level and filtered out by the observe module.
 const MessageDataSchema = z
   .object({
     id: z.string(),
     role: z.enum(["system", "user", "assistant", "tool"]),
     content: z.string(),
-    _meta: MessageMetaSchema,
+    _meta: z.object({}).passthrough().superRefine((meta, ctx) => {
+      // Reject messages that lack timestamp unless they are notAi workflow messages.
+      const m = meta as Record<string, unknown>;
+      if (m.timestamp === undefined && !m.notAi) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["timestamp"],
+          message: "Required",
+        });
+      }
+      // Validate spend shape when present
+      if (m.spend !== null && m.spend !== undefined && typeof m.spend === "object") {
+        const spend = m.spend as Record<string, unknown>;
+        if (
+          typeof spend.cost !== "number" ||
+          typeof spend.contextTokens !== "number" ||
+          typeof spend.reasoningTokens !== "number"
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["spend"],
+            message: "Invalid spend shape",
+          });
+        }
+      }
+    }),
     // user
     envContext: z.string().optional(),
     availableTools: z.array(z.string()).optional(),
@@ -143,13 +170,20 @@ const BreakdownDetailSchema = z
   })
   .catchall(z.number());
 
+// loadedSkills may be string[] (old format) or {name, tokens}[] (new format).
+// Normalise to string[] at parse time so the rest of the pipeline stays stable.
+const LoadedSkillSchema = z.union([
+  z.string(),
+  z.object({ name: z.string(), tokens: z.number() }).transform((s) => s.name),
+]);
+
 const ContextBreakdownSchema = z
   .object({
     total: z.number(),
     reportedTotal: z.number(),
     breakdown: BreakdownDetailSchema,
     key: z.string(),
-    loadedSkills: z.array(z.string()).optional(),
+    loadedSkills: z.array(LoadedSkillSchema).optional(),
   })
   .passthrough();
 
@@ -191,7 +225,7 @@ const ApprovalConfigSchema = z
   .object({
     autoApprovalEnabled: z.boolean(),
     outsideWorkspaceAllowed: z.boolean(),
-    allowed_permissions: z.array(z.enum(["read", "edit", "execute", "todo"])),
+    allowed_permissions: z.array(z.string()),
     editApprovalPreviewMode: z.string(),
     allowedExecutors: z
       .array(
