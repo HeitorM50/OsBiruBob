@@ -4,6 +4,7 @@ import React from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import sampleExport from "../../fixtures/sample-export.json?raw";
+import roundBExport from "../../benchmark/rodada-b.json?raw";
 import App from "./App";
 
 afterEach(() => {
@@ -42,6 +43,49 @@ describe("App input screen", () => {
     expect(screen.getByText(/1 task · 5 turnos · 4 achados/)).toBeTruthy();
     expect(screen.getByText(/Adicione uma Rodada B/)).toBeTruthy();
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("treats a comparison with only Round A as a normal next step", async () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Ver exemplo/ }));
+    expect(await screen.findByText("Rodada A")).toBeTruthy();
+
+    const comparisonStep = screen.getByRole("button", {
+      name: "5 · Comparativo",
+    }) as HTMLButtonElement;
+    expect(comparisonStep.disabled).toBe(false);
+    fireEvent.click(comparisonStep);
+
+    expect(
+      screen.getByRole("heading", {
+        name: "A Rodada B ainda não foi carregada.",
+      })
+    ).toBeTruthy();
+    expect(screen.queryByRole("table")).toBeNull();
+  });
+
+  it("compares the first two accepted exports through the application flow", async () => {
+    const readText = vi.fn(async (file: File) =>
+      file.name === "round-b.json" ? roundBExport : sampleExport
+    );
+    render(<App readText={readText} />);
+
+    fireEvent.drop(screen.getByTestId("dropzone"), {
+      dataTransfer: {
+        files: [exportFile("round-a.json"), exportFile("round-b.json")],
+      },
+    });
+
+    expect(await screen.findByText("Rodada B")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "5 · Comparativo" }));
+
+    expect(screen.getByText("Experimento válido")).toBeTruthy();
+    expect(
+      screen.getByRole("table", { name: "Métricas calculadas pelo Hindsight" })
+    ).toBeTruthy();
+    expect(screen.getByText("18 de 23")).toBeTruthy();
+    expect(screen.getByText("12 de 17")).toBeTruthy();
   });
 
   it("opens the traceable prescriptions screen for the analyzed baseline", async () => {

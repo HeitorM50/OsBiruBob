@@ -819,6 +819,10 @@ interface ComparisonMetrics {
   contextTokensB:     number;
   contextTokensDelta: number;
 
+  conversationTokensA:     number;
+  conversationTokensB:     number;
+  conversationTokensDelta: number;
+
   fixedOverheadA:     number;
   fixedOverheadB:     number;
   fixedOverheadDelta: number;
@@ -831,6 +835,26 @@ interface ComparisonMetrics {
   humanInterventionsB:     number;
   humanInterventionsDelta: number;
 
+  erroredToolCallsA:     number;
+  erroredToolCallsB:     number;
+  erroredToolCallsDelta: number;
+
+  externalCommandsA:     number;
+  externalCommandsB:     number;
+  externalCommandsDelta: number;
+
+  skillTokensA?:     number;
+  skillTokensB?:     number;
+  skillTokensDelta?: number;
+
+  availableToolsA?:     number;
+  availableToolsB?:     number;
+  availableToolsDelta?: number;
+
+  idleToolsA?:     number;
+  idleToolsB?:     number;
+  idleToolsDelta?: number;
+
   buildFailuresA?:     number;
   buildFailuresB?:     number;
   buildFailuresDelta?: number;
@@ -841,6 +865,7 @@ interface ComparisonMetrics {
 
   projectRulesTokensA?: number;
   projectRulesTokensB?: number;
+  projectRulesTokensDelta?: number;
 
   breakdownA?: BreakdownDetail;
   breakdownB?: BreakdownDetail;
@@ -856,6 +881,11 @@ interface ComparisonMetrics {
   regressão. A UI deve comunicar o sinal de forma inequívoca.
 - **Subtasks estão excluídas** de todas as métricas. (I-5)
 - Deltas sobre valores financeiros mantêm precisão exata. (I-3)
+- `conversationTokens*`, inventário, Skills, regras de projeto, erros e comandos
+  externos são calculados apenas a partir das tasks raiz. Inventário fica ausente
+  se `availableTools[]` não estiver disponível em qualquer uma das rodadas.
+- Percentuais e arredondamento pertencem à apresentação. A divisão percentual por
+  uma base zero é exibida como indisponível, nunca como `Infinity` ou `NaN`.
 - **`buildFailures*` é opcional porque não é derivável do export.** O `METRICS.md`
   o define como contagem manual. Quando preenchido automaticamente, a única origem
   aceitável é o proxy `execute_command` com `isError: true`, e isso deve ser declarado

@@ -1,5 +1,6 @@
-import React, { useId, useRef, useState } from "react";
+import React, { useId, useMemo, useRef, useState } from "react";
 import sampleExport from "../../fixtures/sample-export.json?raw";
+import { compare } from "../compare";
 import {
   prescribeAgentsMd,
   prescribeMcpEnablement,
@@ -14,11 +15,12 @@ import { readFileText } from "./file-reader";
 import styles from "./App.module.css";
 import { FindingsScreen } from "./FindingsScreen";
 import { PrescriptionScreen } from "./PrescriptionScreen";
+import { ComparisonScreen } from "./ComparisonScreen";
 
 const DEMO_MAX_CONTEXT_WINDOW = 270_000;
 
 type Theme = "light" | "dark";
-type Screen = "input" | "findings" | "prescriptions";
+type Screen = "input" | "findings" | "prescriptions" | "comparison";
 
 interface LoadedAnalysis extends AnalyzedExport {
   id: number;
@@ -155,6 +157,13 @@ export default function App({
     selectedAnalysis?.report.tasks
       .map((task) => task.context.pressure)
       .find((pressure) => pressure !== null) ?? null;
+  const comparison = useMemo(
+    () =>
+      analyses[0] !== undefined && analyses[1] !== undefined
+        ? compare(analyses[0].report, analyses[1].report)
+        : null,
+    [analyses]
+  );
 
   return (
     <div className={styles.app} data-theme={theme}>
@@ -174,13 +183,16 @@ export default function App({
                 const isInput = index === 0;
                 const isFindings = index === 2;
                 const isPrescriptions = index === 3;
+                const isComparison = index === 4;
                 const enabled =
                   isInput ||
-                  ((isFindings || isPrescriptions) && selectedAnalysis !== undefined);
+                  ((isFindings || isPrescriptions || isComparison) &&
+                    selectedAnalysis !== undefined);
                 const active =
                   (isInput && activeScreen === "input") ||
                   (isFindings && activeScreen === "findings") ||
-                  (isPrescriptions && activeScreen === "prescriptions");
+                  (isPrescriptions && activeScreen === "prescriptions") ||
+                  (isComparison && activeScreen === "comparison");
                 return (
                   <button
                     key={step}
@@ -195,6 +207,9 @@ export default function App({
                       }
                       if (isPrescriptions && selectedAnalysis) {
                         setActiveScreen("prescriptions");
+                      }
+                      if (isComparison && selectedAnalysis) {
+                        setActiveScreen("comparison");
                       }
                     }}
                   >
@@ -225,7 +240,9 @@ export default function App({
             className={styles.progressValue}
             style={{
               width:
-                activeScreen === "prescriptions"
+                activeScreen === "comparison"
+                  ? "100%"
+                  : activeScreen === "prescriptions"
                   ? "80%"
                   : activeScreen === "findings"
                     ? "60%"
@@ -246,6 +263,16 @@ export default function App({
             contextPressure={contextPressure}
           />
         </main>
+      ) : activeScreen === "comparison" && selectedAnalysis ? (
+        <ComparisonScreen
+          comparison={comparison}
+          roundA={selectedAnalysis.report}
+          onAddRoundB={() => {
+            setActiveScreen("input");
+            window.setTimeout(() => inputRef.current?.click(), 0);
+          }}
+          onViewPrescriptions={() => setActiveScreen("prescriptions")}
+        />
       ) : (
         <main className={styles.main}>
           <section className={styles.intro}>

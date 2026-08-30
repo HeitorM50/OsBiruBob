@@ -568,6 +568,10 @@ export interface ComparisonMetrics {
   contextTokensB: number;
   contextTokensDelta: number;
 
+  conversationTokensA: number;
+  conversationTokensB: number;
+  conversationTokensDelta: number;
+
   fixedOverheadA: number;
   fixedOverheadB: number;
   fixedOverheadDelta: number;
@@ -580,6 +584,27 @@ export interface ComparisonMetrics {
   humanInterventionsB: number;
   humanInterventionsDelta: number;
 
+  erroredToolCallsA: number;
+  erroredToolCallsB: number;
+  erroredToolCallsDelta: number;
+
+  externalCommandsA: number;
+  externalCommandsB: number;
+  externalCommandsDelta: number;
+
+  skillTokensA?: number;
+  skillTokensB?: number;
+  skillTokensDelta?: number;
+
+  /** Absent when availableTools was missing from any root task. */
+  availableToolsA?: number;
+  availableToolsB?: number;
+  availableToolsDelta?: number;
+  /** Absent when availableTools was missing from any root task. */
+  idleToolsA?: number;
+  idleToolsB?: number;
+  idleToolsDelta?: number;
+
   /** Not derivable from the export — absent unless filled by external source. */
   buildFailuresA?: number;
   buildFailuresB?: number;
@@ -591,6 +616,7 @@ export interface ComparisonMetrics {
 
   projectRulesTokensA?: number;
   projectRulesTokensB?: number;
+  projectRulesTokensDelta?: number;
 
   breakdownA?: BreakdownDetail;
   breakdownB?: BreakdownDetail;

@@ -12,6 +12,11 @@
 
 import type { ObserveReport, Comparison, ComparisonMetrics } from "../domain/types";
 
+interface InventoryCounts {
+  available: number;
+  idle: number;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -32,6 +37,10 @@ function rootPermissions(report: ObserveReport): readonly string[] {
   return rootTasks[rootTasks.length - 1].approval.allowedPermissions;
 }
 
+function rootTasks(report: ObserveReport): ObserveReport["tasks"] {
+  return report.tasks.filter((task) => !task.isSubtask);
+}
+
 /**
  * Sum `contextTokens` for root tasks.
  *
@@ -42,16 +51,66 @@ function rootPermissions(report: ObserveReport): readonly string[] {
  * heuristic used by SessionTotals for other metrics.
  */
 function sumContextTokens(report: ObserveReport): number {
-  return report.tasks
-    .filter((t) => !t.isSubtask)
-    .reduce((acc, t) => acc + t.contextTokens, 0);
+  return rootTasks(report).reduce((acc, task) => acc + task.contextTokens, 0);
 }
 
 /** Sum fixedOverhead (contextWindowBreakdown.total) across root tasks. */
 function sumFixedOverhead(report: ObserveReport): number {
-  return report.tasks
-    .filter((t) => !t.isSubtask)
-    .reduce((acc, t) => acc + t.context.fixedOverhead, 0);
+  return rootTasks(report).reduce(
+    (acc, task) => acc + task.context.fixedOverhead,
+    0
+  );
+}
+
+function sumConversationTokens(report: ObserveReport): number {
+  return rootTasks(report).reduce(
+    (acc, task) => acc + task.context.conversationTokens,
+    0
+  );
+}
+
+function sumBreakdownField(
+  report: ObserveReport,
+  field: "skills" | "projectRules"
+): number | null {
+  const tasks = rootTasks(report);
+  if (tasks.length === 0) return null;
+  return tasks.reduce((acc, task) => acc + task.context.breakdown[field], 0);
+}
+
+function sumExternalCommands(report: ObserveReport): number {
+  return rootTasks(report).reduce(
+    (acc, task) => acc + task.externalCommands.length,
+    0
+  );
+}
+
+function sumDurationMs(report: ObserveReport): number {
+  return rootTasks(report).reduce((acc, task) => acc + task.durationMs, 0);
+}
+
+/**
+ * Aggregate a session inventory without double-counting tools repeated by root
+ * tasks. One missing inventory makes the session-level metric unavailable.
+ */
+function inventoryCounts(report: ObserveReport): InventoryCounts | null {
+  const tasks = rootTasks(report);
+  if (tasks.length === 0 || tasks.some((task) => task.toolInventory === null)) {
+    return null;
+  }
+
+  const available = new Set<string>();
+  const used = new Set<string>();
+  for (const task of tasks) {
+    for (const tool of task.toolInventory?.available ?? []) available.add(tool);
+    for (const tool of task.toolInventory?.used ?? []) used.add(tool);
+  }
+
+  let idle = 0;
+  for (const tool of available) {
+    if (!used.has(tool)) idle += 1;
+  }
+  return { available: available.size, idle };
 }
 
 /**
@@ -59,9 +118,7 @@ function sumFixedOverhead(report: ObserveReport): number {
  * Returns null when no root tasks exist (avoids emitting 0 for an absent metric).
  */
 function sumProjectRulesTokens(report: ObserveReport): number | null {
-  const rootTasks = report.tasks.filter((t) => !t.isSubtask);
-  if (rootTasks.length === 0) return null;
-  return rootTasks.reduce((acc, t) => acc + t.context.breakdown.projectRules, 0);
+  return sumBreakdownField(report, "projectRules");
 }
 
 // ---------------------------------------------------------------------------
@@ -109,6 +166,9 @@ export function compare(reportA: ObserveReport, reportB: ObserveReport): Compari
   const contextTokensA = sumContextTokens(reportA);
   const contextTokensB = sumContextTokens(reportB);
 
+  const conversationTokensA = sumConversationTokens(reportA);
+  const conversationTokensB = sumConversationTokens(reportB);
+
   const fixedOverheadA = sumFixedOverhead(reportA);
   const fixedOverheadB = sumFixedOverhead(reportB);
 
@@ -117,6 +177,21 @@ export function compare(reportA: ObserveReport, reportB: ObserveReport): Compari
 
   const humanInterventionsA = reportA.totals.humanInterventions;
   const humanInterventionsB = reportB.totals.humanInterventions;
+
+  const erroredToolCallsA = reportA.totals.erroredToolCalls;
+  const erroredToolCallsB = reportB.totals.erroredToolCalls;
+
+  const externalCommandsA = sumExternalCommands(reportA);
+  const externalCommandsB = sumExternalCommands(reportB);
+
+  const skillTokensA = sumBreakdownField(reportA, "skills") ?? undefined;
+  const skillTokensB = sumBreakdownField(reportB, "skills") ?? undefined;
+
+  const inventoryA = inventoryCounts(reportA);
+  const inventoryB = inventoryCounts(reportB);
+
+  const durationMsA = sumDurationMs(reportA);
+  const durationMsB = sumDurationMs(reportB);
 
   const projectRulesTokensA = sumProjectRulesTokens(reportA) ?? undefined;
   const projectRulesTokensB = sumProjectRulesTokens(reportB) ?? undefined;
@@ -130,6 +205,10 @@ export function compare(reportA: ObserveReport, reportB: ObserveReport): Compari
     contextTokensB,
     contextTokensDelta: contextTokensB - contextTokensA,
 
+    conversationTokensA,
+    conversationTokensB,
+    conversationTokensDelta: conversationTokensB - conversationTokensA,
+
     fixedOverheadA,
     fixedOverheadB,
     fixedOverheadDelta: fixedOverheadB - fixedOverheadA,
@@ -142,10 +221,44 @@ export function compare(reportA: ObserveReport, reportB: ObserveReport): Compari
     humanInterventionsB,
     humanInterventionsDelta: humanInterventionsB - humanInterventionsA,
 
+    erroredToolCallsA,
+    erroredToolCallsB,
+    erroredToolCallsDelta: erroredToolCallsB - erroredToolCallsA,
+
+    externalCommandsA,
+    externalCommandsB,
+    externalCommandsDelta: externalCommandsB - externalCommandsA,
+
+    ...(skillTokensA !== undefined && skillTokensB !== undefined
+      ? {
+          skillTokensA,
+          skillTokensB,
+          skillTokensDelta: skillTokensB - skillTokensA,
+        }
+      : {}),
+
+    durationMsA,
+    durationMsB,
+    durationMsDelta: durationMsB - durationMsA,
+
     // buildFailures*: intentionally absent — not derivable from the export.
 
     projectRulesTokensA,
     projectRulesTokensB,
+    ...(projectRulesTokensA !== undefined && projectRulesTokensB !== undefined
+      ? { projectRulesTokensDelta: projectRulesTokensB - projectRulesTokensA }
+      : {}),
+
+    ...(inventoryA !== null && inventoryB !== null
+      ? {
+          availableToolsA: inventoryA.available,
+          availableToolsB: inventoryB.available,
+          availableToolsDelta: inventoryB.available - inventoryA.available,
+          idleToolsA: inventoryA.idle,
+          idleToolsB: inventoryB.idle,
+          idleToolsDelta: inventoryB.idle - inventoryA.idle,
+        }
+      : {}),
   };
 
   // ── Comparison object ──────────────────────────────────────────────────────
