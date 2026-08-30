@@ -240,7 +240,7 @@ npm run demo
 > **O build faz parte do comando de propósito:** sem ele, `node dist/cli.js` falha
 > com `MODULE_NOT_FOUND` num clone limpo.
 > Entrada: [`fixtures/sample-export.json`](../fixtures/sample-export.json)
-> (cópia fiel do export real da Rodada A). Saída: análise completa no terminal.
+> (versão redigida do export real da Rodada A). Saída: análise completa no terminal.
 
 ---
 

@@ -66,18 +66,17 @@ const SEGMENT_DEFS: SegmentDef[] = [
 // ---------------------------------------------------------------------------
 
 /**
- * Format a token count with a period as thousands separator (pt-BR style,
- * matching the prototype: "10.439", "5.403").
+ * Format a token count with a comma as thousands separator ("10,439", "5,403").
  */
 function fmtTokens(n: number): string {
-  return n.toLocaleString("pt-BR");
+  return n.toLocaleString("en-US");
 }
 
 /**
- * Format a percentage to one decimal place (pt-BR comma: "51,8%").
+ * Format a percentage to one decimal place ("51.8%").
  */
 function fmtPct(n: number): string {
-  return n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+  return n.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
 }
 
 /**
@@ -118,39 +117,39 @@ function AggregateRow({
 }: AggregatesProps): React.JSX.Element {
   const pressureLabel =
     pressure !== null && maxContextWindow !== null
-      ? `${fmtPct(pressure * 100)} de uma janela de ${Math.round(maxContextWindow / 1000)}k`
-      : "Pressão indisponível — janela máxima não informada";
+      ? `${fmtPct(pressure * 100)} of a ${Math.round(maxContextWindow / 1000)}k window`
+      : "Pressure unavailable — maximum window not provided";
 
   return (
     <div className={styles.aggregates}>
       <div className={styles.aggregateItem}>
-        <div className={styles.aggregateLabel}>Overhead fixo</div>
+        <div className={styles.aggregateLabel}>Fixed overhead</div>
         <div
           className={styles.aggregateValue}
           data-testid="fixed-overhead"
         >
           {fmtTokens(fixedOverhead)}
         </div>
-        <div className={styles.aggregateSub}>carregado antes do trabalho</div>
+        <div className={styles.aggregateSub}>loaded before any work</div>
       </div>
 
       <div className={styles.aggregatePlus} aria-hidden="true">+</div>
 
       <div className={styles.aggregateItem}>
-        <div className={styles.aggregateLabel}>Conversa</div>
+        <div className={styles.aggregateLabel}>Conversation</div>
         <div
           className={`${styles.aggregateValue} ${styles.aggregateValueMuted}`}
           data-testid="conversation-tokens"
         >
           {fmtTokens(conversationTokens)}
         </div>
-        <div className={styles.aggregateSub}>o trabalho em si</div>
+        <div className={styles.aggregateSub}>the work itself</div>
       </div>
 
       <div className={styles.aggregatePlus} aria-hidden="true">=</div>
 
       <div className={styles.aggregateItem}>
-        <div className={styles.aggregateLabel}>Contexto reportado</div>
+        <div className={styles.aggregateLabel}>Reported context</div>
         <div
           className={styles.aggregateValue}
           data-testid="reported-total"
@@ -160,7 +159,7 @@ function AggregateRow({
         <div
           className={styles.aggregateSub}
           data-testid="pressure-label"
-          aria-label={`Pressão de contexto: ${pressureLabel}`}
+          aria-label={`Context pressure: ${pressureLabel}`}
         >
           {pressureLabel}
         </div>
@@ -182,7 +181,7 @@ function StackedBar({ segments, fixedOverhead }: StackedBarProps): React.JSX.Ele
   if (fixedOverhead === 0) {
     return (
       <div className={styles.barEmpty} data-testid="bar-empty">
-        Overhead zerado — sem dados para visualizar
+        Zero overhead — nothing to visualize
       </div>
     );
   }
@@ -191,7 +190,7 @@ function StackedBar({ segments, fixedOverhead }: StackedBarProps): React.JSX.Ele
   const MIN_LABEL_PCT = 5;
 
   return (
-    <div className={styles.barOuter} role="img" aria-label="Decomposição da janela de contexto">
+    <div className={styles.barOuter} role="img" aria-label="Context window breakdown">
       {segments.map((seg) => {
         if (seg.pct <= 0 && fixedOverhead > 0) {
           // Zero-width segments are not rendered in the visual bar but appear in legend
@@ -251,15 +250,16 @@ function ProjectRulesAlert({ tokens }: ProjectRulesAlertProps): React.JSX.Elemen
       </div>
       <div className={styles.projectRulesAlertBody}>
         <h3 className={styles.projectRulesAlertTitle}>
-          Não existe AGENTS.md neste projeto
+          This project has no AGENTS.md
         </h3>
         <p className={styles.projectRulesAlertText}>
-          A fatia da janela que carregaria o conhecimento do projeto veio zerada.
-          O agente redescobre a estrutura, as convenções e os comandos do zero em
-          cada sessão nova — e paga por essa redescoberta toda vez.
+          The slice of the window that would carry project knowledge came back
+          empty. The agent rediscovers the structure, the conventions and the
+          commands from scratch in every new session — and pays for that
+          rediscovery every time.
         </p>
         <div className={styles.projectRulesAlertMeta}>
-          <span className={styles.badgeHigh}>CONFIANÇA ALTA</span>
+          <span className={styles.badgeHigh}>HIGH CONFIDENCE</span>
           <code className={styles.fieldPath}>breakdown.projectRules</code>
         </div>
       </div>
@@ -278,14 +278,14 @@ interface BreakdownTableProps {
 function BreakdownTable({ segments }: BreakdownTableProps): React.JSX.Element {
   return (
     <div className={styles.tableSection}>
-      <h2 className={styles.tableSectionTitle}>As dez origens</h2>
+      <h2 className={styles.tableSectionTitle}>The ten sources</h2>
       <p className={styles.tableSectionSub}>
-        Origens em zero permanecem na lista — o zero é o achado.
+        Sources at zero stay in the list — the zero is the finding.
       </p>
       <div className={styles.tableScroll}>
         <div className={styles.tableInner}>
           <div className={styles.tableHeader}>
-            <div>Origem</div>
+            <div>Source</div>
             <div className={styles.tableRight}>Tokens</div>
             <div className={styles.tableRight}>Share</div>
           </div>
@@ -303,7 +303,7 @@ function BreakdownTable({ segments }: BreakdownTableProps): React.JSX.Element {
                 >
                   <div className={styles.tableRowAlertName}>
                     <span>{seg.label}</span>
-                    <span className={styles.findingBadge}>ACHADO</span>
+                    <span className={styles.findingBadge}>FINDING</span>
                   </div>
                   <div className={`${styles.tableRight} ${styles.tableAlertValue}`} data-testid={`breakdown-tokens-${seg.key}`}>
                     {fmtTokens(seg.tokens)}
@@ -324,7 +324,7 @@ function BreakdownTable({ segments }: BreakdownTableProps): React.JSX.Element {
                 >
                   <div className={styles.tableRowMutedName}>
                     <span>{seg.label}</span>
-                    <span className={styles.mcpNote}>nenhum servidor MCP conectado</span>
+                    <span className={styles.mcpNote}>no MCP server connected</span>
                   </div>
                   <div className={styles.tableRight} data-testid={`breakdown-tokens-${seg.key}`}>
                     {fmtTokens(seg.tokens)}
@@ -389,15 +389,15 @@ export default function ContextWindowScreen({
     <div className={styles.screen} data-testid="context-window-screen">
       {/* Section header */}
       <div className={styles.sectionLabel}>
-        Diagnóstico · janela de contexto
+        Diagnosis · context window
       </div>
       <h1 className={styles.heading}>
-        Dez mil tokens foram gastos antes de o agente ler uma linha de código.
+        Ten thousand tokens were spent before the agent read a single line of code.
       </h1>
       <p className={styles.lead}>
-        Esse é o overhead fixo: instruções, definições de ferramenta e Skills
-        carregados no início de toda sessão. Ele não aparece em nenhuma tela do
-        agente.
+        This is the fixed overhead: instructions, tool definitions and Skills
+        loaded at the start of every session. It never appears on any screen the
+        agent shows you.
       </p>
 
       {/* Three aggregate numbers */}
@@ -414,8 +414,8 @@ export default function ContextWindowScreen({
 
       <div className={styles.barNote}>
         <span>
-          Cada faixa tem preenchimento próprio — hachura ou sólido — e não
-          depende de cor para ser lida.
+          Every band has its own fill — hatched or solid — so it never relies
+          on colour alone to be read.
         </span>
       </div>
 

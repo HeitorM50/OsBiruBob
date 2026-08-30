@@ -38,7 +38,7 @@ docs/
   analise-rodada-a.md  findings from the baseline run
   ROADMAP.md        phases F0–F7, gates, and Bobcoin strategy
 fixtures/
-  sample-export.json  faithful copy of rodada-a.json — use for all dev/tests
+  sample-export.json  redacted copy of rodada-a.json — use for all dev/tests
 data/               curated catalogues — versioned data, not code
   mcp-catalog.json    binary → MCP server (drives enable-mcp)
   tool-catalog.json   tool → purpose → group (groups unused-tool findings)

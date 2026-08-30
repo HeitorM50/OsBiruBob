@@ -54,10 +54,10 @@ describe("FindingsScreen baseline", () => {
     ]);
 
     render(<FindingsScreen findings={findings} />);
-    expect(screen.getByText("Regras de projeto ausentes")).toBeTruthy();
-    expect(screen.getByText("Ferramentas ociosas")).toBeTruthy();
-    expect(screen.getByText("Overhead de Skill")).toBeTruthy();
-    expect(screen.getByText("Candidato a servidor MCP")).toBeTruthy();
+    expect(screen.getByText("Project rules missing")).toBeTruthy();
+    expect(screen.getByText("Idle tools")).toBeTruthy();
+    expect(screen.getByText("Skill overhead")).toBeTruthy();
+    expect(screen.getByText("MCP server candidate")).toBeTruthy();
   });
 
   it("shows explicit empty states for rereads, retries, and interventions", () => {
@@ -82,7 +82,7 @@ describe("evidence interaction", () => {
     );
 
     expect(screen.queryByText("[2, 4]")).toBeNull();
-    expandFinding(/Regras de projeto ausentes/);
+    expandFinding(/Project rules missing/);
     expect(screen.getByText("[2, 4]")).toBeTruthy();
     expect(screen.getByText("tasks[0].context.projectRules")).toBeTruthy();
     expect(screen.getByText("Source excerpt")).toBeTruthy();
@@ -109,13 +109,13 @@ describe("evidence interaction", () => {
 
     expect(screen.queryByText(firstSecret)).toBeNull();
     const rows = document.querySelectorAll<HTMLElement>("[data-finding-id]");
-    fireEvent.click(within(rows[0]).getByRole("button", { name: /Candidato/ }));
-    fireEvent.click(within(rows[1]).getByRole("button", { name: /Candidato/ }));
+    fireEvent.click(within(rows[0]).getByRole("button", { name: /candidate/ }));
+    fireEvent.click(within(rows[1]).getByRole("button", { name: /candidate/ }));
     expect(screen.getAllByText("[REDACTED]").length).toBeGreaterThanOrEqual(2);
 
-    fireEvent.click(within(rows[0]).getByRole("button", { name: /Mostrar conteúdo bruto/ }));
-    const confirmation = within(rows[0]).getByRole("button", { name: /Entendi — mostrar este item/ });
-    expect(within(rows[0]).getByRole("alert").textContent).toContain("caminhos absolutos");
+    fireEvent.click(within(rows[0]).getByRole("button", { name: /Show raw content/ }));
+    const confirmation = within(rows[0]).getByRole("button", { name: /Understood — show this item/ });
+    expect(within(rows[0]).getByRole("alert").textContent).toContain("absolute paths");
     expect(document.activeElement).toBe(confirmation);
     expect(screen.queryByText(firstSecret)).toBeNull();
 
@@ -145,7 +145,7 @@ describe("evidence interaction", () => {
       }),
     ]} />);
 
-    for (const button of screen.getAllByRole("button", { name: /Regras|Releitura/ })) {
+    for (const button of screen.getAllByRole("button", { name: /Project|Redundant/ })) {
       fireEvent.click(button);
     }
     expect(screen.queryByText(messageSecret)).toBeNull();
@@ -158,9 +158,9 @@ describe("evidence interaction", () => {
     render(<FindingsScreen findings={[makeFinding({
       evidence: makeEvidence({ type: "message", redactable: true, rawValue: payload }),
     })]} />);
-    expandFinding(/Regras de projeto ausentes/);
-    fireEvent.click(screen.getByRole("button", { name: /Mostrar conteúdo bruto/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Entendi — mostrar este item/ }));
+    expandFinding(/Project rules missing/);
+    fireEvent.click(screen.getByRole("button", { name: /Show raw content/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Understood — show this item/ }));
     expect(screen.getByText(payload)).toBeTruthy();
     expect(document.querySelector("script")).toBeNull();
     expect((globalThis as { __findingXss?: boolean }).__findingXss).toBeUndefined();
@@ -170,16 +170,16 @@ describe("evidence interaction", () => {
 describe("states, badges, and ordering", () => {
   it("renders an overall empty state and an empty state for every core type", () => {
     render(<FindingsScreen findings={[]} />);
-    expect(screen.getByText("Nenhum achado para exibir.")).toBeTruthy();
+    expect(screen.getByText("No findings to display.")).toBeTruthy();
     expect(screen.getAllByText("No findings of this type.")).toHaveLength(7);
   });
 
   it("labels token and cost impacts as hypotheses or estimates, never measurements", () => {
     render(<FindingsScreen findings={[makeFinding({ tokenImpact: 1000, costImpact: 0.42 })]} />);
-    const label = screen.getByText(/Hipótese\/estimativa/);
-    expect(label.textContent).toContain("não é valor medido");
-    expect(label.textContent).toContain("1000 tokens estimados");
-    expect(label.textContent).toContain("$0.42 de custo estimado");
+    const label = screen.getByText(/Hypothesis\/estimate/);
+    expect(label.textContent).toContain("not a measured value");
+    expect(label.textContent).toContain("1000 estimated tokens");
+    expect(label.textContent).toContain("$0.42 estimated cost");
   });
 
   it("shows confidence and explicit unavailable severity on every baseline finding", () => {
@@ -209,8 +209,8 @@ describe("states, badges, and ordering", () => {
       makeFinding(),
       makeFinding({ id: "other", kind: "unused-tool" }),
     ]} />);
-    expect(screen.getByRole("navigation", { name: "Tipos de achado" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Regras de projeto ausentes/ })).toBeTruthy();
+    expect(screen.getByRole("navigation", { name: "Finding types" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Project rules missing/ })).toBeTruthy();
   });
 });
 
@@ -223,7 +223,7 @@ describe("regressions and architecture", () => {
     render(<FindingsScreen findings={[makeFinding({
       evidence: makeEvidence({ rawValue: "x".repeat(1000) }),
     })]} />);
-    expandFinding(/Regras de projeto ausentes/);
+    expandFinding(/Project rules missing/);
     const excerpt = screen.getByText("x".repeat(1000)).closest("pre");
     expect(excerpt?.tabIndex).toBe(0);
   });
@@ -248,7 +248,7 @@ describe("regressions and architecture", () => {
 
   it("renders missing detector evidence explicitly instead of inventing it", () => {
     render(<FindingsScreen findings={[makeFinding({ evidence: makeEvidence() })]} />);
-    expandFinding(/Regras de projeto ausentes/);
+    expandFinding(/Project rules missing/);
     expect(screen.getAllByText("Not supplied by detector.")).toHaveLength(2);
     expect(screen.getByText("No source excerpt supplied by detector.")).toBeTruthy();
   });

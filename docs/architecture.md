@@ -569,8 +569,18 @@ material de submissão.
 
 ## Fixtures e modo demo
 
-- `fixtures/sample-export.json` é cópia fiel do `benchmark/rodada-a.json` e
-  serve como input padrão para testes e demo.
+- `fixtures/sample-export.json` é a versão **redigida** do `benchmark/rodada-a.json`
+  e serve como input padrão para testes e demo.
+
+  **Por que redigida.** Esta fixture é embutida no bundle publicado (`import ?raw`),
+  então tudo que estiver nela fica legível para quem abrir a página. O export real
+  carrega caminhos absolutos da máquina que o gerou e um system prompt que lista as
+  skills instaladas localmente. `scripts/redact-demo-fixture.jq` remove exatamente
+  esses campos e **preserva `toolCalls[].arguments`**, porque o detector de MCP lê os
+  comandos de shell guardados ali. Métricas e achados são idênticos aos do baseline:
+  mesmo custo, mesmo breakdown, mesmo inventário, os mesmos quatro achados.
+
+  O `benchmark/rodada-a.json` permanece intacto: é o dado bruto do experimento.
 - Fixtures sintéticas cobrem casos que não aparecem no baseline real (export
   inválido, task sem mensagens, ferramenta com erro, resultado órfão, etc.).
 - O modo demo carrega fixtures embutidas e não requer arquivo externo,
