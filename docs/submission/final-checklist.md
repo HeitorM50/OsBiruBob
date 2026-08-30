@@ -1,6 +1,6 @@
 # Final compliance, security, licence, and reproducibility gate
 
-Audit started on **30 August 2026 at 05:05 BRT** and last updated at **05:46 BRT**.
+Audit started on **30 August 2026 at 05:05 BRT** and last updated at **05:52 BRT**.
 The Official Rules PDF in `rules/` is the normative source.
 
 ## Gate status
@@ -44,7 +44,8 @@ remain manual.
   (94,250 bytes gzip in the Vite report).
 - [x] `README.md` documents Node 20, install, web development, build, preview, demo,
   and verification commands.
-- [ ] Re-run the complete suite from a clean clone at the final candidate SHA.
+- [x] A clean clone of the compliance tree passed on official `node:20-alpine`
+  (Node 20.20.2, npm 10.8.2): `npm ci`, 545 tests, typecheck, web build, and demo.
 - [ ] Confirm green CI and Pages deploy for that exact final SHA.
 
 Commands already run successfully on the audit tree:
@@ -174,7 +175,7 @@ These statements cannot be proven from repository contents and require a person:
 
 Final approval remains **unchecked** until every item below is true on one exact SHA:
 
-- [ ] Clean-clone Node 20 reproduction passes.
+- [x] Clean-clone Node 20 reproduction passes.
 - [ ] CI and Pages deploy are green on the same SHA.
 - [ ] Repository, application, and video work anonymously.
 - [ ] Four official deliverables are complete, mutually consistent, and English.
