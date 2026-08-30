@@ -1,0 +1,140 @@
+[
+  {
+    "name": "GetSymbolsOverview",
+    "group": "code-navigation",
+    "purpose": "Returns a high-level overview of all symbols (classes, functions, types) defined in a file.",
+    "essential": false
+  },
+  {
+    "name": "FindSymbol",
+    "group": "code-navigation",
+    "purpose": "Finds a specific symbol by name path and returns its definition, location, and optionally its source body.",
+    "essential": false
+  },
+  {
+    "name": "FindReferencingSymbols",
+    "group": "code-navigation",
+    "purpose": "Lists all symbols that reference a given symbol, with surrounding code snippets.",
+    "essential": false
+  },
+  {
+    "name": "glob",
+    "group": "code-navigation",
+    "purpose": "Finds files whose paths match a glob pattern, sorted by modification time.",
+    "essential": false
+  },
+  {
+    "name": "grep",
+    "group": "code-navigation",
+    "purpose": "Searches file contents with a regex pattern and returns matching lines with their file paths and line numbers.",
+    "essential": false
+  },
+  {
+    "name": "read_file",
+    "group": "editing",
+    "purpose": "Reads the content of a file, with optional line ranges for efficient partial reads.",
+    "essential": true
+  },
+  {
+    "name": "read_xlsx",
+    "group": "editing",
+    "purpose": "Reads and summarises an Excel (.xlsx) workbook, returning sheet structure and sample rows.",
+    "essential": false
+  },
+  {
+    "name": "write_file",
+    "group": "editing",
+    "purpose": "Creates a new file or completely overwrites an existing file with the given content.",
+    "essential": true
+  },
+  {
+    "name": "apply_diff",
+    "group": "editing",
+    "purpose": "Applies precise, targeted search-and-replace edits to a file using SEARCH/REPLACE blocks.",
+    "essential": false
+  },
+  {
+    "name": "insert_content",
+    "group": "editing",
+    "purpose": "Inserts new lines of content into a file at a specified line number without modifying existing content.",
+    "essential": false
+  },
+  {
+    "name": "search_and_replace",
+    "group": "editing",
+    "purpose": "Finds and replaces specific text strings or regex patterns within a file.",
+    "essential": false
+  },
+  {
+    "name": "list_files",
+    "group": "editing",
+    "purpose": "Lists files and directories within a given directory, optionally recursively.",
+    "essential": false
+  },
+  {
+    "name": "execute_command",
+    "group": "execution",
+    "purpose": "Executes a CLI command in a bash shell, returning stdout and stderr.",
+    "essential": true
+  },
+  {
+    "name": "update_todo_list",
+    "group": "planning",
+    "purpose": "Replaces the current task checklist with an updated list, tracking progress through multi-step tasks.",
+    "essential": false
+  },
+  {
+    "name": "ask_followup_question",
+    "group": "planning",
+    "purpose": "Asks the user a clarifying question with optional suggested answers when additional information is needed.",
+    "essential": false
+  },
+  {
+    "name": "switch_mode",
+    "group": "planning",
+    "purpose": "Switches the active Bob mode (persona) for the current session.",
+    "essential": false
+  },
+  {
+    "name": "use_skill",
+    "group": "documentation",
+    "purpose": "Activates a named Bob skill, loading its full instructions into the context window.",
+    "essential": false
+  },
+  {
+    "name": "search_bob_docs",
+    "group": "documentation",
+    "purpose": "Searches Bob documentation using semantic search to find information about features and configuration.",
+    "essential": false
+  },
+  {
+    "name": "spawn_subagent",
+    "group": "delegation",
+    "purpose": "Spawns a new independent subagent to execute a task in parallel.",
+    "essential": false
+  },
+  {
+    "name": "start_subtask",
+    "group": "delegation",
+    "purpose": "Starts a subtask within the current agent session for delegated work.",
+    "essential": false
+  },
+  {
+    "name": "start_workflow",
+    "group": "delegation",
+    "purpose": "Starts a predefined multi-step workflow by its identifier.",
+    "essential": false
+  },
+  {
+    "name": "create_html_artifact",
+    "group": "presentation",
+    "purpose": "Creates an HTML artifact rendered inline in the chat as a rich visual output.",
+    "essential": false
+  },
+  {
+    "name": "create_chart",
+    "group": "presentation",
+    "purpose": "Creates a chart artifact rendered inline in the chat from structured data.",
+    "essential": false
+  }
+]
