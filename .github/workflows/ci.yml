@@ -49,6 +49,7 @@ jobs:
         run: |
           test -f dist/web/index.html
           test "$(find dist/web -maxdepth 1 -type f | wc -l)" -eq 1
+          grep -Eq 'rel="icon"[^>]+href="data:image/' dist/web/index.html
           ! grep -Eq '<script[^>]+src=|<link[^>]+rel="stylesheet"|fetch\(|XMLHttpRequest|new WebSocket' dist/web/index.html
 
       - name: Demo (builds CLI and runs it)
