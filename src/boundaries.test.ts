@@ -47,7 +47,8 @@ function productionFiles(): string[] {
 }
 
 function relPath(abs: string): string {
-  return path.relative(ROOT, abs);
+  // Keep boundary comparisons and diagnostics platform-independent.
+  return path.relative(ROOT, abs).split(path.sep).join("/");
 }
 
 function withoutComments(content: string): string {

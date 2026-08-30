@@ -10,6 +10,8 @@
  */
 
 import type { EpochMs, Finding, Prescription } from "../domain/types";
+import { prescriptionId } from "./determinism";
+export { prescribeOverheadReduction } from "./overhead";
 
 type AgentsMdFindingKind =
   | "project-rules-absent"
@@ -67,31 +69,6 @@ function compareFindings(a: AgentsMdFinding, b: AgentsMdFinding): number {
     a.detectedAt - b.detectedAt ||
     a.id.localeCompare(b.id)
   );
-}
-
-/** A small synchronous hash used only to keep sensitive Finding IDs out of public IDs. */
-function stableHash(value: string): string {
-  let first = 0x811c9dc5;
-  let second = 0x9e3779b9;
-
-  for (let index = 0; index < value.length; index++) {
-    const code = value.charCodeAt(index);
-    first = Math.imul(first ^ code, 0x01000193);
-    second = Math.imul(second ^ code, 0x85ebca6b);
-  }
-
-  return `${(first >>> 0).toString(16).padStart(8, "0")}${(second >>> 0)
-    .toString(16)
-    .padStart(8, "0")}`;
-}
-
-function prescriptionId(
-  kind: Prescription["kind"],
-  sessionId: string,
-  taskId: string,
-  findingIds: readonly string[]
-): string {
-  return `prescription-${stableHash([kind, sessionId, taskId, ...findingIds].join("\u001f"))}`;
 }
 
 function latestDetectedAt(findings: readonly Finding[]): EpochMs {
