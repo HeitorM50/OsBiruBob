@@ -1,0 +1,529 @@
+/* FindingsScreen — CSS module
+ * Uses the prototype's design tokens (--bg, --ink, --acc, etc.) via the .hs
+ * wrapper that the parent App applies. Falls back to neutral colours for tests
+ * that render without the wrapper.
+ */
+
+.wrapper {
+  max-width: 1180px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 44px 28px 56px;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+
+.header {
+  max-width: 760px;
+}
+
+.headerSub {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink3, #7b838c);
+  margin: 0 0 14px;
+}
+
+.headerTitle {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.12;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+
+.headerDesc {
+  margin: 14px 0 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink2, #4a525b);
+  max-width: 64ch;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin: 26px 0 22px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.toolbarStat {
+  font-size: 12px;
+  color: var(--ink3, #7b838c);
+}
+
+.toolbarDivider {
+  width: 1px;
+  height: 14px;
+  background: var(--line2, #dcdfe3);
+}
+
+.toolbarNote {
+  font-size: 12px;
+  color: var(--ink3, #7b838c);
+}
+
+.typeNav {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 24px;
+  flex-wrap: wrap;
+}
+
+.typeNav a {
+  border: 1px solid var(--line2, #dcdfe3);
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: var(--ink2, #4a525b);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.typeNav a:hover,
+.typeNav a:focus-visible {
+  border-color: var(--focus, #2f5d8c);
+  color: var(--ink, #14181c);
+}
+
+.typeNav a:focus-visible {
+  outline: 2px solid var(--focus, #2f5d8c);
+  outline-offset: 2px;
+}
+
+/* ── Group ───────────────────────────────────────────────────────── */
+
+.group {
+  border: 1px solid var(--line2, #dcdfe3);
+  border-radius: 8px;
+  background: var(--panel, #fff);
+  overflow: hidden;
+  margin-bottom: 24px;
+  scroll-margin-top: 16px;
+}
+
+.groupHeader {
+  padding: 12px 18px;
+  background: var(--soft, #f4f6f8);
+  border-bottom: 1px solid var(--line2, #dcdfe3);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink2, #4a525b);
+  font-weight: 600;
+}
+
+/* ── Finding row ─────────────────────────────────────────────────── */
+
+.findingRow {
+  border-bottom: 1px solid var(--line, #eef0f2);
+}
+
+.findingRow:last-child {
+  border-bottom: none;
+}
+
+.findingHeader {
+  width: 100%;
+  border: 0;
+  background: none;
+  text-align: left;
+  padding: 18px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  cursor: pointer;
+  color: var(--ink, #14181c);
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.findingHeader:hover {
+  background: var(--soft, #f4f6f8);
+}
+
+.findingHeader:focus-visible {
+  outline: 2px solid var(--focus, #2f5d8c);
+  outline-offset: -2px;
+}
+
+.caret {
+  flex: none;
+  width: 14px;
+  color: var(--ink3, #7b838c);
+  font-size: 11px;
+  padding-top: 4px;
+}
+
+.findingHeaderContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.findingTitle {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.findingDescription {
+  font-size: 14px;
+  color: var(--ink2, #4a525b);
+  line-height: 1.4;
+}
+
+.estimateHint {
+  font-size: 13px;
+  color: var(--ink3, #7b838c);
+}
+
+.estimateWord {
+  border-bottom: 1px dotted var(--ink3, #7b838c);
+  cursor: help;
+}
+
+/* ── Badges ──────────────────────────────────────────────────────── */
+
+.badges {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.badgeHigh {
+  border: 1px solid var(--accline, #d9a893);
+  color: var(--acc, #a3401f);
+}
+
+.badgeMedium {
+  border: 1px solid var(--line2, #dcdfe3);
+  color: var(--ink2, #4a525b);
+}
+
+.badgeLow {
+  border: 1px solid var(--line2, #dcdfe3);
+  color: var(--ink3, #7b838c);
+}
+
+.badgeUnavailable {
+  border: 1px dashed var(--line2, #dcdfe3);
+  color: var(--ink3, #7b838c);
+}
+
+.badgeEstimate {
+  font-size: 11px;
+  color: var(--ink3, #7b838c);
+  border: 1px dashed var(--line2, #dcdfe3);
+  padding: 3px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* ── Finding detail / evidence ───────────────────────────────────── */
+
+.findingDetail {
+  padding: 0 18px 20px 48px;
+  min-width: 0;
+}
+
+.evidenceBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.evidenceMetaList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+
+.evidenceMeta {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  font-family: ui-monospace, Menlo, monospace;
+  color: var(--ink2, #4a525b);
+}
+
+.evidenceMetaLabel {
+  color: var(--ink2, #4a525b);
+}
+
+.evidenceMetaValue {
+  color: var(--ink, #14181c);
+  font-weight: 600;
+  margin: 0;
+}
+
+.evidenceFieldPath {
+  font-size: 12px;
+  font-family: ui-monospace, Menlo, monospace;
+  color: var(--ink2, #4a525b);
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+
+.excerptLabel {
+  margin: 0 0 6px;
+  color: var(--ink2, #4a525b);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Wide excerpts scroll inside their container — never widen the page */
+.evidenceExcerpt {
+  border: 1px solid var(--line, #eef0f2);
+  border-radius: 6px;
+  background: var(--soft, #f4f6f8);
+  padding: 14px 16px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-x: auto;
+  color: var(--ink2, #4a525b);
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overscroll-behavior-inline: contain;
+  /* Prevent excerpt from widening the page */
+  white-space: pre;
+  word-break: normal;
+  margin: 0;
+}
+
+.evidenceExcerpt code {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.evidenceRationale {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink2, #4a525b);
+  line-height: 1.6;
+  max-width: 70ch;
+}
+
+/* ── Reveal / redaction controls ─────────────────────────────────── */
+
+.revealBar {
+  margin-top: 4px;
+}
+
+.revealButton {
+  border: 1px solid var(--line2, #dcdfe3);
+  background: var(--panel, #fff);
+  color: var(--ink2, #4a525b);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.revealButton:hover {
+  color: var(--ink, #14181c);
+}
+
+.revealButton:focus-visible {
+  outline: 2px solid var(--focus, #2f5d8c);
+  outline-offset: 2px;
+}
+
+.revealWarning {
+  border: 1px solid var(--accline, #d9a893);
+  border-radius: 6px;
+  background: var(--accsoft, #fbf3f0);
+  padding: 12px 14px;
+  max-width: 520px;
+}
+
+.revealWarningText {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink, #14181c);
+}
+
+.revealWarningActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.revealConfirmButton {
+  border: 0;
+  background: var(--acc, #a3401f);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.revealConfirmButton:hover {
+  opacity: 0.88;
+}
+
+.revealConfirmButton:focus-visible {
+  outline: 2px solid var(--focus, #2f5d8c);
+  outline-offset: 2px;
+}
+
+.revealCancelButton {
+  border: 1px solid var(--line2, #dcdfe3);
+  background: var(--panel, #fff);
+  color: var(--ink2, #4a525b);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 7px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.revealCancelButton:focus-visible {
+  outline: 2px solid var(--focus, #2f5d8c);
+  outline-offset: 2px;
+}
+
+/* ── Zero-result detector cards ──────────────────────────────────── */
+
+.zeroSectionTitle {
+  margin: 32px 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.zeroGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.zeroCard {
+  border: 1px solid var(--line2, #dcdfe3);
+  border-radius: 8px;
+  background: var(--panel, #fff);
+  padding: 18px 20px;
+}
+
+.zeroCardHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.zeroCount {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  color: var(--good, #1f6b45);
+}
+
+.zeroHeadline {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.zeroDetail {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink2, #4a525b);
+}
+
+.zeroEmpty {
+  margin: 0 0 6px;
+  color: var(--ink, #14181c);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.zeroPositive {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--good, #1f6b45);
+  font-weight: 600;
+}
+
+.zeroNote {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--ink3, #7b838c);
+  max-width: 70ch;
+  line-height: 1.6;
+}
+
+/* ── Overall empty state ─────────────────────────────────────────── */
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 28px;
+  text-align: center;
+  gap: 10px;
+}
+
+.emptyStateText {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.emptyStateHint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink3, #7b838c);
+}
+
+@media (max-width: 680px) {
+  .wrapper {
+    padding: 28px 16px 40px;
+  }
+
+  .findingHeader {
+    flex-wrap: wrap;
+  }
+
+  .badges {
+    width: 100%;
+    justify-content: flex-start;
+    padding-left: 30px;
+  }
+
+  .findingDetail {
+    padding-left: 18px;
+  }
+
+  .evidenceMeta {
+    flex-direction: column;
+    gap: 2px;
+  }
+}

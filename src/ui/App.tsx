@@ -12,12 +12,13 @@ import {
 } from "./analysis";
 import { readFileText } from "./file-reader";
 import styles from "./App.module.css";
+import { FindingsScreen } from "./FindingsScreen";
 import { PrescriptionScreen } from "./PrescriptionScreen";
 
 const DEMO_MAX_CONTEXT_WINDOW = 270_000;
 
 type Theme = "light" | "dark";
-type Screen = "input" | "prescriptions";
+type Screen = "input" | "findings" | "prescriptions";
 
 interface LoadedAnalysis extends AnalyzedExport {
   id: number;
@@ -171,11 +172,14 @@ export default function App({
             {["Entrada", "Diagnóstico", "Achados", "Prescrições", "Comparativo"].map(
               (step, index) => {
                 const isInput = index === 0;
+                const isFindings = index === 2;
                 const isPrescriptions = index === 3;
                 const enabled =
-                  isInput || (isPrescriptions && selectedAnalysis !== undefined);
+                  isInput ||
+                  ((isFindings || isPrescriptions) && selectedAnalysis !== undefined);
                 const active =
                   (isInput && activeScreen === "input") ||
+                  (isFindings && activeScreen === "findings") ||
                   (isPrescriptions && activeScreen === "prescriptions");
                 return (
                   <button
@@ -186,6 +190,9 @@ export default function App({
                     aria-current={active ? "step" : undefined}
                     onClick={() => {
                       if (isInput) setActiveScreen("input");
+                      if (isFindings && selectedAnalysis) {
+                        setActiveScreen("findings");
+                      }
                       if (isPrescriptions && selectedAnalysis) {
                         setActiveScreen("prescriptions");
                       }
@@ -216,12 +223,21 @@ export default function App({
         <div className={styles.progressTrack} aria-hidden="true">
           <div
             className={styles.progressValue}
-            style={{ width: activeScreen === "prescriptions" ? "80%" : "20%" }}
+            style={{
+              width:
+                activeScreen === "prescriptions"
+                  ? "80%"
+                  : activeScreen === "findings"
+                    ? "60%"
+                    : "20%",
+            }}
           />
         </div>
       </header>
 
-      {activeScreen === "prescriptions" && selectedAnalysis ? (
+      {activeScreen === "findings" && selectedAnalysis ? (
+        <FindingsScreen findings={selectedAnalysis.diagnosis.findings} />
+      ) : activeScreen === "prescriptions" && selectedAnalysis ? (
         <main className={styles.prescriptionMain}>
           <PrescriptionScreen
             prescriptions={prescriptions}

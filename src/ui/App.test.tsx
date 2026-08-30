@@ -81,6 +81,33 @@ describe("App input screen", () => {
     ).toBeTruthy();
   });
 
+  it("opens Findings with detector output from the analyzed export", async () => {
+    render(<App />);
+    const findingsStep = screen.getByRole("button", {
+      name: "3 · Achados",
+    }) as HTMLButtonElement;
+    expect(findingsStep.disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: /Ver exemplo/ }));
+    expect(await screen.findByText("Rodada A")).toBeTruthy();
+    expect(findingsStep.disabled).toBe(false);
+
+    fireEvent.click(findingsStep);
+    expect(
+      screen.getByRole("heading", {
+        name: "4 achados, cada um rastreável até um campo do export.",
+      })
+    ).toBeTruthy();
+    expect(screen.getByText("Regras de projeto ausentes")).toBeTruthy();
+    expect(screen.getByText("Ferramentas ociosas")).toBeTruthy();
+    expect(screen.getByText("Overhead de Skill")).toBeTruthy();
+    expect(screen.getByText("Candidato a servidor MCP")).toBeTruthy();
+    expect(screen.getAllByText("No findings of this type.")).toHaveLength(3);
+
+    fireEvent.click(screen.getByRole("button", { name: "1 · Entrada" }));
+    expect(screen.getByText("Rodada A")).toBeTruthy();
+  });
+
   it("accepts files through the selector and drag-and-drop, assigning A and B", async () => {
     const readText = vi.fn(async () => sampleExport);
     render(<App readText={readText} />);
