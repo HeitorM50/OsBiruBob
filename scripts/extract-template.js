@@ -1,0 +1,11 @@
+const fs = require('fs');
+const html = fs.readFileSync('prototipo/Hindsight.html', 'utf8');
+const startTag = '<script type="__bundler/template">';
+const endTag = '</script>';
+const startIdx = html.indexOf(startTag);
+const afterTag = startIdx + startTag.length;
+const endIdx = html.indexOf(endTag, afterTag);
+const rawContent = html.slice(afterTag, endIdx).trim();
+const template = JSON.parse(rawContent);
+fs.writeFileSync('prototipo/_extracted_template.html', template);
+console.log('Template extracted, length:', template.length);
