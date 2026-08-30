@@ -1,0 +1,119 @@
+# IBM Bob Usage Statement
+
+IBM Bob is not a code generator we happened to use. It is **the subject of the
+project, the source of its data, and the tool that built it.** Hindsight only
+exists because Bob exports the token breakdown of its own context window.
+
+Every claim below points to an issue, a pull request and a versioned artefact.
+
+---
+
+## 1. Bob is the data source
+
+Hindsight analyses **real Bob session exports** (`Tasks → export JSON`). Nothing
+is simulated.
+
+| What | Artefact |
+|---|---|
+| Baseline of the A/B experiment | `benchmark/rodada-a.json` |
+| Optimised run of the A/B experiment | `benchmark/rodada-b.json` |
+| Demo fixture bundled in the public app | `fixtures/sample-export.json` (redacted) |
+
+The export schema was reverse-engineered field by field from a real export and
+documented in `docs/schema.md`, including seven confirmed traps we hit — for
+example, `messages[].createdAt` is identical across every message and cannot be
+used for ordering.
+
+## 2. Bob built Hindsight
+
+**29 `bob-required` issues were implemented inside the Bob IDE**, in Agent Mode,
+one issue per session. Examples:
+
+| Bob session | Produced | Issue | Evidence |
+|---|---|---|---|
+| Domain model and architecture | `docs/domain-model.md`, `docs/architecture.md` | #31, #33 | `bob_sessions/Pedro/osbirubob_task00_Documatation_domain.jpeg` |
+| Export parser | `src/parser/` | #5 | `bob_sessions/Philipe/osbirubob_task06_parser-export_summary.png` |
+| Per-turn metrics | `src/observe/` | #6 | `bob_sessions/Heitor/osbirubob_task07_metricas-por-turno_summary.png` |
+| Tool-call correlation | `src/observe/tool-calls.ts` | #7 | `bob_sessions/Gustavo/osbirubob_task09_tool-calls_summary.png` |
+| Context breakdown | `src/observe/` | #8 | `bob_sessions/Hugo/osbirubob_task08_decomposicao-contexto_summary.png` |
+| Idle-tool detector | `src/diagnose/detectors/unused-tool.ts` | #14 | `bob_sessions/Pedro/osbirubob_task03_issue_14_*.png` |
+| Redundant-read detector | `src/diagnose/redundant-read.ts` | #10 | `bob_sessions/Philipe/osbirubo_task10_redundant_read.png` |
+| Recommendation catalogues | `data/*.json` | #40 | `bob_sessions/Hugo/osbirubob_task11_recommendation_catalog.png` |
+| `AGENTS.md` generator | `src/prescribe/` | #16 | `bob_sessions/Gustavo/osbirubob_task_16_agents-generator.png` |
+| Prescriptions screen | `src/ui/PrescriptionScreen.tsx` | #42 | `bob_sessions/Hugo/osbirubob_task12_prescription_screen.png` |
+| A/B comparison module | `src/compare/` | #20 | `bob_sessions/Heitor/osbirubob_task11_bob-compare_summary.png` |
+
+**Five team members** have Bob sessions in `bob_sessions/`: Heitor, Gustavo, Hugo,
+Pedro and Philipe.
+
+## 3. Bob is the experiment
+
+The A/B experiment ran **inside Bob**, on `IBM/bob-demo`, commit `cb10cdfb`:
+
+| Round | Configuration | Fixed overhead | Cost |
+|---|---|---:|---:|
+| A (#19, baseline) | default `agent` mode, no `AGENTS.md` | 10,439 | $0.336902 |
+| B (#19, optimised) | generated `AGENTS.md` + custom mode | 7,740 | $0.270606 |
+
+**−25.9% overhead, −19.7% cost.** `projectRules` went from 0 to 121 tokens.
+
+The protocol is auditable: identical prompt (SHA-256 verified, 400 bytes), same
+commit, same person, same auto-approve permission set. `Comparison.valid === true`.
+
+**A first attempt was discarded and kept as evidence.** The `skill` auto-approve
+toggle had been left on, which broke the "only the configuration changes" rule.
+We verified the deviation was inert — `use_skill` was not even available in that
+mode — and discarded the run anyway. See `benchmark/round-b-config/TENTATIVAS.md`.
+
+## 4. Bob configured by Hindsight's own method (self-hosting)
+
+Before implementing, we applied our own tool's method to our own Bob (#45):
+
+| Source | Before | After | Delta |
+|---|---:|---:|---:|
+| Fixed overhead | 12,471 | 10,062 | **−19.3%** |
+| `toolSystemPrompts` | 2,470 | 456 | −81.5% |
+| `skills` | 1,541 | 1,117 | −27.5% |
+| Tools available | 23 | 18 | −5 |
+
+Configuration applied, all versioned:
+
+- **Custom mode** `hindsight-implementation` in `.bob/custom_modes.yaml`, enabling
+  only `read`, `edit`, `execute`, `todo` and `skill`.
+- **Three project Skills** in `.bob/skills/`: `implement-pipeline-module`,
+  `create-synthetic-fixture` and `close-issue-with-evidence`. One is confirmed
+  loaded in the export: `implement-pipeline-module`, 276 tokens.
+- **Five tools removed:** `create_html_artifact`, `switch_mode`, `spawn_subagent`,
+  `start_subtask`, `create_chart`.
+- **`AGENTS.md`** at the repository root, loaded in both runs (2,092 tokens).
+
+Full protocol and measurements: `docs/configuracao-bob.md`.
+
+**Honest limitation:** the mode and the Skills were measured together in a single
+before/after pair. We did not run an intermediate session, so we cannot attribute
+the 19.3% between them.
+
+## 5. Bob produced a finding we did not predict
+
+Our registered hypothesis said disabling tools would reduce `toolDefinitions`.
+Across **two independent measurements** — the benchmark and our own sessions —
+`toolDefinitions` did not move. The savings came from `toolSystemPrompts`,
+−81.5% in both. Bob's export is what made that correction possible, and we
+changed the product's recommendation because of it.
+
+## What we did not use
+
+To avoid misreading: we did **not** use Bob Shell, watsonx, watsonx Orchestrate,
+subagents, or MCP servers. `mcpToolDefinitions` is `0` in every export we
+collected. Hindsight *recommends* MCP servers from shell commands, but no MCP
+server was connected during our sessions.
+
+Bobcoin figures shown in session screenshots are the platform's own display; we
+report measured cost from the export's `cost` field instead.
+
+---
+
+> **Reviewer note (remove before submitting).** The session-to-issue mapping in
+> §2 was inferred from screenshot filenames. Confirm each row against the actual
+> session before submitting — the value of this statement is that every claim is
+> verifiable.
