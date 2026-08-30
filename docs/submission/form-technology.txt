@@ -1,0 +1,19 @@
+IBM Bob is not a tool we happened to use. It is the subject of the project, the source of its data, and the tool that built it. Hindsight only exists because Bob exports the token breakdown of its own context window - a number no interface shows the developer.
+
+WHERE BOB WAS USED
+
+1. Bob as the data source. Hindsight analyses real Bob session exports (Tasks - export JSON). Nothing is simulated. The baseline of our experiment is benchmark/rodada-a.json, the optimised run is benchmark/rodada-b.json, and the demo the judges can open runs on a redacted copy of that same real export. We reverse-engineered the export schema field by field and documented it in docs/schema.md, including seven confirmed traps we hit - for example, messages[].createdAt is identical across every message and cannot be used for ordering.
+
+2. Bob built Hindsight. Twenty-nine issues labelled bob-required were implemented inside the Bob IDE in Agent Mode, one issue per session, across five team members. The parser, the observe layer, the seven detectors, the recommendation catalogues, the AGENTS.md generator, the prescriptions screen and the A/B comparison module were all written in Bob sessions. Screenshots and sanitised exports for each are in bob_sessions/ and linked from docs/submission/bob-usage.md.
+
+3. Bob is the experiment. We ran the same task twice inside Bob on IBM/bob-demo, commit cb10cdfb, with an identical prompt verified by SHA-256, the same person and the same auto-approve permission set. Only the configuration changed. Fixed overhead fell 25.9 percent and cost fell 19.7 percent. A first attempt was discarded because one auto-approve toggle differed, which broke the "only the configuration changes" rule; we kept that invalid run as evidence and documented the root cause.
+
+4. Bob configured by Hindsight's own method. Before implementing, we applied our own tool's method to our own Bob. Fixed overhead in our development sessions fell from 12,471 to 10,062 tokens, down 19.3 percent, using a custom mode, three project Skills and a reduced tool set - all versioned in .bob/. Honest limitation: mode and Skills were measured together in one before/after pair, so we cannot attribute the 19.3 percent between them.
+
+5. MCP, measured rather than claimed. Hindsight recommends MCP servers. Before submitting, we connected the Docker MCP server that our own tool recommended from our own baseline, and rebuilt the benchmark through MCP tools instead of shell. mcpToolDefinitions went from 0 in every previous export to 780. That is the honest result: MCP is not free, it adds tool definitions to the overhead, and we now report the price of our own recommendation as a measured number.
+
+6. Subagents. We used start_subtask to delegate a repository cleanup. It also revealed that subtasks are not exported as separate task records, which we documented in docs/schema.md and corrected in our own domain model claims.
+
+WATSONX
+
+We did not use watsonx.ai or watsonx Orchestrate, and that is a deliberate architectural decision rather than an omission. Hindsight's core promise is that the session export never leaves the user's browser and that every recommendation is a deterministic rule plus a versioned catalogue. Calling a hosted model would require sending the user's own session content to a remote API, would require an API key inside a static page with no backend, and would break the byte-identical output our generators are tested for. In this project the AI is Bob; Hindsight is the tool that measures and corrects Bob.

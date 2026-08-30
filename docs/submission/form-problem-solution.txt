@@ -1,0 +1,17 @@
+Teams are adopting coding agents fast, but nobody knows why a session was expensive. A developer finishes a task, sees a cost number, and learns nothing. Meanwhile the configuration that governs the agent - the AGENTS.md, the custom modes, the enabled tools - is written once, by feel, and never revisited. There is no feedback loop between how the agent behaved and how it is configured, so teams pay for the same mistake in every session.
+
+IBM Bob exposes something no interface shows: the token breakdown of its own context window, by source. In our real baseline session, Bob carried 10,439 tokens before reading a single line of code. Of that, projectRules was 0.
+
+For a non-technical reader: zero means no project guidance was loaded at all. The agent had to rediscover the project's structure, conventions and commands from scratch, in every new session, and pay for that rediscovery every time. The same session had 18 of its 23 tools never called - it was carrying a spreadsheet reader and a chart generator through a Docker task.
+
+Hindsight reads a Bob session export and closes the loop in four stages. Observe normalises the export into typed metrics. Diagnose runs seven detectors that turn signals into findings, each traceable to an exact JSON field. Prescribe generates the missing AGENTS.md, the tools to disable and the MCP servers to enable. Verify compares two runs of the same task.
+
+The user drags a JSON export onto a web page and gets the diagnosis, the evidence and the corrected configuration. Dragging a second export produces the A/B table.
+
+We ran the same task twice, same commit, same prompt, same approval settings. Only the configuration changed. Fixed overhead fell from 10,439 to 7,740 tokens, down 25.9 percent. API cost fell from $0.336902 to $0.270606, down 19.7 percent. projectRules went from 0 to 121.
+
+We report what got worse too. Turns rose from five to six. And our registered hypothesis was wrong: disabling tools did not shrink toolDefinitions at all. The savings came from toolSystemPrompts, down 81.5 percent. Only running the experiment could reveal that, and we changed the product's recommendation because of it.
+
+Hindsight is a static page: no backend, no database, no API key, no network call. The export is read in the browser and never leaves the user's machine - which matters, because it contains source code, absolute paths and executed commands. No language model is called: every recommendation is a rule plus a versioned catalogue, so it is deterministic and always traceable to the field behind it.
+
+Other tools report agent cost. Hindsight prescribes the fix, then measures whether the fix worked.
