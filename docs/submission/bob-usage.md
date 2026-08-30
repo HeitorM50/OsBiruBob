@@ -42,6 +42,8 @@ one issue per session. Examples:
 | `AGENTS.md` generator | `src/prescribe/` | #16 | `bob_sessions/Gustavo/osbirubob_task16_agents-generator_summary.png` |
 | Prescriptions screen | `src/ui/PrescriptionScreen.tsx` | #42 | `bob_sessions/Hugo/osbirubob_task12_prescription-screen_summary.png` |
 | A/B comparison module | `src/compare/` | #20 | `bob_sessions/Heitor/osbirubob_task11_bob-compare_summary.png` |
+| Docker MCP server in use | first export with `mcpToolDefinitions > 0` | §5 | `bob_sessions/Heitor/osbirubob_task12_mcp-docker_export.json` |
+| Subtask delegation | repository cleanup, 3 delegated subtasks | §5 | `bob_sessions/Heitor/osbirubob_task13_subagents-bob_export.json` |
 
 **Five team members** have Bob sessions in `bob_sessions/`: Heitor, Gustavo, Hugo,
 Pedro and Philipe.
@@ -93,7 +95,51 @@ Full protocol and measurements: `docs/configuracao-bob.md`.
 before/after pair. We did not run an intermediate session, so we cannot attribute
 the 19.3% between them.
 
-## 5. Bob produced a finding we did not predict
+## 5. MCP and subagents — measured, not claimed
+
+Hindsight *recommends* MCP servers. Before submitting, we connected one and measured
+what it costs, because recommending something we had never run would be dishonest.
+
+### Docker MCP (session `task12_mcp-docker`)
+
+Our own tool, reading our own baseline, recommends **`docker-mcp`** — two `docker`
+shell calls, matching the catalogue entry's `minHits: 2`. We connected that server
+in Bob and rebuilt the benchmark image through MCP tools instead of shell.
+
+| Signal | Every previous export | This session |
+|---|---:|---:|
+| `mcpToolDefinitions` | **0** | **780** |
+
+**MCP is not free, and we report that.** Connecting the server added 780 tokens of
+tool definitions to the fixed overhead. Hindsight recommends MCP to replace
+unstructured shell output with structured results; this is the price of that trade.
+We can now state it as a measured number instead of an assumption.
+
+This session also gave the parser its **first real `mcpToolDefinitions > 0` input**.
+Until then that code path had only ever seen zero.
+
+### Subagents (session `task13_subagents-bob`)
+
+We used `start_subtask` three times to decompose a repository cleanup, delegating
+each step. All three completed successfully.
+
+**Finding about the export format:** the resulting export contains **one task with
+`parentId: null`**. The subtasks appear only as tool calls with text results inside
+the parent — they are **not** exported as separate task records.
+
+That matters for our own domain model. Invariant **I-5** excludes subtasks
+(`parentId !== null`) from aggregation, and our parser handles it — but in export
+format v1 that branch **never fires on real data**. It remains covered by synthetic
+fixtures only, and we say so rather than implying it was validated in production.
+
+The same session exposed an undocumented structure: the subtask transcript is
+embedded in a **nested `data.messages[]` array** inside the parent message, and its
+`_meta.fileMtimes` stores absolute paths as **object keys**. Our redaction filter
+only walked the top-level message array, so it had a blind spot there. We found it
+by auditing the artefact before shipping it, hardened the filter with a
+whole-document pass, and documented the structure in `docs/schema.md`.
+
+## 6. Bob produced a finding we did not predict
 
 Our registered hypothesis said disabling tools would reduce `toolDefinitions`.
 Across **two independent measurements** — the benchmark and our own sessions —
@@ -103,10 +149,14 @@ changed the product's recommendation because of it.
 
 ## What we did not use
 
-To avoid misreading: we did **not** use Bob Shell, watsonx, watsonx Orchestrate,
-subagents, or MCP servers. `mcpToolDefinitions` is `0` in every export we
-collected. Hindsight *recommends* MCP servers from shell commands, but no MCP
-server was connected during our sessions.
+To avoid misreading: we did **not** use Bob Shell, watsonx, or watsonx Orchestrate.
+
+**watsonx was a deliberate exclusion, not an oversight.** Hindsight's core promise is
+that the export never leaves the user's browser and that every recommendation is a
+deterministic rule plus a versioned catalogue. Calling a hosted model would require
+sending the user's own session content to a remote API, would require an API key in a
+static page, and would break the byte-identical output our generators are tested for.
+The absence is the architecture.
 
 Bobcoin figures shown in session screenshots are the platform's own display; we
 report measured cost from the export's `cost` field instead. The mapping above was

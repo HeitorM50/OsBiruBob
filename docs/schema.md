@@ -261,6 +261,29 @@ Não estavam no plano e saem sem esforço:
 
 ---
 
+## Sessões com subtask — array de mensagens aninhado
+
+Descoberto ao rodar uma sessão com `start_subtask` (não aparece no baseline).
+
+Quando o agente delega com `start_subtask`, o transcript da subtask é embutido
+**dentro da mensagem pai**, num array aninhado:
+
+```
+tasks[].messages[].data.messages[]        ← transcript da subtask
+tasks[].messages[].data.messages[]._meta.fileMtimes   ← caminhos absolutos nas CHAVES
+```
+
+Três consequências:
+
+1. **A subtask não vira uma task separada.** O export continua com uma única entrada
+   em `tasks[]`, com `parentId: null`. A invariante I-5 (excluir subtasks da
+   agregação) **nunca dispara com dado real** no formato v1.
+2. **Qualquer redação que só varra `tasks[].messages[]` tem ponto cego.** O
+   `scripts/redact-demo-fixture.jq` precisou de uma passada final com `walk` para
+   alcançar esse nível.
+3. `_meta.fileMtimes` guarda caminhos absolutos nas **chaves** do objeto, que um
+   `gsub` sobre valores não alcança.
+
 ## Armadilhas conhecidas
 
 - **Timestamps são epoch ms.** Não são ISO-8601.

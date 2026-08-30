@@ -10,6 +10,22 @@
 #
 # _meta.changes, _meta.fileMtimes and _meta.cwd are dropped entirely: they are
 # undocumented and key paths there are not reachable by a value-level gsub.
+# Defensive final pass.
+#
+# Subtask sessions embed a NESTED message array at
+# .tasks[].messages[].data.messages[] carrying the delegated subtask transcript,
+# including _meta.fileMtimes whose OBJECT KEYS are absolute file:// paths. The
+# per-message transforms above only reach the top-level messages array, so this
+# pass walks the whole document and drops those undocumented _meta fields
+# wherever they appear, at any depth.
+def strip_meta_leaks:
+  walk(
+    if type == "object" and has("_meta") and (._meta | type) == "object"
+    then ._meta |= del(.fileMtimes, .changes, .cwd)
+    else .
+    end
+  );
+
 def redact_paths:
   walk(
     if type == "string" then
@@ -65,3 +81,4 @@ def safe_arguments:
       )
   )
 | redact_paths
+| strip_meta_leaks
