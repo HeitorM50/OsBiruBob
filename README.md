@@ -6,6 +6,10 @@
 
 IBM TechXchange 2026 — Pre-conference Dev Day Hackathon.
 
+**[Abrir a demo pública do Hindsight](https://heitorm50.github.io/OsBiruBob/)** —
+clique em **"Ver exemplo"** para analisar o baseline sem instalar nada, sem conta
+e sem API key.
+
 ---
 
 ## O problema
@@ -72,13 +76,12 @@ projeto `bob-get-started/express-todo-api-modern`.
 ## Como rodar
 
 O Hindsight é uma **aplicação web estática**. Não tem servidor, não tem banco, não
-pede API key e não faz nenhuma requisição de rede.
+pede API key e não faz nenhuma requisição de rede em runtime.
 
-> Em construção — a implementação vive nas issues das Fases 2 a 6.
-
-**Pela URL publicada.** Abra a página, clique em **"Ver exemplo"** e a ferramenta
-roda em cima do export real do baseline já embutido. É o modo demo: máquina limpa,
-zero configuração.
+**Pela URL publicada.** Abra
+[`heitorm50.github.io/OsBiruBob`](https://heitorm50.github.io/OsBiruBob/), clique
+em **"Ver exemplo"** e a ferramenta roda em cima do export real do baseline já
+embutido. É o modo demo: máquina limpa, zero configuração.
 
 **Rodando local.**
 
