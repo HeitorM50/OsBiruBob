@@ -469,6 +469,7 @@ export type FindingKind =
   | "project-rules-absent"
   | "unused-tool"
   | "skill-overhead"
+  | "mcp-candidate"
   | "unmatched-tool-call"
   | "orphan-tool-result"
   | (string & Record<never, never>); // open for extension
@@ -487,6 +488,10 @@ export interface FindingEvidence {
   breakdownValue?: number;
   unusedTools?: string[];
   externalCommands?: string[];
+  /** Trusted catalogue metadata used to explain an MCP recommendation. */
+  catalogEntryId?: string;
+  replaces?: string;
+  rationale?: string;
   rawValue?: unknown;
 }
 
@@ -510,6 +515,12 @@ export interface Finding {
   costImpact?: number;
 }
 
+/** Result of a diagnostic pass, including reasons a signal was unavailable. */
+export interface DiagnoseResult {
+  findings: Finding[];
+  unavailableMetrics: string[];
+}
+
 // ---------------------------------------------------------------------------
 // Model 7 — Prescription
 // ---------------------------------------------------------------------------
@@ -519,6 +530,7 @@ export type PrescriptionKind =
   | "agents-md-file"
   | "disable-tool"
   | "disable-skill"
+  | "enable-mcp"
   | "custom-mode"
   | (string & Record<never, never>);
 
@@ -596,4 +608,19 @@ export interface Comparison {
   prescriptionIds?: string[];
   notes?: string;
   invalidReason?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Model 10 — Recommendation catalogues
+// ---------------------------------------------------------------------------
+
+export interface McpCatalogEntry {
+  id: string;
+  label: string;
+  binaries: string[];
+  matchesHttp: boolean;
+  replaces: string;
+  rationale: string;
+  docsUrl?: string;
+  minHits?: number;
 }

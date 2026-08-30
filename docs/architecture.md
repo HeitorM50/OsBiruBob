@@ -110,7 +110,9 @@ tipadas que os detectores possam consumir.
 **Responsabilidade:** converter sinais do `ObserveReport` em `Finding[]`
 explicáveis, sem falsos positivos no baseline real.
 
-- Cada detector é uma função pura: `(ObserveReport) => Finding[]`.
+- Cada detector é uma função pura. Detectores baseados somente no report usam
+  `(ObserveReport) => Finding[]`; os que dependem de catálogo retornam
+  `DiagnoseResult`, preservando o motivo quando o dado externo está indisponível.
 - Detectores P0 do roadmap:
   - `#13` — `projectRules === 0`
   - `#14` — ferramenta disponível e nunca chamada

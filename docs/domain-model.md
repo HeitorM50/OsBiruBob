@@ -667,7 +667,20 @@ interface FindingEvidence {
   breakdownValue?:   number;
   unusedTools?:      string[];
   externalCommands?: string[];
+  catalogEntryId?:   string;
+  replaces?:         string;
+  rationale?:        string;
   rawValue?:         unknown;
+}
+```
+
+Detectores que dependem de dados externos curados retornam também o motivo de
+indisponibilidade, sem mutar o `ObserveReport`:
+
+```typescript
+interface DiagnoseResult {
+  findings: Finding[];
+  unavailableMetrics: string[];
 }
 ```
 
@@ -684,6 +697,8 @@ interface FindingEvidence {
   a interface apontar para a linha exata do export.
 - `turnIndices` é 0-based **sobre turnos `assistant`** (`TurnMetrics.index`), não sobre
   `messages[]`.
+- `catalogEntryId`, `replaces` e `rationale` vêm dos catálogos versionados e são
+  dados confiáveis. Em `mcp-candidate`, `externalCommands` continua redigível.
 - `confidence` reflete a certeza do detector, não a gravidade do problema:
   - `"high"`: padrão determinístico (ex.: `isError: true` seguido da mesma tool).
   - `"medium"`: heurística com falso-positivo possível (ex.: `durationMs` alto).
@@ -909,7 +924,8 @@ interface ToolCatalogEntry {
 ### Regras comuns
 
 - Catálogo ausente ou inválido **degrada, não quebra**: o detector correspondente
-  não emite achado e o relatório registra o motivo.
+  retorna `DiagnoseResult` sem achados e registra o motivo em
+  `unavailableMetrics`.
 - Nenhuma entrada de catálogo contém segredo, URL interna ou caminho de máquina.
 - Catálogo é entrada confiável (versionada no repositório), ao contrário do export.
 
