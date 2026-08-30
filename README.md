@@ -1,205 +1,195 @@
 # Hindsight
 
-> Lê os exports de sessão do IBM Bob, mostra onde a configuração do agente está
-> desperdiçando contexto e dinheiro, gera a configuração corrigida e **prova** a
-> melhoria rodando a mesma tarefa de novo.
+> Reads IBM Bob session exports, reveals where an agent configuration wastes
+> context and money, generates a corrected configuration, and **proves** the
+> result by running the same task again.
 
-IBM TechXchange 2026 — Pre-conference Dev Day Hackathon.
+Built during the IBM TechXchange 2026 Pre-conference Dev Day Hackathon.
 
-**[Abrir a demo pública do Hindsight](https://heitorm50.github.io/OsBiruBob/)** —
-clique em **"Ver exemplo"** para analisar o baseline sem instalar nada, sem conta
-e sem API key.
+**[Open the public Hindsight demo](https://heitorm50.github.io/OsBiruBob/)** —
+select **“See an example”** to analyse the embedded, redacted baseline without an
+installation, account, API key, or network request.
 
----
+## The problem
 
-## O problema
+Coding agents load context from tool definitions, Skills, system prompts, base
+rules, and project rules. IBM Bob includes that breakdown in its session export,
+but does not surface it in the session interface.
 
-Um agente de código carrega uma janela de contexto montada de várias origens:
-definições de ferramenta, Skills, prompts de sistema, regras base, regras do
-projeto. O Bob expõe essa decomposição no export da sessão — mas **nenhuma
-interface mostra esse número para quem está usando**.
+Our real Round A baseline, versioned at
+[`benchmark/rodada-a.json`](benchmark/rodada-a.json), paid **10,439 tokens of fixed
+overhead before the agent read one line of code**:
 
-Na nossa Rodada A — baseline real, versionada em [`benchmark/rodada-a.json`](benchmark/rodada-a.json) —
-o overhead fixo foi de 10.439 tokens:
-
-| Origem | Tokens | % |
+| Source | Tokens | Share |
 |---|---:|---:|
-| `toolDefinitions` | 5.403 | 51,8% |
-| `toolSystemPrompts` | 2.470 | 23,7% |
-| `skills` | 1.541 | 14,8% |
-| `staticSections` | 563 | 5,4% |
-| `baseRules` | 197 | 1,9% |
-| `customInstructions` | 160 | 1,5% |
-| `environment` | 71 | 0,7% |
-| `roleDefinition` | 34 | 0,3% |
-| **`projectRules`** | **0** | **0,0%** |
-| `mcpToolDefinitions` | 0 | 0,0% |
+| `toolDefinitions` | 5,403 | 51.8% |
+| `toolSystemPrompts` | 2,470 | 23.7% |
+| `skills` | 1,541 | 14.8% |
+| `staticSections` | 563 | 5.4% |
+| `baseRules` | 197 | 1.9% |
+| `customInstructions` | 160 | 1.5% |
+| `environment` | 71 | 0.7% |
+| `roleDefinition` | 34 | 0.3% |
+| **`projectRules`** | **0** | **0.0%** |
+| `mcpToolDefinitions` | 0 | 0.0% |
 
-Esse zero é o achado. `projectRules: 0` significa que **não existe `AGENTS.md`** no
-repositório: o agente redescobre as mesmas coisas por tentativa e erro em toda
-sessão nova — o mesmo build que quebra, a mesma dependência que falta, a mesma
-correção que o humano precisa ditar de novo. O custo disso é real e ninguém
-nunca o viu, porque o número fica escondido no export.
+That zero is the central finding. `projectRules: 0` means no repository guidance
+was loaded: the agent has to rediscover the same structure, conventions, and
+commands in every new session. The same task carried 23 tools and called only 5.
 
-## A solução
+## The solution
 
-O Hindsight fecha o ciclo em quatro passos:
+Hindsight closes the feedback loop in four stages:
 
-1. **Observe** — faz o parse do export JSON do Bob: custo por turno, contexto por
-   turno, sequência de tool calls, e a decomposição da janela de contexto.
-2. **Diagnose** — detecta os padrões de desperdício: `projectRules` zerado,
-   ferramenta carregada e nunca usada, Skill paga e não utilizada, releitura
-   redundante do mesmo arquivo, retry depois de erro e intervenção humana no meio
-   da conversa.
-3. **Prescribe** — transforma cada achado numa recomendação concreta: o `AGENTS.md`
-   que faltava, as ferramentas a desligar, as Skills que sobram ou que faltam, os
-   servidores MCP que substituiriam chamadas de shell, e quando dividir a task em
-   subagentes. Tudo determinístico, com a evidência ao lado.
-4. **Verify** — roda a mesma tarefa de novo, no mesmo commit, com o mesmo prompt, e
-   compara. O delta é o resultado.
+1. **Observe** — validates a Bob export and normalises turns, tool calls, cost,
+   and context-window metrics.
+2. **Diagnose** — finds absent project rules, idle tools, paid Skill overhead,
+   redundant reads, retries after errors, human intervention, and MCP candidates.
+3. **Prescribe** — produces a missing `AGENTS.md`, tools to disable, Skills to
+   review, and MCP suggestions. Every recommendation is tied to evidence.
+4. **Verify** — compares two runs of the same task and reports improvements,
+   regressions, unavailable metrics, and experiment validity.
 
-## Metodologia
+The full pipeline is deterministic:
 
-Duas rodadas da mesma tarefa-benchmark, mesma pessoa, mesmo commit, prompt idêntico
-caractere por caractere:
+```text
+export JSON → Parser → Observe → Diagnose → Prescribe → Compare → UI
+```
 
-- **Rodada A** — repositório virgem. Sem `AGENTS.md`, sem `.bob`, sem modo customizado,
-  sem Skill. Sem rodar `/init`.
-- **Rodada B** — tudo igual, exceto a configuração gerada pelo Hindsight.
+## Try it
 
-O contrato completo — o que é medido, de onde vem cada número e as regras que
-invalidam a comparação — está em [`benchmark/METRICS.md`](benchmark/METRICS.md).
+The product is a self-contained static application. It has no backend, database,
+credentials, telemetry, or runtime network calls.
 
-Repositório-benchmark: [`IBM/bob-demo`](https://github.com/IBM/bob-demo),
-projeto `bob-get-started/express-todo-api-modern`.
+### Public demo
 
-## Como rodar
+Open <https://heitorm50.github.io/OsBiruBob/> in any browser and select
+**“See an example.”** The embedded fixture is a structurally faithful, redacted
+copy of Round A. To compare your own experiment, drop Round A and Round B exports
+onto the page.
 
-O Hindsight é uma **aplicação web estática**. Não tem servidor, não tem banco, não
-pede API key e não faz nenhuma requisição de rede em runtime.
+### Local web app
 
-**Pela URL publicada.** Abra
-[`heitorm50.github.io/OsBiruBob`](https://heitorm50.github.io/OsBiruBob/), clique
-em **"Ver exemplo"** e a ferramenta roda em cima do export real do baseline já
-embutido. É o modo demo: máquina limpa, zero configuração.
-
-**Rodando local.**
+Node.js 20 or newer is required.
 
 ```bash
 git clone https://github.com/HeitorM50/OsBiruBob.git
 cd OsBiruBob
 npm ci
-npm run dev:web      # abre a aplicação com hot reload
+npm run dev:web
 ```
 
-Para gerar os arquivos estáticos:
+Build and preview the same static artefact deployed on GitHub Pages:
 
 ```bash
-npm run build:web    # saída em dist/web/ — pronto para hospedagem estática
-npm run preview      # confere o build localmente
+npm run build:web    # writes dist/web/index.html
+npm run preview
 ```
 
-**Em cima de uma sessão sua.** No Bob IDE: `Tasks` → export JSON. Arraste o arquivo
-para a página. Arraste **dois** arquivos (Rodada A e Rodada B) para ver a tabela de
-delta.
-
-**Pelo terminal**, para desenvolvimento:
+Development CLI:
 
 ```bash
-npm run demo         # roda a CLI sobre fixtures/sample-export.json
+npm run demo         # builds and analyses fixtures/sample-export.json
 ```
 
-A estrutura do export está documentada em [`docs/schema.md`](docs/schema.md).
-
-## Privacidade
-
-**O seu export nunca sai da sua máquina.** O arquivo é lido pelo navegador com
-`FileReader` e processado na própria aba — não há upload, não há servidor, não há
-telemetria.
-
-Isso não é detalhe de implementação. Um export de sessão do Bob contém o seu
-código-fonte, os caminhos absolutos da sua máquina e os comandos que você rodou.
-Uma ferramenta de análise que exigisse enviar isso para um servidor seria
-inutilizável em qualquer repositório privado.
-
-Pelo mesmo motivo, o Hindsight **não chama nenhum modelo de linguagem**. Toda
-recomendação vem de regra e catálogo versionado, e é rastreável até um campo do
-export — o que também significa que ela sempre pode ser explicada.
-
-## Estrutura do repositório
-
-```
-.bob/          modo mínimo e Skills compartilhadas para implementar as fases F2–F4
-benchmark/     contrato de métricas, prompt da tarefa e os dois exports das rodadas
-bob_sessions/  screenshots das sessões do Bob (entregável obrigatório)
-fixtures/      export de exemplo para desenvolvimento e modo demo
-data/          catálogos curados (MCP, ferramentas) — dado versionado, não código
-scripts/       sanitização e extração segura de métricas dos exports
-src/           implementação — core puro, mais a SPA em src/ui/
-docs/          arquitetura, modelo de domínio, stack, schema do export e roadmap
-```
-
-Quem implementar as fases F2–F4 no Bob deve confiar no workspace e selecionar o
-modo **Hindsight Implementation**. A configuração, as três Skills e a medição
-self-hosting estão documentadas em
-[`docs/configuracao-bob.md`](docs/configuracao-bob.md).
-
-## Resultados
-
-Tabela gerada pelo produto, não montada à mão:
+Canonical verification commands:
 
 ```bash
-npx tsx src/cli.ts --compare benchmark/rodada-a.json benchmark/rodada-b.json
+npm test
+npm run typecheck
+npm run build:web
+npm run demo
 ```
 
-Protocolo do experimento validado: `Comparison.valid === true`.
+## Privacy and security
 
-**Métrica principal: redução de 25,9% no overhead de contexto.** Apoio: custo, −19,7%.
+**A user-provided export never leaves the browser.** It is read with `FileReader`
+and held only in memory. Reloading the page clears it. There is no upload, server,
+storage, model call, or telemetry.
 
-Calculadas pelo Hindsight a partir dos exports:
+This is a product constraint: a Bob export may contain source code, absolute paths,
+prompts, and commands. Public fixtures and submitted Bob reports are redacted;
+generated public output hides message bodies, task titles, tool arguments, and
+workspace paths by default.
 
-| Métrica | Rodada A (baseline) | Rodada B (otimizada) | Delta |
+Security policy and credential-response instructions are in
+[`SECURITY.MD`](SECURITY.MD). Raw session exports and screenshots are ignored until
+they have been reviewed and sanitised.
+
+## Measured A/B result
+
+We ran the same Docker-and-Node task twice on `IBM/bob-demo` commit `cb10cdfb`, with
+the same person, byte-identical prompt, approval permissions, and clean conversation.
+Only the Bob configuration changed.
+
+| Metric | Round A | Round B | Delta |
 |---|---:|---:|---:|
-| API Cost | $0,336902 | $0,270606 | **−$0,066296 (−19,7%)** |
-| **Overhead fixo** | **10.439** | **7.740** | **−2.699 (−25,9%)** |
-| Tokens de conversa | 7.145 | 5.811 | −1.334 (−18,7%) |
-| Contexto reportado | 17.584 | 13.551 | −4.033 (−22,9%) |
-| **Ferramentas ociosas** | **18 de 23 (78%)** | **12 de 17 (71%)** | −6 ferramentas |
-| Skill paga sem uso | 1.541 | 826 | −715 (−46,4%) |
+| API cost | $0.336902 | $0.270606 | **−$0.066296 (−19.7%)** |
+| **Fixed overhead** | **10,439** | **7,740** | **−2,699 (−25.9%)** |
+| Conversation tokens | 7,145 | 5,811 | −1,334 (−18.7%) |
+| Reported context | 17,584 | 13,551 | −4,033 (−22.9%) |
+| Idle tools | 18 of 23 (78%) | 12 of 17 (71%) | −6 tools |
+| Paid Skill without declared use | 1,541 | 826 | −715 (−46.4%) |
 | `projectRules` | **0** | **121** | +121 |
-| Turnos | 5 | 6 | **+1 (regressão)** |
-| Intervenções humanas | 0 | 0 | 0 |
-| Tool calls com erro | 0 | 0 | 0 |
-| Duração | 566 s | 1.338 s | **+772 s (regressão)** |
+| Assistant turns | 5 | 6 | **+1 (regression)** |
+| Tool-call errors | 0 | 0 | 0 |
+| Human interventions | 0 | 0 | 0 |
+| Duration | 566 s | 1,338 s | **+772 s (regression)** |
 
-Preenchidas à mão a partir do screenshot — **não são exportadas pelo Bob**:
+The main result is a **25.9% reduction in fixed context overhead**, supported by a
+**19.7% lower API cost**. The result is intentionally reported with its negative
+outcomes: the run took one more turn and more wall-clock time.
 
-| Métrica | Rodada A (baseline) | Rodada B (otimizada) | Delta |
-|---|---|---|---|
-| Tokens ↑ / ↓ | indisponível | indisponível | — |
-| Cache ↑ / ↓ | indisponível | indisponível | — |
-| Context Length % | 7% (18.4k / 270.0k) | 5% (13.6k / 270.0k) | −2 p.p. |
-| Falhas de build | 0 | 0 | 0 |
+The pre-registered hypothesis was also partly wrong. Removing six tools did **not**
+change `toolDefinitions` (5,403 in both rounds). Instead, `toolSystemPrompts` fell
+81.5%, accounting for 75% of the overhead reduction. The experiment corrected the
+product's own assumption.
 
-### De onde veio a economia
+Screenshot-only metrics are not fabricated from the export. Tokens ↑/↓ and cache
+were unavailable in both summaries; Context Length changed from 7% to 5%; build
+failures were manually observed as 0 in both rounds.
 
-`toolSystemPrompts` caiu **81,5%** (2.470 → 456) e responde sozinho por 75% da
-redução. `projectRules` saiu de zero: o `AGENTS.md` gerado passou a ser carregado.
+See the complete protocol in [`benchmark/METRICS.md`](benchmark/METRICS.md) and the
+result analysis in [`docs/analise-rodada-b.md`](docs/analise-rodada-b.md).
 
-**`toolDefinitions` não se moveu** — 5.403 nas duas rodadas, apesar de o modo
-customizado reduzir de 23 para 17 ferramentas. A hipótese registrada antes do
-experimento previa o contrário, e foi refutada.
+## How IBM Bob was used
 
-### O que regrediu
+IBM Bob is the project's implementation tool, data source, and experimental
+environment. Five team members implemented the project through Bob IDE sessions;
+the repository includes the required task-summary evidence in [`bob_sessions/`](bob_sessions/).
 
-Turnos subiram de 5 para 6 e a duração mais que dobrou. **O custo caiu 19,7% mesmo
-com um turno a mais**, ou seja, cada turno ficou substancialmente mais barato. A
-duração inclui espera por aprovação humana e é a métrica menos confiável do conjunto.
+Hindsight was also applied to its own Bob setup before implementation: the team
+added repository rules, selected a smaller custom mode, and created three reusable
+project Skills. That self-hosting measurement reduced fixed overhead by 19.3%.
 
-Análise completa em [`docs/analise-rodada-b.md`](docs/analise-rodada-b.md).
+The detailed, auditable usage statement is in
+[`docs/submission/bob-usage.md`](docs/submission/bob-usage.md).
 
-## Segurança
+## Repository map
 
-Credencial de IBM Cloud detectada em repositório público suspende a conta na hora.
-Antes de todo commit, a checklist de [`SECURITY.MD`](SECURITY.MD) vale — e o
-`.gitignore` e o `.bobignore` deste repositório não devem ser afrouxados.
+```text
+.bob/          shared Bob custom mode and three project Skills
+benchmark/     experiment protocol, exact task, and redacted Round A/B exports
+bob_sessions/  sanitised Bob reports and task-summary screenshots
+data/          reviewed MCP and tool catalogues
+fixtures/      redacted offline demo fixture
+scripts/       export sanitisation and measurement helpers
+src/           pure pipeline core, React SPA, and development CLI
+docs/          architecture, schema, evidence, results, and submission material
+```
+
+The export schema is documented in [`docs/schema.md`](docs/schema.md), domain
+contracts in [`docs/domain-model.md`](docs/domain-model.md), and dependency rules in
+[`docs/architecture.md`](docs/architecture.md).
+
+## Third-party software and data
+
+The project is released under the [MIT License](LICENSE). Direct runtime
+dependencies are MIT-licensed. The benchmark uses the public
+[`IBM/bob-demo`](https://github.com/IBM/bob-demo) repository at commit `cb10cdfb`,
+licensed under Apache-2.0; no Bob demo source code is redistributed here. Catalogue
+entries link to public project documentation but do not bundle or install those
+projects.
+
+See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for the reviewed inventory,
+licences, and public sources.

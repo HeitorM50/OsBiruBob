@@ -1,0 +1,1354 @@
+{
+  "version": 1,
+  "exportedAt": 1787975444786,
+  "workspace": "file:/[REDACTED]",
+  "tasks": [
+    {
+      "task": {
+        "id": "57be89793cb4c5e6f36bc32b5458d7b8",
+        "workspace": "file:/[REDACTED]",
+        "parentId": null,
+        "taskType": "normal",
+        "title": "[REDACTED]",
+        "status": "active",
+        "firstMessage": "[REDACTED]",
+        "version": null,
+        "gitSha": null,
+        "gitBranch": null,
+        "isPinned": false,
+        "lastError": null,
+        "messageQueue": null,
+        "createdAt": 1787970406021,
+        "updatedAt": 1787975413863,
+        "env": {
+          "id": "57be89793cb4c5e6f36bc32b5458d7b8",
+          "workspace": "file:/[REDACTED]",
+          "workspaceName": "[REDACTED]",
+          "scheme": "file",
+          "query": "[REDACTED]",
+          "language": "en",
+          "isPlayground": false,
+          "costEffective": true,
+          "modeId": "agent",
+          "_meta": {
+            "commandSecurityModel": "openai/gpt-oss-20b"
+          },
+          "staticEnvInfo": {
+            "primaryWorkspace": "[REDACTED]",
+            "systemInfo": {
+              "platform": "win32",
+              "release": "10.0.19045",
+              "arch": "x64",
+              "shell": "powershell.exe"
+            }
+          },
+          "task": [
+            {
+              "description": "[REDACTED]",
+              "state": "done"
+            },
+            {
+              "description": "[REDACTED]",
+              "state": "done"
+            },
+            {
+              "description": "[REDACTED]",
+              "state": "done"
+            },
+            {
+              "description": "[REDACTED]",
+              "state": "done"
+            }
+          ]
+        },
+        "approvalConfig": {
+          "autoApprovalEnabled": true,
+          "outsideWorkspaceAllowed": false,
+          "allowed_permissions": [
+            "read"
+          ],
+          "editApprovalPreviewMode": "editor",
+          "allowedExecutors": [
+            {
+              "toolId": "execute_command",
+              "approvedCommands": [],
+              "deniedCommands": []
+            }
+          ],
+          "taskCommandApprovals": [],
+          "forbiddenApprovalGroups": [],
+          "taskAllowedMcpTools": []
+        },
+        "costs": {
+          "cost": 1.8971299999999998,
+          "contextTokens": 71183,
+          "contextWindowBreakdown": {
+            "total": null,
+            "reportedTotal": null,
+            "breakdown": null,
+            "loadedSkills": [],
+            "key": "[REDACTED]"
+          }
+        }
+      },
+      "messages": [
+        {
+          "id": "112080da84db50c43035aa819eef22bf",
+          "role": "system",
+          "createdAt": 1787971914275,
+          "data": {
+            "id": "112080da84db50c43035aa819eef22bf",
+            "role": "system",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970421871
+            }
+          }
+        },
+        {
+          "id": "7f4b8e6bf7b572399dff755cc368eb9e",
+          "role": "user",
+          "createdAt": 1787971914276,
+          "data": {
+            "id": "7f4b8e6bf7b572399dff755cc368eb9e",
+            "role": "user",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970421871
+            },
+            "envContext": "[REDACTED]",
+            "availableTools": [
+              "GetSymbolsOverview",
+              "FindSymbol",
+              "FindReferencingSymbols",
+              "use_skill",
+              "apply_diff",
+              "create_html_artifact",
+              "insert_content",
+              "list_files",
+              "read_file",
+              "read_xlsx",
+              "search_and_replace",
+              "update_todo_list",
+              "switch_mode",
+              "write_file",
+              "execute_command",
+              "glob",
+              "grep",
+              "search_bob_docs",
+              "spawn_subagent",
+              "ask_followup_question",
+              "start_subtask",
+              "create_chart",
+              "start_workflow"
+            ]
+          }
+        },
+        {
+          "id": "b4b482b9fe875f2c5791d424b8783514",
+          "role": "assistant",
+          "createdAt": 1787971914276,
+          "data": {
+            "id": "b4b482b9fe875f2c5791d424b8783514",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970424246,
+              "spend": {
+                "cost": 0.052366,
+                "contextTokens": 26183,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_avI7DfsQZ7NLJKGBpswyiH",
+                "name": "list_files",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_dY6IjetpjyaQuF80Jw14iL",
+                "name": "glob",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_PZyIdPSeqa1mWBozTMbgJH",
+                "name": "list_files",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_QofZ7vV9jVjYGdGSYrWRlY",
+                "name": "list_files",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_LeKZ2MxQEKSwBui9TKmg5v",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_uyqLIwZMOGVWLHT6loHYHd",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_BMTNT9YQiG7bNGk3R3oDCt",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_wR0BIxRj6ftiys4Oi2yX1P",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_njYv1K86DMAL4LzBcBIpuh",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_D5yLd80jZ0BqYLCesv2waC",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_lqNl7T3tzOBHFJWO4ks4Nj",
+                "name": "read_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "697e6921c6db696a23066da280d077b3",
+          "role": "tool",
+          "createdAt": 1787971914276,
+          "data": {
+            "id": "697e6921c6db696a23066da280d077b3",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970424269,
+              "durationMs": 11
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_avI7DfsQZ7NLJKGBpswyiH",
+                "name": "list_files",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "617635602e09609ea36eb31b93324afc",
+          "role": "tool",
+          "createdAt": 1787971914276,
+          "data": {
+            "id": "617635602e09609ea36eb31b93324afc",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970424302,
+              "durationMs": 45
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_dY6IjetpjyaQuF80Jw14iL",
+                "name": "glob",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "350565bbd61fc995ffd3832b785c1752",
+          "role": "tool",
+          "createdAt": 1787971914276,
+          "data": {
+            "id": "350565bbd61fc995ffd3832b785c1752",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970426503,
+              "durationMs": 3
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_PZyIdPSeqa1mWBozTMbgJH",
+                "name": "list_files",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "c33eca2fdf8b5a40c0c3cd4f6b36f123",
+          "role": "tool",
+          "createdAt": 1787971914277,
+          "data": {
+            "id": "c33eca2fdf8b5a40c0c3cd4f6b36f123",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970426504,
+              "durationMs": 4
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_QofZ7vV9jVjYGdGSYrWRlY",
+                "name": "list_files",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "68b7c84fd98a00cf60b0b785e75af475",
+          "role": "tool",
+          "createdAt": 1787971914277,
+          "data": {
+            "id": "68b7c84fd98a00cf60b0b785e75af475",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970428568,
+              "durationMs": 17
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_LeKZ2MxQEKSwBui9TKmg5v",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "22586e93c3fa7abec31137a700c39701",
+          "role": "tool",
+          "createdAt": 1787971914277,
+          "data": {
+            "id": "22586e93c3fa7abec31137a700c39701",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970428575,
+              "durationMs": 25
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_uyqLIwZMOGVWLHT6loHYHd",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "02f076b48e2913eb4470bfda8482aa58",
+          "role": "tool",
+          "createdAt": 1787971914277,
+          "data": {
+            "id": "02f076b48e2913eb4470bfda8482aa58",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970428592,
+              "durationMs": 42
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_BMTNT9YQiG7bNGk3R3oDCt",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "7f7775cfe195b6a1e90454b644bbee12",
+          "role": "tool",
+          "createdAt": 1787971914277,
+          "data": {
+            "id": "7f7775cfe195b6a1e90454b644bbee12",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970430982,
+              "durationMs": 5
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_wR0BIxRj6ftiys4Oi2yX1P",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "42cfb0f3ea1f20694bb0de4811bc6a49",
+          "role": "tool",
+          "createdAt": 1787971914277,
+          "data": {
+            "id": "42cfb0f3ea1f20694bb0de4811bc6a49",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970430994,
+              "durationMs": 17
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_njYv1K86DMAL4LzBcBIpuh",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "4b3bdaa277b88b5e6c92c7f3d75b23a2",
+          "role": "tool",
+          "createdAt": 1787971914278,
+          "data": {
+            "id": "4b3bdaa277b88b5e6c92c7f3d75b23a2",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970433681,
+              "durationMs": 10
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_D5yLd80jZ0BqYLCesv2waC",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "2a61a227ffd853210bf719feb1ceb03d",
+          "role": "tool",
+          "createdAt": 1787971914278,
+          "data": {
+            "id": "2a61a227ffd853210bf719feb1ceb03d",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970433692,
+              "durationMs": 20
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_lqNl7T3tzOBHFJWO4ks4Nj",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "23964af969b0429379aad21791879a9c",
+          "role": "assistant",
+          "createdAt": 1787971914278,
+          "data": {
+            "id": "23964af969b0429379aad21791879a9c",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970436067,
+              "spend": {
+                "cost": 0.05768,
+                "contextTokens": 28840,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_8ImEreOTPJ8Ufxyc98rJmi",
+                "name": "write_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_mAunKDxWcLmPREEVGJkzuQ",
+                "name": "list_files",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "647e5f2e0c176f25066c49b0b76dcb69",
+          "role": "tool",
+          "createdAt": 1787971914278,
+          "data": {
+            "id": "647e5f2e0c176f25066c49b0b76dcb69",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970540519,
+              "durationMs": 5
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_mAunKDxWcLmPREEVGJkzuQ",
+                "name": "list_files",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "9c614e2d1a408945afdaf77c2105d636",
+          "role": "assistant",
+          "createdAt": 1787971914278,
+          "data": {
+            "id": "9c614e2d1a408945afdaf77c2105d636",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970542929,
+              "spend": {
+                "cost": 0.076704,
+                "contextTokens": 38352,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_O2Vz8PWE9qafCFfHts5Iwl",
+                "name": "write_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "5b0c649c7417fded181d595696e8d5b1",
+          "role": "tool",
+          "createdAt": 1787971914278,
+          "data": {
+            "id": "5b0c649c7417fded181d595696e8d5b1",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970714811,
+              "durationMs": 13072
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_O2Vz8PWE9qafCFfHts5Iwl",
+                "name": "write_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "edit",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "16bb89cbf68acfe408da7a65565d713a",
+          "role": "assistant",
+          "createdAt": 1787971914279,
+          "data": {
+            "id": "16bb89cbf68acfe408da7a65565d713a",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787970718670,
+              "spend": {
+                "cost": 0.07799,
+                "contextTokens": 38995,
+                "reasoningTokens": 0
+              }
+            },
+            "stop": true
+          }
+        },
+        {
+          "id": "f2487fc76950e04c5e7ce4a766078826",
+          "role": "user",
+          "createdAt": 1787971914280,
+          "data": {
+            "id": "f2487fc76950e04c5e7ce4a766078826",
+            "role": "user",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971061424
+            },
+            "envContext": "[REDACTED]",
+            "availableTools": [
+              "GetSymbolsOverview",
+              "FindSymbol",
+              "FindReferencingSymbols",
+              "use_skill",
+              "apply_diff",
+              "create_html_artifact",
+              "insert_content",
+              "list_files",
+              "read_file",
+              "read_xlsx",
+              "search_and_replace",
+              "update_todo_list",
+              "switch_mode",
+              "write_file",
+              "execute_command",
+              "glob",
+              "grep",
+              "search_bob_docs",
+              "spawn_subagent",
+              "ask_followup_question",
+              "start_subtask",
+              "create_chart",
+              "start_workflow"
+            ]
+          }
+        },
+        {
+          "id": "bcac2838f0942c780f5a28515bac6434",
+          "role": "assistant",
+          "createdAt": 1787971914280,
+          "data": {
+            "id": "bcac2838f0942c780f5a28515bac6434",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971063281,
+              "spend": {
+                "cost": 0.09137,
+                "contextTokens": 45685,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_8NaB30kYMNZgnyRE6Hrnad",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_okTzJibUcCCavBoeXWwHhe",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_lOvOLVegY4YOn7LhQFnxJN",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_OTMKaDwprQBbLzEzUxL7IK",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_3oEXnuS1c6FZjMmnjFszbA",
+                "name": "read_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "548eee0f0ab69a27a5782421a820c172",
+          "role": "tool",
+          "createdAt": 1787971914280,
+          "data": {
+            "id": "548eee0f0ab69a27a5782421a820c172",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971063297,
+              "durationMs": 12
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_8NaB30kYMNZgnyRE6Hrnad",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "dff96fbfd911df46e461ab109ba75bfa",
+          "role": "tool",
+          "createdAt": 1787971914280,
+          "data": {
+            "id": "dff96fbfd911df46e461ab109ba75bfa",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971065386,
+              "durationMs": 5
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_okTzJibUcCCavBoeXWwHhe",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "60e73c88bd807a00921acbf6fc6b89f1",
+          "role": "tool",
+          "createdAt": 1787971914280,
+          "data": {
+            "id": "60e73c88bd807a00921acbf6fc6b89f1",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971067641,
+              "durationMs": 4
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_lOvOLVegY4YOn7LhQFnxJN",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "e23c4b8ccda479d996ef438e06e9790a",
+          "role": "tool",
+          "createdAt": 1787971914280,
+          "data": {
+            "id": "e23c4b8ccda479d996ef438e06e9790a",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971069695,
+              "durationMs": 3
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_OTMKaDwprQBbLzEzUxL7IK",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "6ca2bf009ceb3a5d1171e81890745dfd",
+          "role": "tool",
+          "createdAt": 1787971914281,
+          "data": {
+            "id": "6ca2bf009ceb3a5d1171e81890745dfd",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971072253,
+              "durationMs": 4
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_3oEXnuS1c6FZjMmnjFszbA",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "142b2991ac3255299e89ba666362e6fb",
+          "role": "assistant",
+          "createdAt": 1787971914281,
+          "data": {
+            "id": "142b2991ac3255299e89ba666362e6fb",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971074943,
+              "spend": {
+                "cost": 0.117048,
+                "contextTokens": 58524,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_yxhzsFWOqZ0eCfumRyTs2P",
+                "name": "write_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "59e73f1a26aebe2dc151a83f064d350d",
+          "role": "tool",
+          "createdAt": 1787971914281,
+          "data": {
+            "id": "59e73f1a26aebe2dc151a83f064d350d",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971213289,
+              "durationMs": 27164
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_yxhzsFWOqZ0eCfumRyTs2P",
+                "name": "write_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "edit",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "eb0bee14148593602d46cc2b7c624843",
+          "role": "assistant",
+          "createdAt": 1787971914297,
+          "data": {
+            "id": "eb0bee14148593602d46cc2b7c624843",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971215864,
+              "spend": {
+                "cost": 0.133178,
+                "contextTokens": 66589,
+                "reasoningTokens": 0
+              }
+            },
+            "stop": true
+          }
+        },
+        {
+          "id": "3660b5aa75e74807da4f2fd20f9afbdf",
+          "role": "user",
+          "createdAt": 1787971914297,
+          "data": {
+            "id": "3660b5aa75e74807da4f2fd20f9afbdf",
+            "role": "user",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971334065
+            },
+            "envContext": "[REDACTED]",
+            "availableTools": [
+              "GetSymbolsOverview",
+              "FindSymbol",
+              "FindReferencingSymbols",
+              "use_skill",
+              "apply_diff",
+              "create_html_artifact",
+              "insert_content",
+              "list_files",
+              "read_file",
+              "read_xlsx",
+              "search_and_replace",
+              "update_todo_list",
+              "switch_mode",
+              "write_file",
+              "execute_command",
+              "glob",
+              "grep",
+              "search_bob_docs",
+              "spawn_subagent",
+              "ask_followup_question",
+              "start_subtask",
+              "create_chart",
+              "start_workflow"
+            ]
+          }
+        },
+        {
+          "id": "04bc638f8226de8b3dd7bbfd3ce14c78",
+          "role": "assistant",
+          "createdAt": 1787971914298,
+          "data": {
+            "id": "04bc638f8226de8b3dd7bbfd3ce14c78",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971337088,
+              "spend": {
+                "cost": 0.141078,
+                "contextTokens": 70539,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_6XorRxAto3L1pomrpN6773",
+                "name": "read_file",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_85fn3dlO2pVRMOW6H8rfH3",
+                "name": "list_files",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_awjpPf6xqWIvME1hl3mToT",
+                "name": "write_file",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "b8fe35e6fdfec8e09eadd27578ec6a86",
+          "role": "tool",
+          "createdAt": 1787971914298,
+          "data": {
+            "id": "b8fe35e6fdfec8e09eadd27578ec6a86",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971337106,
+              "durationMs": 7
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_85fn3dlO2pVRMOW6H8rfH3",
+                "name": "list_files",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "026c368f240cd48e8d3d3cc938fb6a26",
+          "role": "tool",
+          "createdAt": 1787971914298,
+          "data": {
+            "id": "026c368f240cd48e8d3d3cc938fb6a26",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971337112,
+              "durationMs": 14
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_6XorRxAto3L1pomrpN6773",
+                "name": "read_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "read",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "2dcc1e88c6d4c9bc06e9b81e35e915b8",
+          "role": "tool",
+          "createdAt": 1787971914298,
+          "data": {
+            "id": "2dcc1e88c6d4c9bc06e9b81e35e915b8",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971406768,
+              "durationMs": 23219
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_awjpPf6xqWIvME1hl3mToT",
+                "name": "write_file",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "edit",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "a4d916e4207771b81b7522896e630f25",
+          "role": "assistant",
+          "createdAt": 1787971914298,
+          "data": {
+            "id": "a4d916e4207771b81b7522896e630f25",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971409261,
+              "spend": {
+                "cost": 0.141414,
+                "contextTokens": 70707,
+                "reasoningTokens": 0
+              }
+            },
+            "stop": true
+          }
+        },
+        {
+          "id": "c01ab147fbf625ce2b22f9c89a8ae459",
+          "role": "user",
+          "createdAt": 1787971914299,
+          "data": {
+            "id": "c01ab147fbf625ce2b22f9c89a8ae459",
+            "role": "user",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971773467
+            },
+            "envContext": "[REDACTED]",
+            "availableTools": [
+              "GetSymbolsOverview",
+              "FindSymbol",
+              "FindReferencingSymbols",
+              "use_skill",
+              "apply_diff",
+              "create_html_artifact",
+              "insert_content",
+              "list_files",
+              "read_file",
+              "read_xlsx",
+              "search_and_replace",
+              "update_todo_list",
+              "switch_mode",
+              "write_file",
+              "execute_command",
+              "glob",
+              "grep",
+              "search_bob_docs",
+              "spawn_subagent",
+              "ask_followup_question",
+              "start_subtask",
+              "create_chart",
+              "start_workflow"
+            ]
+          }
+        },
+        {
+          "id": "c18d42c4034b9c604076aa121fa91b78",
+          "role": "assistant",
+          "createdAt": 1787971914299,
+          "data": {
+            "id": "c18d42c4034b9c604076aa121fa91b78",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971776158,
+              "spend": {
+                "cost": 0.142366,
+                "contextTokens": 71183,
+                "reasoningTokens": 0
+              }
+            },
+            "toolCalls": [
+              {
+                "id": "tooluse_PqUeuaXEqWGtYm1uYP069y",
+                "name": "execute_command",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_Q6MpSbrNiNMj4A22CxzhRt",
+                "name": "execute_command",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_nq9dmoQxpf1QhkTdheNOq0",
+                "name": "execute_command",
+                "arguments": {}
+              },
+              {
+                "id": "tooluse_T7qmJharn1rYRCk5hlkEw2",
+                "name": "start_workflow",
+                "arguments": {}
+              }
+            ]
+          }
+        },
+        {
+          "id": "c51e427a85161c14a4600f97eb59b89f",
+          "role": "tool",
+          "createdAt": 1787971914299,
+          "data": {
+            "id": "c51e427a85161c14a4600f97eb59b89f",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971796902,
+              "durationMs": 20740
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_PqUeuaXEqWGtYm1uYP069y",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "79bcd70d7d17d7b09df199f53b0130f8",
+          "role": "tool",
+          "createdAt": 1787971914299,
+          "data": {
+            "id": "79bcd70d7d17d7b09df199f53b0130f8",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971803748,
+              "durationMs": 4084
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_nq9dmoQxpf1QhkTdheNOq0",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "47cfdeb7aee2439f8f708b53a348d10a",
+          "role": "tool",
+          "createdAt": 1787971914299,
+          "data": {
+            "id": "47cfdeb7aee2439f8f708b53a348d10a",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971805263,
+              "durationMs": 5600
+            },
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_Q6MpSbrNiNMj4A22CxzhRt",
+                "name": "execute_command",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "execute",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "c2fc6826d83141915753ef9e4af466a6",
+          "role": "assistant",
+          "createdAt": 1787971914299,
+          "data": {
+            "id": "c2fc6826d83141915753ef9e4af466a6",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971807646
+            }
+          }
+        },
+        {
+          "id": "15acdaf4c80656e9706c5cc3a9e08c2e",
+          "role": "tool",
+          "createdAt": 1787971914299,
+          "data": {
+            "id": "15acdaf4c80656e9706c5cc3a9e08c2e",
+            "role": "tool",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971809845,
+              "durationMs": 2203
+            },
+            "stop": true,
+            "toolUsage": {
+              "signature": {
+                "id": "tooluse_T7qmJharn1rYRCk5hlkEw2",
+                "name": "start_workflow",
+                "arguments": {},
+                "isError": false
+              },
+              "permission": "workflow",
+              "isOutsideWorkspace": false
+            }
+          }
+        },
+        {
+          "id": "36cbcfbd149654c1fca1b2f802b444a2",
+          "role": "assistant",
+          "createdAt": 1787971914300,
+          "data": {
+            "id": "36cbcfbd149654c1fca1b2f802b444a2",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971810183
+            }
+          }
+        },
+        {
+          "id": "42f87fa0f721aa9ef3fe22fd4fc8c9a8",
+          "role": "user",
+          "createdAt": 1787971914300,
+          "data": {
+            "id": "42f87fa0f721aa9ef3fe22fd4fc8c9a8",
+            "role": "user",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971814789
+            }
+          }
+        },
+        {
+          "id": "f9fa355c5887b1fb1dd6594526b800a0",
+          "role": "assistant",
+          "createdAt": 1787971914300,
+          "data": {
+            "id": "f9fa355c5887b1fb1dd6594526b800a0",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971814801
+            }
+          }
+        },
+        {
+          "id": "3d5dab930172ac584f478dbd382a9a5f",
+          "role": "assistant",
+          "createdAt": 1787971914300,
+          "data": {
+            "id": "3d5dab930172ac584f478dbd382a9a5f",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971815694
+            }
+          }
+        },
+        {
+          "id": "871160e6e947f739e5ee9506c82ec206",
+          "role": "assistant",
+          "createdAt": 1787971914300,
+          "data": {
+            "id": "871160e6e947f739e5ee9506c82ec206",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971817043
+            }
+          }
+        },
+        {
+          "id": "1c324a43fde29909490cb758e3ff84bc",
+          "role": "assistant",
+          "createdAt": 1787971914301,
+          "data": {
+            "id": "1c324a43fde29909490cb758e3ff84bc",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971817642
+            }
+          }
+        },
+        {
+          "id": "de2faf75ea666f56c5238d6a259dd196",
+          "role": "user",
+          "createdAt": 1787971914301,
+          "data": {
+            "id": "de2faf75ea666f56c5238d6a259dd196",
+            "role": "user",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971820700
+            }
+          }
+        },
+        {
+          "id": "69a9049b7fdb768da95e1d5f496003f5",
+          "role": "assistant",
+          "createdAt": 1787971914301,
+          "data": {
+            "id": "69a9049b7fdb768da95e1d5f496003f5",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971820726
+            }
+          }
+        },
+        {
+          "id": "26375885b0f1f5b5ca4b82ff904f3f87",
+          "role": "assistant",
+          "createdAt": 1787971914301,
+          "data": {
+            "id": "26375885b0f1f5b5ca4b82ff904f3f87",
+            "role": "assistant",
+            "content": "[REDACTED]",
+            "_meta": {
+              "timestamp": 1787971914258
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
