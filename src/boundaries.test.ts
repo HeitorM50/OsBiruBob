@@ -50,13 +50,19 @@ function relPath(abs: string): string {
   return path.relative(ROOT, abs);
 }
 
+function withoutComments(content: string): string {
+  return content
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+}
+
 // ── tests ──────────────────────────────────────────────────────────────────
 
 describe("boundaries", () => {
   it("no Node API imports outside src/cli.ts", () => {
-    const nodeApis = ["from 'fs'", 'from "fs"', "from 'path'", 'from "path"', "from 'os'", 'from "os"'];
-    const processRe = /\bprocess\.(env|exit|argv|cwd|platform|stdout|stderr)\b/;
-    const nodeRequireRe = /require\(['"](?:fs|path|os)['"]\)/;
+    const nodeImportRe =
+      /(?:from\s+|import\s*\(\s*|require\s*\(\s*|import\s+)["'](?:node:)?(?:fs|path|process|os)(?:\/[^"']*)?["']/;
+    const processRe = /\bprocess\b/;
 
     const violations: string[] = [];
 
@@ -64,15 +70,10 @@ describe("boundaries", () => {
       const rel = relPath(f);
       if (rel === "src/cli.ts") continue;
 
-      const content = fs.readFileSync(f, "utf8");
+      const content = withoutComments(fs.readFileSync(f, "utf8"));
 
-      for (const api of nodeApis) {
-        if (content.includes(api)) {
-          violations.push(`${rel}: forbidden Node import '${api}'`);
-        }
-      }
-      if (nodeRequireRe.test(content)) {
-        violations.push(`${rel}: forbidden Node require()`);
+      if (nodeImportRe.test(content)) {
+        violations.push(`${rel}: forbidden Node module import`);
       }
       if (processRe.test(content)) {
         violations.push(`${rel}: forbidden Node process API`);
@@ -83,21 +84,21 @@ describe("boundaries", () => {
   });
 
   it("no network calls in production source", () => {
-    const patterns = [
-      "fetch(",
-      "new XMLHttpRequest",
-      "new WebSocket",
+    const patterns: Array<[RegExp, string]> = [
+      [/\bfetch\s*\(/, "fetch"],
+      [/\bXMLHttpRequest\b/, "XMLHttpRequest"],
+      [/\bWebSocket\b/, "WebSocket"],
     ];
 
     const violations: string[] = [];
 
     for (const f of productionFiles()) {
       const rel = relPath(f);
-      const content = fs.readFileSync(f, "utf8");
+      const content = withoutComments(fs.readFileSync(f, "utf8"));
 
-      for (const p of patterns) {
-        if (content.includes(p)) {
-          violations.push(`${rel}: forbidden network call '${p}'`);
+      for (const [pattern, label] of patterns) {
+        if (pattern.test(content)) {
+          violations.push(`${rel}: forbidden network API '${label}'`);
         }
       }
     }
@@ -106,21 +107,21 @@ describe("boundaries", () => {
   });
 
   it("no unsafe HTML rendering in production source", () => {
-    const patterns = [
-      "dangerouslySetInnerHTML",
-      "innerHTML",
-      "eval(",
+    const patterns: Array<[RegExp, string]> = [
+      [/\bdangerouslySetInnerHTML\b/, "dangerouslySetInnerHTML"],
+      [/\.innerHTML\b/, "innerHTML"],
+      [/\beval\s*\(/, "eval"],
     ];
 
     const violations: string[] = [];
 
     for (const f of productionFiles()) {
       const rel = relPath(f);
-      const content = fs.readFileSync(f, "utf8");
+      const content = withoutComments(fs.readFileSync(f, "utf8"));
 
-      for (const p of patterns) {
-        if (content.includes(p)) {
-          violations.push(`${rel}: forbidden unsafe rendering '${p}'`);
+      for (const [pattern, label] of patterns) {
+        if (pattern.test(content)) {
+          violations.push(`${rel}: forbidden unsafe rendering '${label}'`);
         }
       }
     }
