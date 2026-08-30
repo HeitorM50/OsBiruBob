@@ -20,6 +20,7 @@ import { join } from "path";
 import { parseSession } from "./parser/index";
 import { observe } from "./observe/index";
 import { toPublicReport } from "./observe/public-report";
+import { diagnose } from "./diagnose/index";
 import type { ObserveReport } from "./domain/types";
 
 // ---------------------------------------------------------------------------
@@ -96,6 +97,7 @@ function parseArgs(argv: string[]): { inputPath: string; emitJson: boolean } {
  */
 function formatReport(report: ObserveReport): string {
   const lines: string[] = [];
+  const diagnosis = diagnose(report);
 
   lines.push("");
   lines.push("┌─ Hindsight — ObserveReport ──────────────────────────────────┐");
@@ -114,6 +116,7 @@ function formatReport(report: ObserveReport): string {
   lines.push(`  Tool calls           ${report.totals.toolCalls}`);
   lines.push(`  Errored tool calls   ${report.totals.erroredToolCalls}`);
   lines.push(`  Human interventions  ${report.totals.humanInterventions}`);
+  lines.push(`  Diagnostic findings  ${diagnosis.findings.length}`);
 
   // Per-task detail
   for (const task of report.tasks) {
@@ -165,6 +168,9 @@ function formatReport(report: ObserveReport): string {
   lines.push("");
   lines.push("  ── Unavailable metrics ───────────────────────────────────────");
   lines.push(`  ${report.unavailableMetrics.join(", ")}`);
+  if (diagnosis.unavailableMetrics.length > 0) {
+    lines.push(`  ${diagnosis.unavailableMetrics.join(", ")}`);
+  }
 
   // Anomalies
   if (report.anomalies.length > 0) {
