@@ -9,5 +9,6 @@
  */
 
 export { detectProjectRulesAbsent } from "./project-rules-absent";
+export { detectRetryAfterError } from "./retry-after-error";
 export { detectRedundantReads } from "./redundant-read";
 export { detectSkillOverhead } from "./skill-overhead";

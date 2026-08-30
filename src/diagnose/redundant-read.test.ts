@@ -114,6 +114,7 @@ function createReadCall(
     assistantMessageId: `msg-${turnIndex}`,
     resultMessageId: `result-${turnIndex}`,
     isError: false,
+    errorMessage: null,
     permission: "read",
     durationMs: 100,
     isOutsideWorkspace: false,
@@ -136,6 +137,7 @@ function createWriteCall(
     assistantMessageId: `msg-${turnIndex}`,
     resultMessageId: `result-${turnIndex}`,
     isError: false,
+    errorMessage: null,
     permission: "edit",
     durationMs: 100,
     isOutsideWorkspace: false,
@@ -150,10 +152,10 @@ describe("detectRedundantReads", () => {
       createReadCall("read_file", "src/utils.ts", 1),
       createReadCall("read_file", "package.json", 2),
     ];
-    
+
     const report = createReport(toolCalls);
     const findings = detectRedundantReads(report);
-    
+
     expect(findings).toHaveLength(0);
   });
 
@@ -162,10 +164,10 @@ describe("detectRedundantReads", () => {
       createReadCall("read_file", "src/index.ts", 0),
       createReadCall("read_file", "src/index.ts", 2), // releitura no turno 2
     ];
-    
+
     const report = createReport(toolCalls);
     const findings = detectRedundantReads(report);
-    
+
     expect(findings).toHaveLength(1);
     expect(findings[0].kind).toBe("redundant-read");
     expect(findings[0].evidence.turnIndices).toEqual([0, 2]);
@@ -178,10 +180,10 @@ describe("detectRedundantReads", () => {
       createReadCall("read_file", "src/index.ts", 0),
       createReadCall("read_file", "src/index.ts", 0), // mesmo turno
     ];
-    
+
     const report = createReport(toolCalls);
     const findings = detectRedundantReads(report);
-    
+
     expect(findings).toHaveLength(0);
   });
 
@@ -191,10 +193,10 @@ describe("detectRedundantReads", () => {
       createWriteCall("write_file", "src/index.ts", 1), // escrita no meio
       createReadCall("read_file", "src/index.ts", 2), // releitura após escrita
     ];
-    
+
     const report = createReport(toolCalls);
     const findings = detectRedundantReads(report);
-    
+
     expect(findings).toHaveLength(0);
   });
 
@@ -203,10 +205,10 @@ describe("detectRedundantReads", () => {
       createReadCall("read_file", "./src/index.ts", 0),
       createReadCall("read_file", "src/index.ts", 2), // mesmo path normalizado
     ];
-    
+
     const report = createReport(toolCalls);
     const findings = detectRedundantReads(report);
-    
+
     expect(findings).toHaveLength(1);
     expect(findings[0].kind).toBe("redundant-read");
   });
@@ -216,10 +218,10 @@ describe("detectRedundantReads", () => {
       createReadCall("list_files", "src", 0, true), // recursivo
       createReadCall("list_files", "src", 2, false), // não recursivo
     ];
-    
+
     const report = createReport(toolCalls);
     const findings = detectRedundantReads(report);
-    
+
     expect(findings).toHaveLength(0);
   });
 
@@ -228,10 +230,10 @@ describe("detectRedundantReads", () => {
       createReadCall("read_file", "src/index.ts", 0),
       createReadCall("read_file", "src/index.ts", 2),
     ];
-    
+
     const report = createReport(toolCalls, true); // isSubtask = true
     const findings = detectRedundantReads(report);
-    
+
     expect(findings).toHaveLength(0);
   });
 
@@ -240,10 +242,10 @@ describe("detectRedundantReads", () => {
       createReadCall("read_file", "src/index.ts", 0),
       createReadCall("read_file", "src/index.ts", 2),
     ];
-    
+
     const report = createReport(toolCalls);
     const findings = detectRedundantReads(report);
-    
+
     expect(findings).toHaveLength(1);
     expect(findings[0].evidence.redactable).toBe(true);
   });
@@ -254,10 +256,10 @@ describe("detectRedundantReads", () => {
       createReadCall("read_file", "src/index.ts", 2),
       createReadCall("read_file", "src/index.ts", 4), // 3 turnos
     ];
-    
+
     const report = createReport(toolCalls);
     const findings = detectRedundantReads(report);
-    
+
     expect(findings).toHaveLength(1);
     // 3 turnos = 2 releituras redundantes = 2 * 500 = 1000 tokens
     expect(findings[0].tokenImpact).toBe(1000);

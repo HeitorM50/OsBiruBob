@@ -9,6 +9,7 @@
  *   - workspace
  *   - task.title
  *   - toolCalls[].arguments
+ *   - toolCalls[].errorMessage
  *   - externalCommands[].raw
  *   - humanInterventions[].content
  *
@@ -41,9 +42,13 @@ export type PublicHumanIntervention = Omit<HumanIntervention, "content"> & {
   content: "[REDACTED]";
 };
 
-/** ToolCallRecord with arguments replaced by "[REDACTED]". */
-export type PublicToolCallRecord = Omit<ToolCallRecord, "arguments"> & {
+/** ToolCallRecord with sensitive content replaced by "[REDACTED]". */
+export type PublicToolCallRecord = Omit<
+  ToolCallRecord,
+  "arguments" | "errorMessage"
+> & {
   arguments: "[REDACTED]";
+  errorMessage: "[REDACTED]" | null;
 };
 
 export type PublicTaskReport = Omit<
@@ -91,7 +96,11 @@ function redactTaskReport(task: TaskReport): PublicTaskReport {
 }
 
 function redactToolCallRecord(rec: ToolCallRecord): PublicToolCallRecord {
-  return { ...rec, arguments: "[REDACTED]" };
+  return {
+    ...rec,
+    arguments: "[REDACTED]",
+    errorMessage: rec.errorMessage === null ? null : "[REDACTED]",
+  };
 }
 
 function redactExternalCommand(cmd: ExternalCommandRecord): PublicExternalCommandRecord {

@@ -462,6 +462,7 @@ interface ToolCallRecord {
 
   resultMessageId:    string | null;
   isError:            boolean | null;
+  errorMessage:       string | null;
   permission:         "read" | "edit" | "execute" | "todo" | null;
   durationMs:         number | null;
   isOutsideWorkspace: boolean | null;
@@ -470,7 +471,8 @@ interface ToolCallRecord {
 
 - Campos do resultado são `null` quando a chamada não tem resultado correspondente
   (chamada órfã). `isError: null` **não é** `false` — é ausência de dado.
-- `arguments` é `redactable`: pode conter caminho, comando ou código.
+- `arguments` e `errorMessage` são `redactable`: podem conter caminho, comando
+  ou código. `errorMessage` é `null` quando não há erro confirmado.
 
 ### `ToolInventory`
 

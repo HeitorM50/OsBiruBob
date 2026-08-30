@@ -231,6 +231,38 @@ describe("observe — forward-compatible tool permissions", () => {
   });
 });
 
+describe("observe — error result content", () => {
+  it("preserves error content for diagnosis and omits successful result content", () => {
+    const base = JSON.parse(readFixture("fixtures/sample-export.json"));
+    const toolMessages = base.tasks[0].messages.filter(
+      (message: { data?: { role?: string } }) => message.data?.role === "tool"
+    );
+    if (toolMessages.length < 2) {
+      throw new Error("Expected at least two tool messages in the baseline");
+    }
+
+    toolMessages[0].data.toolUsage.signature.isError = true;
+    toolMessages[0].data.content = "Synthetic failure content";
+    toolMessages[1].data.toolUsage.signature.isError = false;
+    toolMessages[1].data.content = "Synthetic success content";
+
+    const parsed = parseSession(JSON.stringify(base));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    const report = observe(parsed.value);
+    const errored = report.tasks[0].toolCalls.find(
+      (call) => call.resultMessageId === toolMessages[0].id
+    );
+    const succeeded = report.tasks[0].toolCalls.find(
+      (call) => call.resultMessageId === toolMessages[1].id
+    );
+
+    expect(errored?.errorMessage).toBe("Synthetic failure content");
+    expect(succeeded?.errorMessage).toBeNull();
+  });
+});
+
 // ---------------------------------------------------------------------------
 // completed — must come from stop:true, never from task.status
 // ---------------------------------------------------------------------------
@@ -871,6 +903,21 @@ describe("toPublicReport — redaction", () => {
         expect(tc.arguments).toBe("[REDACTED]");
       }
     }
+  });
+
+  it("redacts tool error messages without mutating the report", () => {
+    const reportWithError = structuredClone(report);
+    const toolCall = reportWithError.tasks[0].toolCalls[0];
+    toolCall.isError = true;
+    toolCall.errorMessage = "failed at /private/workspace/file.ts";
+
+    const publicReport = toPublicReport(reportWithError);
+
+    expect(publicReport.tasks[0].toolCalls[0].errorMessage).toBe("[REDACTED]");
+    expect(JSON.stringify(publicReport)).not.toContain("/private/workspace/file.ts");
+    expect(reportWithError.tasks[0].toolCalls[0].errorMessage).toBe(
+      "failed at /private/workspace/file.ts"
+    );
   });
 
   it("all externalCommands raw fields are [REDACTED]", () => {
