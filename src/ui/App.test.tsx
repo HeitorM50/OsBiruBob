@@ -2,10 +2,14 @@
 
 import React from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import sampleExport from "../../fixtures/sample-export.json?raw";
 import roundBExport from "../../benchmark/rodada-b.json?raw";
 import App from "./App";
+
+beforeEach(() => {
+  vi.stubGlobal("scrollTo", vi.fn());
+});
 
 afterEach(() => {
   cleanup();
@@ -14,6 +18,11 @@ afterEach(() => {
 
 function exportFile(name: string): File {
   return new File([sampleExport], name, { type: "application/json" });
+}
+
+async function returnToInputAfterAnalysis(): Promise<void> {
+  await screen.findByTestId("context-window-screen");
+  fireEvent.click(screen.getByRole("button", { name: "1 · Input" }));
 }
 
 describe("App input screen", () => {
@@ -37,8 +46,9 @@ describe("App input screen", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
+    await returnToInputAfterAnalysis();
 
-    expect(await screen.findByText("Round A")).toBeTruthy();
+    expect(screen.getByText("Round A")).toBeTruthy();
     expect(screen.getAllByText("Example").length).toBeGreaterThan(0);
     expect(screen.getByText(/1 task · 5 turns · 4 findings/)).toBeTruthy();
     expect(screen.getByText(/comparison is enabled/)).toBeTruthy();
@@ -61,7 +71,8 @@ describe("App input screen", () => {
     fireEvent.drop(screen.getByTestId("dropzone"), {
       dataTransfer: { files: [exportFile("round-a.json")] },
     });
-    expect(await screen.findByText("Round A")).toBeTruthy();
+    await returnToInputAfterAnalysis();
+    expect(screen.getByText("Round A")).toBeTruthy();
 
     const comparisonStep = screen.getByRole("button", {
       name: "5 · Comparison",
@@ -89,7 +100,8 @@ describe("App input screen", () => {
       },
     });
 
-    expect(await screen.findByText("Round B")).toBeTruthy();
+    await returnToInputAfterAnalysis();
+    expect(screen.getByText("Round B")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "5 · Comparison" }));
 
     expect(screen.getByText("Valid export metrics")).toBeTruthy();
@@ -108,10 +120,8 @@ describe("App input screen", () => {
     expect(diagnosisStep.disabled).toBe(true);
 
     fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
-    expect(await screen.findByText("Round A")).toBeTruthy();
+    expect(await screen.findByTestId("context-window-screen")).toBeTruthy();
     expect(diagnosisStep.disabled).toBe(false);
-
-    fireEvent.click(diagnosisStep);
 
     // The centrepiece of the pitch must be reachable from the demo in one click.
     expect(screen.getByTestId("context-window-screen")).toBeTruthy();
@@ -135,10 +145,10 @@ describe("App input screen", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
-    expect(await screen.findByText("Round A")).toBeTruthy();
+    expect(await screen.findByTestId("context-window-screen")).toBeTruthy();
 
     scrollTo.mockClear();
-    fireEvent.click(screen.getByRole("button", { name: "2 · Diagnosis" }));
+    fireEvent.click(screen.getByRole("button", { name: "1 · Input" }));
 
     // Each step is a page of its own: opening one while the previous page was
     // scrolled down must not land the reader on blank space.
@@ -153,7 +163,7 @@ describe("App input screen", () => {
     expect(prescriptionsStep.disabled).toBe(true);
 
     fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
-    expect(await screen.findByText("Round A")).toBeTruthy();
+    expect(await screen.findByTestId("context-window-screen")).toBeTruthy();
     expect(prescriptionsStep.disabled).toBe(false);
 
     fireEvent.click(prescriptionsStep);
@@ -190,7 +200,7 @@ describe("App input screen", () => {
     expect(findingsStep.disabled).toBe(true);
 
     fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
-    expect(await screen.findByText("Round A")).toBeTruthy();
+    expect(await screen.findByTestId("context-window-screen")).toBeTruthy();
     expect(findingsStep.disabled).toBe(false);
 
     fireEvent.click(findingsStep);
@@ -216,7 +226,8 @@ describe("App input screen", () => {
     const selector = screen.getByLabelText("Select JSON exports from IBM Bob");
     fireEvent.change(selector, { target: { files: [exportFile("round-a.json")] } });
 
-    expect(await screen.findByText("Round A")).toBeTruthy();
+    await returnToInputAfterAnalysis();
+    expect(screen.getByText("Round A")).toBeTruthy();
     expect(screen.getAllByText("round-a.json")).toHaveLength(2);
     expect(screen.getByText(/Add a Round B/)).toBeTruthy();
 
@@ -225,7 +236,8 @@ describe("App input screen", () => {
     fireEvent.dragLeave(dropzone);
     fireEvent.drop(dropzone, { dataTransfer: { files: [exportFile("round-b.json")] } });
 
-    expect(await screen.findByText("Round B")).toBeTruthy();
+    await returnToInputAfterAnalysis();
+    expect(screen.getByText("Round B")).toBeTruthy();
     expect(screen.getByText("round-b.json")).toBeTruthy();
     expect(screen.getByText(/comparison is enabled/)).toBeTruthy();
     expect(readText).toHaveBeenCalledTimes(2);
@@ -238,7 +250,8 @@ describe("App input screen", () => {
       dataTransfer: { files: [exportFile("a.json"), exportFile("b.json"), exportFile("c.json")] },
     });
 
-    expect(await screen.findByText("Session 3")).toBeTruthy();
+    await returnToInputAfterAnalysis();
+    expect(screen.getByText("Session 3")).toBeTruthy();
     expect(screen.getByText("3 sessions analyzed")).toBeTruthy();
     expect(screen.getByText(/future recurring analyses/)).toBeTruthy();
     expect(screen.queryByText(/Skill recomendada/)).toBeNull();
@@ -256,7 +269,8 @@ describe("App input screen", () => {
     expect(screen.getByText("Not a single byte left your machine.")).toBeTruthy();
 
     await act(async () => resolveRead?.(sampleExport));
-    expect(await screen.findByText("Round A")).toBeTruthy();
+    await returnToInputAfterAnalysis();
+    expect(screen.getByText("Round A")).toBeTruthy();
   });
 
   it("keeps valid files from a mixed batch and reports each rejected file", async () => {
@@ -271,7 +285,8 @@ describe("App input screen", () => {
       dataTransfer: { files: [exportFile("valid.json"), exportFile("broken.json"), exportFile("package.json")] },
     });
 
-    expect(await screen.findByText("Round A")).toBeTruthy();
+    await returnToInputAfterAnalysis();
+    expect(screen.getByText("Round A")).toBeTruthy();
     expect(screen.getAllByText("valid.json")).toHaveLength(2);
     expect(screen.getByText(/broken.json/)).toBeTruthy();
     expect(screen.getByText(/package.json/)).toBeTruthy();
@@ -291,7 +306,8 @@ describe("App input screen", () => {
     render(<App readText={async () => sampleExport} />);
     fireEvent.drop(screen.getByTestId("dropzone"), { dataTransfer: { files: [exportFile(maliciousName)] } });
 
-    expect(await screen.findByText(maliciousName)).toBeTruthy();
+    await returnToInputAfterAnalysis();
+    expect(screen.getAllByText(maliciousName).length).toBeGreaterThan(0);
     expect(document.querySelector("script[data-xss='yes']")).toBeNull();
   });
 
@@ -305,7 +321,7 @@ describe("App input screen", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
 
-    expect(await screen.findByText("Round A")).toBeTruthy();
+    expect(await screen.findByTestId("context-window-screen")).toBeTruthy();
     expect(document.querySelector("script[data-export-xss='yes']")).toBeNull();
     expect(document.body.textContent).not.toContain(payload);
   });
@@ -313,10 +329,12 @@ describe("App input screen", () => {
   it("example replaces previous files and clear removes all in-memory state", async () => {
     render(<App readText={async () => sampleExport} />);
     fireEvent.drop(screen.getByTestId("dropzone"), { dataTransfer: { files: [exportFile("private-session.json")] } });
-    expect(await screen.findByText("private-session.json")).toBeTruthy();
+    await returnToInputAfterAnalysis();
+    expect(screen.getAllByText("private-session.json").length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
-    expect((await screen.findAllByText(/sample-export\.json/)).length).toBeGreaterThan(0);
+    await returnToInputAfterAnalysis();
+    expect(screen.getAllByText(/sample-export\.json/).length).toBeGreaterThan(0);
     expect(screen.queryByText("private-session.json")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Clear analyses" }));
@@ -329,7 +347,7 @@ describe("App input screen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Toggle theme" }));
     expect(screen.getByRole("button", { name: "Toggle theme" }).textContent).toBe("Light theme");
     fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
-    expect(await screen.findByText("Round A")).toBeTruthy();
+    expect(await screen.findByTestId("context-window-screen")).toBeTruthy();
     first.unmount();
 
     render(<App />);
