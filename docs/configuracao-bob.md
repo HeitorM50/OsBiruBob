@@ -152,10 +152,11 @@ osbirubob_taskNN_selfhost-after_summary.png
 ```
 
 Nesta execução, os exports legados da calibração self-hosting ainda usam `task00`.
-Os screenshots seguem a sequência cronológica global do time: `task04` para
-`selfhost-before` e `task05` para `selfhost-after`, sob `bob_sessions/Heitor/`.
-Exports brutos e screenshots originais usam os sufixos `.raw-export.json` e
-`.raw-summary.png`; permanecem locais e ignorados pelo Git.
+Os screenshots estão nomeados `task04` para `selfhost-before` e `task05` para
+`selfhost-after`, sob `bob_sessions/Heitor/`. Esses números só podem ser tratados
+como finais depois de conferidos na lista de tasks do Bob; ordem de commit ou mtime
+não prova o ordinal da task. Exports brutos e screenshots originais usam os sufixos
+`.raw-export.json` e `.raw-summary.png`; permanecem locais e ignorados pelo Git.
 
 Antes de commitar, o comando abaixo deve terminar com status zero. Ele verifica a
 redação obrigatória e não imprime o valor encontrado:
