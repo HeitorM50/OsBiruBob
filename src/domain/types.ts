@@ -555,7 +555,7 @@ export interface Prescription {
 }
 
 // ---------------------------------------------------------------------------
-// Model 8 — Comparison
+// Model 9 — Comparison
 // ---------------------------------------------------------------------------
 
 export interface ComparisonMetrics {
@@ -580,9 +580,10 @@ export interface ComparisonMetrics {
   humanInterventionsB: number;
   humanInterventionsDelta: number;
 
-  buildFailuresA: number;
-  buildFailuresB: number;
-  buildFailuresDelta: number;
+  /** Not derivable from the export — absent unless filled by external source. */
+  buildFailuresA?: number;
+  buildFailuresB?: number;
+  buildFailuresDelta?: number;
 
   durationMsA?: number;
   durationMsB?: number;

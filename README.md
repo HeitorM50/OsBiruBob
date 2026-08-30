@@ -146,31 +146,57 @@ self-hosting estão documentadas em
 
 ## Resultados
 
-Preenchido depois da Rodada B. É esta tabela que vai para o vídeo.
+Tabela gerada pelo produto, não montada à mão:
+
+```bash
+npx tsx src/cli.ts --compare benchmark/rodada-a.json benchmark/rodada-b.json
+```
+
+Protocolo do experimento validado: `Comparison.valid === true`.
+
+**Métrica principal: redução de 25,9% no overhead de contexto.** Apoio: custo, −19,7%.
 
 Calculadas pelo Hindsight a partir dos exports:
 
 | Métrica | Rodada A (baseline) | Rodada B (otimizada) | Delta |
-|---|---|---|---|
-| API Cost | 0.336902 | | |
-| **Overhead fixo** | **10.439** | | |
-| Tokens de conversa | 7.145 | | |
-| Contexto reportado | 17.584 | | |
-| **Ferramentas ociosas** | **18 de 23 (78%)** | | |
-| Skill paga sem uso | 1.541 | | |
-| `projectRules` | 0 | | |
-| Turnos | 5 | | |
-| Intervenções humanas | 0 | | |
-| Tool calls com erro | 0 | | |
+|---|---:|---:|---:|
+| API Cost | $0,336902 | $0,270606 | **−$0,066296 (−19,7%)** |
+| **Overhead fixo** | **10.439** | **7.740** | **−2.699 (−25,9%)** |
+| Tokens de conversa | 7.145 | 5.811 | −1.334 (−18,7%) |
+| Contexto reportado | 17.584 | 13.551 | −4.033 (−22,9%) |
+| **Ferramentas ociosas** | **18 de 23 (78%)** | **12 de 17 (71%)** | −6 ferramentas |
+| Skill paga sem uso | 1.541 | 826 | −715 (−46,4%) |
+| `projectRules` | **0** | **121** | +121 |
+| Turnos | 5 | 6 | **+1 (regressão)** |
+| Intervenções humanas | 0 | 0 | 0 |
+| Tool calls com erro | 0 | 0 | 0 |
+| Duração | 566 s | 1.338 s | **+772 s (regressão)** |
 
 Preenchidas à mão a partir do screenshot — **não são exportadas pelo Bob**:
 
 | Métrica | Rodada A (baseline) | Rodada B (otimizada) | Delta |
 |---|---|---|---|
-| Tokens ↑ / ↓ | | | |
-| Cache ↑ / ↓ | | | |
-| Context Length % | 7% (18.4k / 270.0k) | | |
-| Falhas de build | 0 | | |
+| Tokens ↑ / ↓ | indisponível | indisponível | — |
+| Cache ↑ / ↓ | indisponível | indisponível | — |
+| Context Length % | 7% (18.4k / 270.0k) | 5% (13.6k / 270.0k) | −2 p.p. |
+| Falhas de build | 0 | 0 | 0 |
+
+### De onde veio a economia
+
+`toolSystemPrompts` caiu **81,5%** (2.470 → 456) e responde sozinho por 75% da
+redução. `projectRules` saiu de zero: o `AGENTS.md` gerado passou a ser carregado.
+
+**`toolDefinitions` não se moveu** — 5.403 nas duas rodadas, apesar de o modo
+customizado reduzir de 23 para 17 ferramentas. A hipótese registrada antes do
+experimento previa o contrário, e foi refutada.
+
+### O que regrediu
+
+Turnos subiram de 5 para 6 e a duração mais que dobrou. **O custo caiu 19,7% mesmo
+com um turno a mais**, ou seja, cada turno ficou substancialmente mais barato. A
+duração inclui espera por aprovação humana e é a métrica menos confiável do conjunto.
+
+Análise completa em [`docs/analise-rodada-b.md`](docs/analise-rodada-b.md).
 
 ## Segurança
 
