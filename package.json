@@ -1,22 +1,22 @@
 {
   "name": "hindsight",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Reads IBM Bob session exports, finds context waste, generates corrected config, and proves the improvement.",
   "license": "MIT",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "dev":        "tsx src/cli.ts",
-    "dev:web":    "vite",
-    "build":      "tsup src/cli.ts --format cjs --dts --clean",
-    "build:web":  "vite build",
-    "preview":    "vite preview",
-    "test":       "vitest run",
+    "dev": "tsx src/cli.ts",
+    "dev:web": "vite",
+    "build": "tsup src/cli.ts --format cjs --dts --clean",
+    "build:web": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
     "test:watch": "vitest",
-    "test:cov":   "vitest run --coverage",
-    "demo":       "npm run build && node dist/cli.js --input fixtures/sample-export.json --demo",
-    "typecheck":  "tsc --noEmit"
+    "test:cov": "vitest run --coverage",
+    "demo": "npm run build && node dist/cli.js --input fixtures/sample-export.json --demo",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "chalk": "^5.4.1",

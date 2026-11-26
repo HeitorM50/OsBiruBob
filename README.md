@@ -12,6 +12,21 @@ baseline and Round B after configuration) and walk through the full diagnosis,
 prescriptions, and A/B comparison without an installation, account, API key, or
 network request.
 
+## What's new in 0.2.0
+
+The first release after the hackathon focuses on making every recommendation
+something you can apply in IBM Bob and understand without reading the code:
+
+- a simpler **Load → Diagnose → Fix → Compare** flow, with each finding linked
+  to its fix;
+- a ready-to-use **`.bob/custom_modes.yaml`** that disables idle tool groups;
+- an **AGENTS.md draft** whose rules trace back to the findings behind them;
+- **MCP cards** with docs link, install snippet and token cost;
+- units, a glossary and labelled estimates on every number, plus dark-mode,
+  upload and "missing is not zero" fixes.
+
+See [CHANGELOG.md](CHANGELOG.md) for the full list.
+
 ## The problem
 
 Coding agents load context from tool definitions, Skills, system prompts, base
