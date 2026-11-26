@@ -4,7 +4,11 @@ import { describe, expect, it } from "vitest";
 import type { ContextSummary, ObserveReport } from "../domain/types";
 import { observe } from "../observe/index";
 import { parseSession } from "../parser/index";
-import { detectSkillOverhead } from "./skill-overhead";
+import {
+  detectSkillOverhead,
+  detectSkillOverheadWithStatus,
+  SKILL_LOADED_SKILLS_UNAVAILABLE_PREFIX,
+} from "./skill-overhead";
 
 const SKILLS_PATH =
   "tasks[0].task.costs.contextWindowBreakdown.breakdown.skills";
@@ -35,7 +39,7 @@ function metricObject(
 describe("detectSkillOverhead", () => {
   const baselineReport = loadBaselineReport();
 
-  it("detects the paid skill overhead in benchmark/rodada-a.json", () => {
+  it("detects the measured skill overhead in benchmark/rodada-a.json", () => {
     const [finding] = detectSkillOverhead(baselineReport);
     const baselineTask = baselineReport.tasks[0];
 
@@ -58,6 +62,7 @@ describe("detectSkillOverhead", () => {
       tokenImpact: 1_541,
       metric: {
         skillTokens: 1_541,
+        measuredSkillTokens: 1_541,
         loadedSkills: [],
       },
     });
@@ -71,7 +76,7 @@ describe("detectSkillOverhead", () => {
     expect(percentage).toBeCloseTo(14.8, 1);
   });
 
-  it("labels token impact as an estimate", () => {
+  it("labels breakdown.skills overhead as measured (estimated: false), not contradictory", () => {
     const [finding] = detectSkillOverhead(baselineReport);
     const tokenImpact = metricObject(
       finding.metric.tokenImpact,
@@ -80,9 +85,10 @@ describe("detectSkillOverhead", () => {
 
     expect(tokenImpact).toEqual({
       tokens: 1_541,
-      estimated: true,
-      basis: "breakdown.skills",
+      estimated: false,
+      basis: "measured directly from contextWindowBreakdown.breakdown.skills",
     });
+    expect(finding.estimationBasis).toContain("Settings → Skills");
   });
 
   it("does not flag paid skills when at least one loaded skill is declared", () => {
@@ -100,17 +106,32 @@ describe("detectSkillOverhead", () => {
     expect(detectSkillOverhead(report)).toEqual([]);
   });
 
-  it("treats an absent loadedSkills field as an empty declaration", () => {
+  it("treats an absent loadedSkills field as unavailable, never as empty (I-6)", () => {
     const report = structuredClone(baselineReport);
     delete (report.tasks[0].context as Partial<ContextSummary>).loadedSkills;
 
-    const findings = detectSkillOverhead(report);
-
-    expect(findings).toHaveLength(1);
-    expect(findings[0].metric.loadedSkills).toEqual([]);
+    const status = detectSkillOverheadWithStatus(report);
+    expect(status.findings).toEqual([]);
+    expect(status.unavailableMetrics).toEqual([
+      `${SKILL_LOADED_SKILLS_UNAVAILABLE_PREFIX}${report.tasks[0].taskId}`,
+    ]);
+    expect(detectSkillOverhead(report)).toEqual([]);
   });
 
-  it("emits at most one finding per qualifying task", () => {
+  it("ignores subtasks (parentId !== null / isSubtask: true) (I-5)", () => {
+    const report = structuredClone(baselineReport);
+    const subtask = structuredClone(report.tasks[0]);
+    subtask.taskId = "subtask-1";
+    subtask.parentId = report.tasks[0].taskId;
+    subtask.isSubtask = true;
+    report.tasks.push(subtask);
+
+    const findings = detectSkillOverhead(report);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].taskId).toBe(report.tasks[0].taskId);
+  });
+
+  it("emits at most one finding per qualifying root task", () => {
     const report = structuredClone(baselineReport);
     const secondTask = structuredClone(report.tasks[0]);
     secondTask.taskId = "second-task";

@@ -6,7 +6,7 @@
  * - tool-catalog.json covers all 23 tools from benchmark/rodada-a.json
  * - Docker matches both baseline commands (docker build + docker run)
  * - Broken/invalid catalog input produces a handled error, no uncaught exception
- * - Unknown tool resolves to "outros"
+ * - Unknown tool resolves to "other"
  * - Both catalogs pass a scan for secrets, internal URLs, tokens, keys, absolute paths
  * - Loading is synchronous, static, and offline
  * - Adding a new catalog entry requires no TypeScript modification
@@ -138,7 +138,7 @@ describe("mcp-catalog.json — schema validation", () => {
   it("optional fields have correct types when present", () => {
     if (!result.ok) throw new Error(result.reason);
     for (const entry of result.entries) {
-      if (entry.docsUrl !== undefined) {
+      if (entry.docsUrl !== undefined && entry.docsUrl !== null) {
         expect(typeof entry.docsUrl).toBe("string");
         expect(entry.docsUrl.length).toBeGreaterThan(0);
       }
@@ -150,31 +150,50 @@ describe("mcp-catalog.json — schema validation", () => {
     }
   });
 
+  it("accepts docsUrl: null as a valid unverified catalog entry", () => {
+    const validated = loadMcpCatalog([
+      {
+        id: "unverified-mcp",
+        label: "Unverified MCP",
+        binaries: ["example"],
+        matchesHttp: false,
+        replaces: "Replaces example CLI.",
+        rationale: "Structured calls avoid text parsing.",
+        docsUrl: null,
+        minHits: 2,
+      },
+    ]);
+    expect(validated.ok).toBe(true);
+  });
+
   it("covers docker entry with id 'docker-mcp'", () => {
     if (!result.ok) throw new Error(result.reason);
     const docker = result.entries.find((e) => e.id === "docker-mcp");
     expect(docker).toBeDefined();
   });
 
-  it("covers git, gh, kubectl, database, aws, npm, and http entries", () => {
+  it("covers git, gh, kubectl, postgres, mysql, sqlite, aws, npm, and http entries", () => {
     if (!result.ok) throw new Error(result.reason);
     const ids = new Set(result.entries.map((e) => e.id));
     for (const expected of [
       "git-mcp",
       "gh-mcp",
       "kubectl-mcp",
-      "database-mcp",
+      "postgres-mcp",
+      "mysql-mcp",
+      "sqlite-mcp",
       "aws-mcp",
       "npm-mcp",
       "http-mcp",
     ]) {
       expect(ids.has(expected), `Missing entry: ${expected}`).toBe(true);
     }
+    expect(ids.has("database-mcp")).toBe(false);
   });
 });
 
 // ---------------------------------------------------------------------------
-// 2. Docker matches both baseline commands
+// 2. Docker matches non-noisy commands
 // ---------------------------------------------------------------------------
 
 describe("mcp-catalog.json — Docker matches baseline commands", () => {
@@ -379,28 +398,28 @@ describe("catalog loader — graceful degradation for invalid input", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 6. Unknown tool resolves to "outros"
+// 6. Unknown tool resolves to "other"
 // ---------------------------------------------------------------------------
 
 describe("resolveToolGroup — unknown tool fallback", () => {
   const catalogResult = loadToolCatalog();
 
-  it("returns 'outros' for a tool not in the catalog", () => {
+  it("returns 'other' for a tool not in the catalog", () => {
     if (!catalogResult.ok) throw new Error(catalogResult.reason);
     const group = resolveToolGroup("completelY_unknown_tool_xyz", catalogResult.entries);
     expect(group).toBe(UNKNOWN_TOOL_GROUP);
-    expect(group).toBe("outros");
+    expect(group).toBe("other");
   });
 
-  it("returns the correct group for a known tool", () => {
+  it("returns the correct Bob group for a known tool", () => {
     if (!catalogResult.ok) throw new Error(catalogResult.reason);
     const group = resolveToolGroup("execute_command", catalogResult.entries);
-    expect(group).toBe("execution");
+    expect(group).toBe("execute");
   });
 
-  it("returns 'outros' with an empty catalog", () => {
+  it("returns 'other' with an empty catalog", () => {
     const group = resolveToolGroup("execute_command", []);
-    expect(group).toBe("outros");
+    expect(group).toBe("other");
   });
 
   it("does NOT return undefined for any tool — always a string", () => {

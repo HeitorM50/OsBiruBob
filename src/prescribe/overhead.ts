@@ -2,11 +2,37 @@
  * F4 / #17 — deterministic tool-reduction and Skill-overhead prescriptions.
  *
  * Consumes Findings already enriched by Diagnose. It deliberately does not
- * import or reload recommendation catalogues.
+ * import or reload recommendation catalogues, performs no I/O, and never rounds
+ * numeric values (I-3).
  */
 
-import type { Finding, Prescription } from "../domain/types";
+import type {
+  BobToolGroup,
+  Finding,
+  PrescribedToolSummary,
+  Prescription,
+} from "../domain/types";
 import { prescriptionId } from "./determinism";
+
+const BOB_TOOL_GROUPS: ReadonlySet<BobToolGroup> = new Set([
+  "read",
+  "edit",
+  "execute",
+  "todo",
+  "skill",
+  "mcp",
+  "subtask",
+  "subagent",
+  "mode",
+  "workflow",
+]);
+
+const SKILL_STEPS: readonly string[] = [
+  "Open IBM Bob → Settings → Skills.",
+  "Review enabled global and workspace Skills and turn off \"Allow Bob to use this skill\" for any Skill not needed in this workflow.",
+  "If you use a project custom mode (.bob/custom_modes.yaml), omit '- skill' from groups: when the task does not need Skills.",
+  "Start a new conversation and confirm that breakdown.skills decreased in the next session export.",
+];
 
 interface IdleToolMetric {
   name: string;
@@ -19,11 +45,14 @@ interface ParsedUnusedToolFinding {
   finding: Finding;
   candidates: IdleToolMetric[];
   retainedEssential: IdleToolMetric[];
+  retainedBobGroups: string[];
   tokenImpact: number | undefined;
+  estimationBasis: string;
 }
 
 interface ParsedSkillFinding {
   finding: Finding;
+  skillTokens: number;
   tokenImpact: number | undefined;
 }
 
@@ -41,6 +70,10 @@ function isFinitePositive(value: unknown): value is number {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
+}
+
+function isBobGroup(group: string): group is BobToolGroup {
+  return BOB_TOOL_GROUPS.has(group as BobToolGroup);
 }
 
 function parseIdleTool(value: unknown): IdleToolMetric | null {
@@ -93,6 +126,16 @@ function parseUnusedToolFinding(finding: Finding): ParsedUnusedToolFinding | nul
     return null;
   }
 
+  const rawRetainedGroups = finding.metric.retainedBobGroups;
+  let retainedBobGroups: string[] = [];
+  if (rawRetainedGroups !== undefined) {
+    if (!Array.isArray(rawRetainedGroups) || !rawRetainedGroups.every(isNonEmptyString)) {
+      return null;
+    }
+    retainedBobGroups = sortedUniqueStrings(rawRetainedGroups);
+  }
+  const retainedGroupSet = new Set(retainedBobGroups);
+
   const byName = new Map<string, IdleToolMetric>();
   for (const rawTool of rawIdleTools) {
     const tool = parseIdleTool(rawTool);
@@ -112,7 +155,9 @@ function parseUnusedToolFinding(finding: Finding): ParsedUnusedToolFinding | nul
   }
 
   const tools = [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
-  const candidates = tools.filter((tool) => !tool.essential);
+  const candidates = tools.filter(
+    (tool) => !tool.essential && !retainedGroupSet.has(tool.group)
+  );
   const retainedEssential = tools.filter((tool) => tool.essential);
   const evidenceCandidates = sortedUniqueStrings(finding.evidence.unusedTools);
   const metricCandidates = candidates.map((tool) => tool.name);
@@ -128,11 +173,19 @@ function parseUnusedToolFinding(finding: Finding): ParsedUnusedToolFinding | nul
     return null;
   }
 
+  const estimationBasis = isNonEmptyString(finding.estimationBasis)
+    ? finding.estimationBasis
+    : isNonEmptyString(finding.metric.estimationBasis)
+      ? finding.metric.estimationBasis
+      : "Proportional estimate over disableable Bob tool groups: (tools in fully-idle, non-essential Bob groups / available tools) * breakdown.toolDefinitions. Individual tool definition sizes are not measured.";
+
   return {
     finding,
     candidates,
     retainedEssential,
+    retainedBobGroups,
     tokenImpact: finding.tokenImpact,
+    estimationBasis,
   };
 }
 
@@ -142,9 +195,11 @@ function parseSkillFinding(finding: Finding): ParsedSkillFinding | null {
   const skillTokens = finding.metric.skillTokens;
   const loadedSkills = finding.metric.loadedSkills;
   if (!isFinitePositive(skillTokens)) return null;
+  // Absence is not empty (I-6): loadedSkills must be explicitly an empty array.
   if (
-    loadedSkills !== undefined &&
-    (!Array.isArray(loadedSkills) || !loadedSkills.every(isNonEmptyString) || loadedSkills.length > 0)
+    !Array.isArray(loadedSkills) ||
+    !loadedSkills.every(isNonEmptyString) ||
+    loadedSkills.length > 0
   ) {
     return null;
   }
@@ -152,14 +207,31 @@ function parseSkillFinding(finding: Finding): ParsedSkillFinding | null {
     return null;
   }
 
-  return { finding, tokenImpact: finding.tokenImpact };
+  return { finding, skillTokens, tokenImpact: finding.tokenImpact };
 }
 
-function retainedRationale(retained: readonly IdleToolMetric[]): string {
-  if (retained.length === 0) return "";
-  return ` Catalogue-protected essential tools retained: ${retained
-    .map((tool) => tool.name)
-    .join(", ")}.`;
+function retainedRationale(
+  retainedEssential: readonly IdleToolMetric[],
+  retainedBobGroups: readonly string[]
+): string {
+  const notes: string[] = [];
+  if (retainedEssential.length > 0) {
+    notes.push(
+      `Protected essential tools retained: ${retainedEssential
+        .map((tool) => tool.name)
+        .join(", ")}.`
+    );
+  }
+  if (retainedBobGroups.length > 0) {
+    notes.push(
+      `Active Bob groups retained as a whole: ${retainedBobGroups.join(", ")} (Bob configures tools by group, not individually).`
+    );
+  }
+  return notes.length > 0 ? ` ${notes.join(" ")}` : "";
+}
+
+function formatToolLine(tool: IdleToolMetric): string {
+  return tool.purpose ? `- ${tool.name}: ${tool.purpose}` : `- ${tool.name}`;
 }
 
 function toolPrescriptions(parsed: ParsedUnusedToolFinding): Prescription[] {
@@ -174,24 +246,60 @@ function toolPrescriptions(parsed: ParsedUnusedToolFinding): Prescription[] {
 
   const orderedGroups = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
   const findingIds = [parsed.finding.id];
-  const estimatedPerCandidate =
-    parsed.tokenImpact === undefined
+
+  // Only configurable groups (i.e. not "other") receive a share of the
+  // Bob-group token saving estimate. Unknown/non-group tools in "other" have
+  // no direct group toggle in .bob/custom_modes.yaml.
+  const estimableGroups = orderedGroups.filter(([group]) => group !== "other");
+  const estimableToolCount = estimableGroups.reduce(
+    (sum, [, tools]) => sum + tools.length,
+    0
+  );
+  const estimatedPerTool =
+    parsed.tokenImpact === undefined || estimableToolCount === 0
       ? undefined
-      : parsed.tokenImpact / parsed.candidates.length;
-  let allocatedSaving = 0;
+      : parsed.tokenImpact / estimableToolCount;
 
-  return orderedGroups.map(([group, tools], index) => {
+  const groupSavings = new Map<string, number>();
+  if (estimatedPerTool !== undefined && parsed.tokenImpact !== undefined) {
+    let allocated = 0;
+    estimableGroups.forEach(([group, tools], index) => {
+      const saving =
+        index === estimableGroups.length - 1
+          ? parsed.tokenImpact! - allocated
+          : estimatedPerTool * tools.length;
+      allocated += saving;
+      groupSavings.set(group, saving);
+    });
+  }
+
+  return orderedGroups.map(([group, tools]) => {
     tools.sort((a, b) => a.name.localeCompare(b.name));
-    let estimatedTokenSaving: number | undefined;
-    if (estimatedPerCandidate !== undefined && parsed.tokenImpact !== undefined) {
-      estimatedTokenSaving =
-        index === orderedGroups.length - 1
-          ? parsed.tokenImpact - allocatedSaving
-          : estimatedPerCandidate * tools.length;
-      allocatedSaving += estimatedTokenSaving;
-    }
+    const estimatedTokenSaving = groupSavings.get(group);
+    const bobGroup = isBobGroup(group);
 
-    const toolList = tools.map((tool) => `- ${tool.name}`).join("\n");
+    const toolList = tools.map(formatToolLine).join("\n");
+    const structuredTools: PrescribedToolSummary[] = tools.map((tool) => ({
+      name: tool.name,
+      group: tool.group,
+      purpose: tool.purpose,
+    }));
+
+    const steps = bobGroup
+      ? [
+          `Create or update .bob/custom_modes.yaml and omit '- ${group}' from groups:.`,
+          "Confirm the workspace is trusted in IBM Bob and select the custom mode in Settings → Modes.",
+          "Start a new conversation so Bob loads only the selected tool groups.",
+        ]
+      : [
+          "Switch to a project custom mode in .bob/custom_modes.yaml; default-agent-only tools (such as HTML/chart artifacts) are omitted automatically in custom modes.",
+          "Unknown tools under 'other' do not map to a configurable Bob group and cannot be toggled individually.",
+        ];
+
+    const groupHeader = bobGroup
+      ? `Omit '- ${group}' from groups: in .bob/custom_modes.yaml to disable this unused Bob tool group:`
+      : "Tools not mapped to a configurable Bob group (default-agent-only tools are omitted automatically when using a custom mode):";
+
     return {
       id: prescriptionId(
         "disable-tool",
@@ -206,22 +314,34 @@ function toolPrescriptions(parsed: ParsedUnusedToolFinding): Prescription[] {
       kind: "disable-tool",
       status: "pending",
       createdAt: parsed.finding.detectedAt,
-      content:
-        `Group: ${group}\n\n` +
-        "Estimated recommendation for this analyzed session:\n\n" +
-        toolList,
+      ...(bobGroup ? { targetFile: ".bob/custom_modes.yaml" } : {}),
+      content: `Group: ${group}\n\n${groupHeader}\n\n${toolList}`,
+      tools: structuredTools,
+      steps,
       rationale:
-        "These tools were available but unused in the analyzed session. " +
-        "Review their necessity in other workflows before disabling them. " +
-        "Potential token savings are estimated, not individually measured." +
-        retainedRationale(parsed.retainedEssential),
-      ...(estimatedTokenSaving === undefined ? {} : { estimatedTokenSaving }),
+        (bobGroup
+          ? `Bob tool group '${group}' had no tool calls and contains no protected essential tools in the analyzed session. ` +
+            "Potential token savings are estimated by Bob group, not individually measured. " +
+            `Basis: ${parsed.estimationBasis}`
+          : "These tools were unused in the analyzed session but do not belong to a configurable Bob custom-mode group; " +
+            "no per-group token saving is estimated for them.") +
+        retainedRationale(parsed.retainedEssential, parsed.retainedBobGroups),
+      ...(estimatedTokenSaving === undefined
+        ? {}
+        : {
+            estimatedTokenSaving,
+            isEstimate: true,
+            estimationBasis: parsed.estimationBasis,
+          }),
     };
   });
 }
 
 function skillPrescription(parsed: ParsedSkillFinding): Prescription {
   const findingIds = [parsed.finding.id];
+  const estimationBasis =
+    "Upper-bound saving estimate equal to measured breakdown.skills; actual savings depend on which global or workspace Skills are disabled in IBM Bob (Settings → Skills).";
+
   return {
     id: prescriptionId(
       "disable-skill",
@@ -236,13 +356,22 @@ function skillPrescription(parsed: ParsedSkillFinding): Prescription {
     status: "pending",
     createdAt: parsed.finding.detectedAt,
     content:
-      "Review global or installed Skills enabled for this workflow. " +
-      "The export reports aggregate Skill overhead but does not identify a specific Skill target.",
+      "How to review and disable unused Skills in IBM Bob:\n" +
+      SKILL_STEPS.map((step, index) => `${index + 1}. ${step}`).join("\n") +
+      "\n\nNote: The export measures aggregate Skill overhead in breakdown.skills, " +
+      "but does not identify a specific Skill target.",
+    steps: [...SKILL_STEPS],
     rationale:
-      "Estimated aggregate Skill overhead for the analyzed session; no concrete Skill was identified.",
+      "Bob measured aggregate Skill context overhead in breakdown.skills while loadedSkills was empty. " +
+      "Disabling unused Skills in Settings → Skills can recover up to this measured amount (upper-bound estimate), " +
+      "because the export does not break down tokens per individual Skill.",
     ...(parsed.tokenImpact === undefined
       ? {}
-      : { estimatedTokenSaving: parsed.tokenImpact }),
+      : {
+          estimatedTokenSaving: parsed.tokenImpact,
+          isEstimate: true,
+          estimationBasis,
+        }),
   };
 }
 

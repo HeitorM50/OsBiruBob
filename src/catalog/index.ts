@@ -9,7 +9,7 @@
  * - Static imports: synchronous, offline, bundler-safe.
  * - Adding a catalog entry requires no TypeScript changes.
  * - Missing or invalid catalogs degrade gracefully — consumers record the reason.
- * - Unknown tools are visible under group "outros", never omitted.
+ * - Unknown tools are visible under group "other", never omitted.
  * - No Node APIs (fs, path, process) — browser-safe module.
  */
 
@@ -45,11 +45,16 @@ function isValidMcpEntry(entry: unknown): entry is McpCatalogEntry {
     typeof e.matchesHttp === "boolean" &&
     isNonEmptyString(e.replaces) &&
     isNonEmptyString(e.rationale) &&
-    (e.docsUrl === undefined || isNonEmptyString(e.docsUrl)) &&
+    (e.docsUrl === undefined || e.docsUrl === null || isNonEmptyString(e.docsUrl)) &&
     (e.minHits === undefined ||
       (typeof e.minHits === "number" &&
         Number.isInteger(e.minHits) &&
-        e.minHits > 0))
+        e.minHits > 0)) &&
+    (e.installSnippet === undefined || isNonEmptyString(e.installSnippet)) &&
+    (e.estimatedToolTokens === undefined ||
+      (typeof e.estimatedToolTokens === "number" &&
+        Number.isFinite(e.estimatedToolTokens) &&
+        e.estimatedToolTokens > 0))
   );
 }
 
@@ -119,7 +124,7 @@ export const TOOL_CATALOG_ABSENT = "catalog: data/tool-catalog.json absent";
 export const TOOL_CATALOG_INVALID = "catalog: data/tool-catalog.json invalid";
 
 /** Fallback group for tools not listed in the catalog (Model 10 rule). */
-export const UNKNOWN_TOOL_GROUP = "outros";
+export const UNKNOWN_TOOL_GROUP = "other";
 
 /**
  * Returns the validated tool catalog entries.
@@ -155,7 +160,7 @@ export function loadToolCatalog(
 /**
  * Resolves the group for a tool name.
  * Falls back to UNKNOWN_TOOL_GROUP when the tool is not in the catalog.
- * Never omits a tool — unknown tools are still visible, just grouped as "outros".
+ * Never omits a tool — unknown tools are still visible, just grouped as "other".
  */
 export function resolveToolGroup(
   toolName: string,

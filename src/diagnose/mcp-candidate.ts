@@ -13,11 +13,40 @@ export const MCP_CATALOG_ABSENT =
 export const MCP_CATALOG_INVALID =
   "mcp-candidate: data/mcp-catalog.json invalid";
 
+/** Default minimum matching commands when an entry omits minHits. */
+export const DEFAULT_MCP_MIN_HITS = 2;
+
+/** Trivial shell utilities that never constitute meaningful MCP usage on their own. */
+const TRIVIAL_BINARIES: ReadonlySet<string> = new Set([
+  "sleep",
+  "echo",
+  "true",
+]);
+
+/**
+ * Return true only when every observed binary in the command is a trivial
+ * shell utility (`sleep`, `echo`, `true`). Compound commands that include a
+ * real tool binary alongside `sleep` (e.g. `docker compose up -d && sleep 5`)
+ * represent real tool usage and are counted normally.
+ */
+export function isTrivialOrNoisyCommand(command: ExternalCommandRecord): boolean {
+  return (
+    command.binaries.length > 0 &&
+    command.binaries.every((binary) => TRIVIAL_BINARIES.has(binary))
+  );
+}
+
 /**
  * Match observed external commands against a curated MCP catalogue.
  *
- * The unknown input is intentional: catalogue loading is an external boundary.
- * Missing or malformed data degrades to an unavailable metric and never throws.
+ * Rules:
+ * - Subtasks (isSubtask || parentId !== null) are excluded (I-5).
+ * - Trivial/noisy commands (sleep, echo, true, docker ... sleep N) are not
+ *   counted as hits.
+ * - The unknown input is intentional: catalogue loading is an external boundary.
+ *   Missing or malformed data degrades to an unavailable metric and never throws.
+ * - Trusted catalogue metadata (docsUrl, installSnippet, estimatedToolTokens,
+ *   replaces, rationale) is forwarded into evidence for prescription rendering.
  */
 export function detectMcpCandidates(
   report: ObserveReport,
@@ -34,13 +63,25 @@ export function detectMcpCandidates(
   const findings: Finding[] = [];
 
   for (const task of report.tasks) {
+    // I-5: subtasks are excluded from session-level diagnostics/prescriptions.
+    if (task.isSubtask || task.parentId !== null) {
+      continue;
+    }
+
     for (const entry of catalogInput) {
       const commands = matchingCommands(task.externalCommands, entry);
-      const minHits = entry.minHits ?? 1;
+      const minHits = entry.minHits ?? DEFAULT_MCP_MIN_HITS;
 
       if (commands.length < minHits) {
         continue;
       }
+
+      const docsUrl = entry.docsUrl ?? null;
+      const estimatedToolTokens = entry.estimatedToolTokens;
+      const estimationBasis =
+        estimatedToolTokens !== undefined
+          ? `Estimated fixed mcpToolDefinitions overhead (~${estimatedToolTokens} tokens/turn) added when enabling ${entry.label}; actual overhead depends on server version and enabled tools.`
+          : undefined;
 
       findings.push({
         id: `mcp-candidate:${report.sessionId}:${task.taskId}:${entry.id}`,
@@ -60,6 +101,13 @@ export function detectMcpCandidates(
           catalogEntryId: entry.id,
           replaces: entry.replaces,
           rationale: entry.rationale,
+          docsUrl,
+          ...(entry.installSnippet !== undefined
+            ? { installSnippet: entry.installSnippet }
+            : {}),
+          ...(estimatedToolTokens !== undefined
+            ? { estimatedToolTokens }
+            : {}),
         },
         confidence: "medium",
         metric: {
@@ -75,7 +123,12 @@ export function detectMcpCandidates(
               command.targetHost === null ? [] : [command.targetHost]
             )
           ),
+          docsUrl,
+          ...(estimatedToolTokens !== undefined
+            ? { estimatedToolTokens }
+            : {}),
         },
+        ...(estimationBasis !== undefined ? { estimationBasis } : {}),
         prescriptionHint: "enable-mcp",
         description: `${entry.label} could replace repeated shell commands in this task.`,
       });
@@ -110,6 +163,10 @@ function matchingCommands(
   const matches: ExternalCommandRecord[] = [];
 
   for (const command of commands) {
+    if (isTrivialOrNoisyCommand(command)) {
+      continue;
+    }
+
     const binaryMatch = command.binaries.some((binary) =>
       entryBinaries.has(binary)
     );
@@ -153,11 +210,19 @@ function isMcpCatalogEntry(input: unknown): input is McpCatalogEntry {
     typeof entry.matchesHttp === "boolean" &&
     isNonEmptyString(entry.replaces) &&
     isNonEmptyString(entry.rationale) &&
-    (entry.docsUrl === undefined || isNonEmptyString(entry.docsUrl)) &&
+    (entry.docsUrl === undefined ||
+      entry.docsUrl === null ||
+      isNonEmptyString(entry.docsUrl)) &&
     (entry.minHits === undefined ||
       (typeof entry.minHits === "number" &&
         Number.isInteger(entry.minHits) &&
-        entry.minHits > 0))
+        entry.minHits > 0)) &&
+    (entry.installSnippet === undefined ||
+      isNonEmptyString(entry.installSnippet)) &&
+    (entry.estimatedToolTokens === undefined ||
+      (typeof entry.estimatedToolTokens === "number" &&
+        Number.isFinite(entry.estimatedToolTokens) &&
+        entry.estimatedToolTokens > 0))
   );
 }
 

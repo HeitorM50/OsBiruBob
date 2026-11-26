@@ -506,6 +506,12 @@ export interface FindingEvidence {
   catalogEntryId?: string;
   replaces?: string;
   rationale?: string;
+  /** Verified documentation URL from the trusted MCP catalogue, or null when unverified. */
+  docsUrl?: string | null;
+  /** Ready-to-paste IBM Bob MCP settings JSON snippet from the trusted MCP catalogue. */
+  installSnippet?: string;
+  /** Estimated fixed mcpToolDefinitions token overhead added by enabling this MCP server. */
+  estimatedToolTokens?: number;
   rawValue?: unknown;
 }
 
@@ -531,6 +537,8 @@ export interface Finding {
   tokenImpactEstimateBasis?: string;
   /** Estimated cost impact — no rounding (I-3). */
   costImpact?: number;
+  /** Human-readable basis explaining how tokenImpact was calculated or measured. */
+  estimationBasis?: string;
 }
 
 /** Result of a diagnostic pass, including reasons a signal was unavailable. */
@@ -542,6 +550,25 @@ export interface DiagnoseResult {
 // ---------------------------------------------------------------------------
 // Model 7 — Prescription
 // ---------------------------------------------------------------------------
+
+/** Configurable tool groups supported by IBM Bob custom modes (.bob/custom_modes.yaml). */
+export type BobToolGroup =
+  | "read"
+  | "edit"
+  | "execute"
+  | "todo"
+  | "skill"
+  | "mcp"
+  | "subtask"
+  | "subagent"
+  | "mode"
+  | "workflow";
+
+export interface PrescribedToolSummary {
+  name: string;
+  group: string;
+  purpose: string | null;
+}
 
 export type PrescriptionKind =
   | "agents-md-section"
@@ -569,6 +596,22 @@ export interface Prescription {
   /** Estimate only — no rounding (I-3). */
   estimatedTokenSaving?: number;
   estimatedCostSaving?: number;
+  /** Estimated fixed context tokens ADDED by applying this prescription (e.g. MCP tool definitions). */
+  estimatedTokenCost?: number;
+  /** True when token savings or costs are estimates rather than direct measurements. */
+  isEstimate?: boolean;
+  /** Human-readable basis explaining how token estimates were computed. */
+  estimationBasis?: string;
+  /** Verified documentation URL (e.g. for an MCP server), or null when unverified. */
+  docsUrl?: string | null;
+  /** Ready-to-paste IBM Bob configuration snippet (e.g. .bob/mcp.json). */
+  installSnippet?: string;
+  /** Step-by-step instructions to apply this prescription in IBM Bob. */
+  steps?: string[];
+  /** Structured tool list with catalogue purpose for disable-tool prescriptions. */
+  tools?: PrescribedToolSummary[];
+  /** Bob tool groups enabled by a custom-mode prescription. */
+  groups?: BobToolGroup[];
   rationale?: string;
 }
 
@@ -666,8 +709,12 @@ export interface McpCatalogEntry {
   matchesHttp: boolean;
   replaces: string;
   rationale: string;
-  docsUrl?: string;
+  docsUrl?: string | null;
   minHits?: number;
+  /** Ready-to-paste IBM Bob MCP settings JSON snippet (.bob/mcp.json). */
+  installSnippet?: string;
+  /** Estimated fixed mcpToolDefinitions token overhead added per session. */
+  estimatedToolTokens?: number;
 }
 
 export interface ToolCatalogEntry {

@@ -179,7 +179,7 @@ describe("PrescriptionScreen", () => {
     expect(document.activeElement).toBe(tabs[4]);
   });
 
-  it("renders the real baseline with four populated families and 18 idle tools", () => {
+  it("renders the real baseline with four populated families and 7 disable candidates", () => {
     const baseline = loadBaseline();
     expect(baseline.prescriptions.some((item) => item.kind === "agents-md-file")).toBe(true);
     expect(baseline.prescriptions.some((item) => item.kind === "disable-skill")).toBe(true);
@@ -188,7 +188,7 @@ describe("PrescriptionScreen", () => {
     const idleTools = baseline.prescriptions
       .filter((item) => item.kind === "disable-tool")
       .flatMap((item) => item.content?.split("\n").filter((line) => line.startsWith("- ")) ?? []);
-    expect(idleTools).toHaveLength(18);
+    expect(idleTools).toHaveLength(7);
 
     const { container } = mount({
       prescriptions: baseline.prescriptions,

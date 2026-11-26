@@ -4,79 +4,119 @@
     "label": "Docker MCP Server",
     "binaries": ["docker", "docker-compose"],
     "matchesHttp": false,
-    "replaces": "Replaces shell invocations of `docker` and `docker-compose` with structured MCP tool calls.",
-    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
+    "replaces": "Replaces repeated shell invocations of `docker` and `docker-compose` (container inspection, logs, compose lifecycle) with structured MCP tool calls.",
+    "rationale": "Container logs, inspect JSON, and ps tables executed via shell flood the context window with verbose formatting; Docker MCP tools return scoped container status and structured metadata, reducing re-runs and parsing errors.",
     "docsUrl": "https://github.com/ckreiling/mcp-server-docker",
-    "minHits": 2
+    "minHits": 2,
+    "estimatedToolTokens": 780,
+    "installSnippet": "{\n  \"mcpServers\": {\n    \"mcp-server-docker\": {\n      \"command\": \"uvx\",\n      \"args\": [\"mcp-server-docker\"],\n      \"disabled\": false,\n      \"alwaysAllow\": []\n    }\n  }\n}"
   },
   {
     "id": "git-mcp",
     "label": "Git MCP Server",
     "binaries": ["git"],
     "matchesHttp": false,
-    "replaces": "Replaces shell invocations of `git` (log, diff, status, commit, etc.) with structured MCP tool calls.",
-    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
+    "replaces": "Replaces repeated shell invocations of `git` (status, diff, log, branch, commit) with structured MCP tool calls.",
+    "rationale": "Repeated git status, log, and diff shell calls often require extra flags and formatting retries; Git MCP exposes typed repository operations with explicit repo paths and bounded diff context.",
     "docsUrl": "https://github.com/modelcontextprotocol/servers/tree/main/src/git",
-    "minHits": 2
+    "minHits": 2,
+    "estimatedToolTokens": 2400,
+    "installSnippet": "{\n  \"mcpServers\": {\n    \"git\": {\n      \"command\": \"uvx\",\n      \"args\": [\"mcp-server-git\"],\n      \"disabled\": false,\n      \"alwaysAllow\": []\n    }\n  }\n}"
   },
   {
     "id": "gh-mcp",
     "label": "GitHub MCP Server",
     "binaries": ["gh"],
     "matchesHttp": false,
-    "replaces": "Replaces shell invocations of the `gh` CLI (issues, PRs, releases) with structured MCP tool calls.",
-    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
+    "replaces": "Replaces repeated shell invocations of the `gh` CLI (issues, pull requests, workflow runs, releases) with structured MCP tool calls.",
+    "rationale": "The gh CLI mixes human-formatted tables with ad-hoc --json and --jq queries that frequently fail or truncate fields; the official GitHub MCP server provides typed issue, PR, and repository endpoints directly.",
     "docsUrl": "https://github.com/github/github-mcp-server",
-    "minHits": 2
+    "minHits": 2,
+    "estimatedToolTokens": 5000,
+    "installSnippet": "{\n  \"mcpServers\": {\n    \"github\": {\n      \"command\": \"docker\",\n      \"args\": [\"run\", \"-i\", \"--rm\", \"-e\", \"GITHUB_PERSONAL_ACCESS_TOKEN\", \"ghcr.io/github/github-mcp-server\"],\n      \"env\": {\n        \"GITHUB_PERSONAL_ACCESS_TOKEN\": \"<YOUR_GITHUB_PAT>\"\n      },\n      \"disabled\": false,\n      \"alwaysAllow\": []\n    }\n  }\n}"
   },
   {
     "id": "kubectl-mcp",
     "label": "Kubernetes MCP Server",
     "binaries": ["kubectl"],
     "matchesHttp": false,
-    "replaces": "Replaces shell invocations of `kubectl` with structured MCP tool calls for cluster management.",
-    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
+    "replaces": "Replaces repeated shell invocations of `kubectl` (pod status, logs, events, resource inspection) with structured MCP tool calls.",
+    "rationale": "Cluster debugging through kubectl requires chaining namespace flags, jsonpath expressions, and log tails; a Kubernetes MCP server exposes contexts, events, and pod logs with built-in read-only and context-allowlist guards.",
     "docsUrl": "https://github.com/strowk/mcp-k8s-go",
-    "minHits": 2
+    "minHits": 2,
+    "estimatedToolTokens": 2000,
+    "installSnippet": "{\n  \"mcpServers\": {\n    \"mcp-k8s\": {\n      \"command\": \"npx\",\n      \"args\": [\"-y\", \"@strowk/mcp-k8s\", \"--readonly\", \"--allowed-contexts=<YOUR_K8S_CONTEXT>\"],\n      \"disabled\": false,\n      \"alwaysAllow\": []\n    }\n  }\n}"
   },
   {
-    "id": "database-mcp",
-    "label": "Database MCP Server",
-    "binaries": ["psql", "mysql", "sqlite3"],
+    "id": "postgres-mcp",
+    "label": "PostgreSQL MCP Server",
+    "binaries": ["psql"],
     "matchesHttp": false,
-    "replaces": "Replaces shell invocations of `psql`, `mysql`, or `sqlite3` with structured MCP tool calls for database queries.",
-    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
-    "docsUrl": "https://github.com/modelcontextprotocol/servers/tree/main/src/postgres",
-    "minHits": 2
+    "replaces": "Replaces repeated shell invocations of `psql` for schema inspection, explain plans, and SQL queries with structured MCP tool calls.",
+    "rationale": "Running psql through the shell requires escaping SQL strings and parsing ASCII tables; a dedicated PostgreSQL MCP server provides schema introspection, query plans, and restricted read-only access modes.",
+    "docsUrl": "https://github.com/crystaldba/postgres-mcp",
+    "minHits": 2,
+    "estimatedToolTokens": 1800,
+    "installSnippet": "{\n  \"mcpServers\": {\n    \"postgres\": {\n      \"command\": \"uvx\",\n      \"args\": [\"postgres-mcp\", \"--access-mode=restricted\"],\n      \"env\": {\n        \"DATABASE_URI\": \"<YOUR_POSTGRES_URI>\"\n      },\n      \"disabled\": false,\n      \"alwaysAllow\": []\n    }\n  }\n}"
+  },
+  {
+    "id": "mysql-mcp",
+    "label": "MySQL MCP Server",
+    "binaries": ["mysql"],
+    "matchesHttp": false,
+    "replaces": "Replaces repeated shell invocations of `mysql` for schema discovery and SQL queries with structured MCP tool calls.",
+    "rationale": "Shell mysql commands depend on brittle quoting and tabular text output; a dedicated MySQL MCP server returns structured query rows and enforces explicit per-schema read/write permissions.",
+    "docsUrl": "https://github.com/benborla/mcp-server-mysql",
+    "minHits": 2,
+    "estimatedToolTokens": 1000,
+    "installSnippet": "{\n  \"mcpServers\": {\n    \"mysql\": {\n      \"command\": \"npx\",\n      \"args\": [\"-y\", \"@benborla29/mcp-server-mysql\"],\n      \"env\": {\n        \"MYSQL_HOST\": \"<YOUR_MYSQL_HOST>\",\n        \"MYSQL_PORT\": \"3306\",\n        \"MYSQL_USER\": \"<YOUR_MYSQL_USER>\",\n        \"MYSQL_PASS\": \"<YOUR_MYSQL_CREDENTIAL>\",\n        \"MYSQL_DB\": \"<YOUR_MYSQL_DB>\"\n      },\n      \"disabled\": false,\n      \"alwaysAllow\": []\n    }\n  }\n}"
+  },
+  {
+    "id": "sqlite-mcp",
+    "label": "SQLite MCP Server",
+    "binaries": ["sqlite3"],
+    "matchesHttp": false,
+    "replaces": "Replaces repeated shell invocations of `sqlite3` for local database inspection and SQL queries with structured MCP tool calls.",
+    "rationale": "Repeated sqlite3 one-liners require quoting SQL and setting output modes manually; an SQLite MCP server exposes typed list_tables, describe_table, and read_query tools over the local database file.",
+    "docsUrl": "https://github.com/modelcontextprotocol/servers-archived/tree/main/src/sqlite",
+    "minHits": 2,
+    "estimatedToolTokens": 1200,
+    "installSnippet": "{\n  \"mcpServers\": {\n    \"sqlite\": {\n      \"command\": \"uvx\",\n      \"args\": [\"mcp-server-sqlite\", \"--db-path\", \"<PATH_TO_SQLITE_DB>\"],\n      \"disabled\": false,\n      \"alwaysAllow\": []\n    }\n  }\n}"
   },
   {
     "id": "aws-mcp",
-    "label": "AWS MCP Server",
+    "label": "AWS API MCP Server",
     "binaries": ["aws"],
     "matchesHttp": false,
-    "replaces": "Replaces shell invocations of the `aws` CLI with structured MCP tool calls for AWS resource management.",
-    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
-    "docsUrl": "https://github.com/aws/amazon-q-developer-cli",
-    "minHits": 2
+    "replaces": "Replaces repeated shell invocations of the `aws` CLI for inspecting and managing AWS resources with structured MCP tool calls.",
+    "rationale": "AWS CLI commands require remembering service-specific flags, pagination tokens, and JMESPath filters; the official AWS Labs API MCP server validates CLI operations and returns structured AWS responses with explicit region scoping.",
+    "docsUrl": "https://github.com/awslabs/mcp/tree/main/src/aws-api-mcp-server",
+    "minHits": 2,
+    "estimatedToolTokens": 900,
+    "installSnippet": "{\n  \"mcpServers\": {\n    \"awslabs.aws-api-mcp-server\": {\n      \"command\": \"uvx\",\n      \"args\": [\"awslabs.aws-api-mcp-server@latest\"],\n      \"env\": {\n        \"AWS_REGION\": \"<YOUR_AWS_REGION>\"\n      },\n      \"disabled\": false,\n      \"alwaysAllow\": []\n    }\n  }\n}"
   },
   {
     "id": "npm-mcp",
-    "label": "NPM MCP Server",
+    "label": "NPM Scripts MCP Server",
     "binaries": ["npm", "npx", "yarn", "pnpm"],
     "matchesHttp": false,
-    "replaces": "Replaces shell invocations of `npm`, `npx`, `yarn`, or `pnpm` for package management with structured MCP tool calls.",
-    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
-    "docsUrl": "https://github.com/modelcontextprotocol/servers",
-    "minHits": 2
+    "replaces": "Replaces repeated shell invocations of `npm`, `npx`, `yarn`, or `pnpm` scripts with structured MCP tool calls derived from package.json.",
+    "rationale": "Ad-hoc package-manager shell calls risk mistyped script names and unguarded flags; an npm-scripts MCP server exposes only the project's declared package.json scripts as discoverable, whitelisted tools.",
+    "docsUrl": "https://github.com/fstubner/npm-run-mcp-server",
+    "minHits": 2,
+    "estimatedToolTokens": 800,
+    "installSnippet": "{\n  \"mcpServers\": {\n    \"npm-scripts\": {\n      \"command\": \"npx\",\n      \"args\": [\"-y\", \"npm-run-mcp-server\"],\n      \"disabled\": false,\n      \"alwaysAllow\": []\n    }\n  }\n}"
   },
   {
     "id": "http-mcp",
     "label": "HTTP Fetch MCP Server",
-    "binaries": ["curl", "wget", "http", "httpie"],
+    "binaries": ["curl", "wget", "http"],
     "matchesHttp": true,
-    "replaces": "Replaces shell HTTP requests via `curl`, `wget`, or `httpie` with structured MCP tool calls.",
-    "rationale": "Shell commands return unstructured text that the agent must interpret inside the context window; MCP tools return structured data, reducing token consumption and parsing errors.",
+    "replaces": "Replaces repeated shell HTTP requests via `curl`, `wget`, or HTTPie (`http`) with structured MCP fetch calls.",
+    "rationale": "Raw curl and wget responses dump full HTML, headers, and progress noise into the conversation; the official MCP Fetch server converts web content into compact Markdown with bounded length and SSRF protections.",
     "docsUrl": "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch",
-    "minHits": 2
+    "minHits": 2,
+    "estimatedToolTokens": 350,
+    "installSnippet": "{\n  \"mcpServers\": {\n    \"fetch\": {\n      \"command\": \"uvx\",\n      \"args\": [\"mcp-server-fetch\"],\n      \"disabled\": false,\n      \"alwaysAllow\": []\n    }\n  }\n}"
   }
 ]
