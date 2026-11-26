@@ -1,13 +1,22 @@
 import React from "react";
 import type { Comparison, ObserveReport } from "../domain/types";
 import { findingKindLabel } from "./finding-labels";
+import {
+  formatCurrency,
+  formatDurationSeconds,
+  formatInteger,
+  formatPercent,
+  formatTokens,
+} from "./format";
+import { BREAKDOWN_FIELD_LABELS } from "./Glossary";
 import styles from "./ComparisonScreen.module.css";
 
-type ValueKind = "currency" | "integer" | "duration";
+type ValueKind = "currency" | "integer" | "tokens" | "duration";
 type TrendRule = "lower-is-better" | "intentional-increase";
 
 interface MetricRow {
   label: string;
+  technicalKey?: string;
   valueA: number | null | undefined;
   valueB: number | null | undefined;
   delta: number | null | undefined;
@@ -25,22 +34,6 @@ export interface ComparisonScreenProps {
   onViewPrescriptions: () => void;
 }
 
-const integerFormatter = new Intl.NumberFormat("en-US", {
-  maximumFractionDigits: 0,
-});
-
-const moneyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  minimumFractionDigits: 6,
-  maximumFractionDigits: 6,
-});
-
-const percentFormatter = new Intl.NumberFormat("en-US", {
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
-});
-
 function rootTasks(report: ObserveReport): ObserveReport["tasks"] {
   return report.tasks.filter((task) => !task.isSubtask);
 }
@@ -55,15 +48,19 @@ function roundAFixedOverhead(report: ObserveReport): number | null {
 }
 
 function formatValue(value: number, kind: ValueKind): string {
-  if (kind === "currency") return moneyFormatter.format(value);
-  if (kind === "duration") {
-    return `${integerFormatter.format(Math.round(value / 1000))} s`;
-  }
-  return integerFormatter.format(value);
+  if (kind === "currency") return formatCurrency(value);
+  if (kind === "duration") return formatDurationSeconds(value);
+  if (kind === "tokens") return formatTokens(value);
+  return formatInteger(value);
 }
 
 function signedValue(value: number, kind: ValueKind): string {
-  if (value === 0) return kind === "currency" ? moneyFormatter.format(0) : "0";
+  if (value === 0) {
+    if (kind === "currency") return formatCurrency(0);
+    if (kind === "tokens") return formatTokens(0);
+    if (kind === "duration") return formatDurationSeconds(0);
+    return "0";
+  }
   const sign = value > 0 ? "+" : "−";
   return `${sign}${formatValue(Math.abs(value), kind)}`;
 }
@@ -74,8 +71,8 @@ function percentage(delta: number, baseline: number): number | null {
 }
 
 function signedPercent(value: number): string {
-  if (value === 0) return `${percentFormatter.format(0)}%`;
-  return `${value > 0 ? "+" : "−"}${percentFormatter.format(Math.abs(value))}%`;
+  if (value === 0) return formatPercent(0);
+  return `${value > 0 ? "+" : "−"}${formatPercent(Math.abs(value))}`;
 }
 
 function deltaLabel(row: MetricRow): {
@@ -167,11 +164,11 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
   const metrics = comparison.metrics;
   const idleDisplayA =
     metrics.idleToolsA !== undefined && metrics.availableToolsA !== undefined
-      ? `${integerFormatter.format(metrics.idleToolsA)} of ${integerFormatter.format(metrics.availableToolsA)}`
+      ? `${formatInteger(metrics.idleToolsA)} of ${formatInteger(metrics.availableToolsA)}`
       : undefined;
   const idleDisplayB =
     metrics.idleToolsB !== undefined && metrics.availableToolsB !== undefined
-      ? `${integerFormatter.format(metrics.idleToolsB)} of ${integerFormatter.format(metrics.availableToolsB)}`
+      ? `${formatInteger(metrics.idleToolsB)} of ${formatInteger(metrics.availableToolsB)}`
       : undefined;
 
   return [
@@ -180,7 +177,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       valueA: metrics.fixedOverheadA,
       valueB: metrics.fixedOverheadB,
       delta: metrics.fixedOverheadDelta,
-      kind: "integer",
+      kind: "tokens",
       trend: "lower-is-better",
       emphasis: true,
     },
@@ -208,7 +205,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       valueA: metrics.contextTokensA,
       valueB: metrics.contextTokensB,
       delta: metrics.contextTokensDelta,
-      kind: "integer",
+      kind: "tokens",
       trend: "lower-is-better",
     },
     {
@@ -216,7 +213,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       valueA: metrics.conversationTokensA,
       valueB: metrics.conversationTokensB,
       delta: metrics.conversationTokensDelta,
-      kind: "integer",
+      kind: "tokens",
       trend: "lower-is-better",
     },
     {
@@ -224,15 +221,16 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       valueA: metrics.skillTokensA,
       valueB: metrics.skillTokensB,
       delta: metrics.skillTokensDelta,
-      kind: "integer",
+      kind: "tokens",
       trend: "lower-is-better",
     },
     {
-      label: "projectRules",
+      label: BREAKDOWN_FIELD_LABELS.projectRules,
+      technicalKey: "projectRules",
       valueA: metrics.projectRulesTokensA,
       valueB: metrics.projectRulesTokensB,
       delta: metrics.projectRulesTokensDelta,
-      kind: "integer",
+      kind: "tokens",
       trend: "intentional-increase",
     },
     {
@@ -305,7 +303,9 @@ function MetricTable({
                   row.trend === "intentional-increase" ? styles.intentionalRow : ""
                 }`}
               >
-                <th scope="row">{row.label}</th>
+                <th scope="row" title={row.technicalKey}>
+                  {row.label}
+                </th>
                 <td><Value value={row.valueA} kind={row.kind} display={row.displayA} /></td>
                 <td><Value value={row.valueB} kind={row.kind} display={row.displayB} /></td>
                 <DeltaCell row={row} />
@@ -317,6 +317,25 @@ function MetricTable({
     </div>
   );
 }
+
+const SCREENSHOT_METRICS: ReadonlyArray<{ label: string; explanation: string }> = [
+  {
+    label: "Tokens ↑",
+    explanation: "Input tokens sent to the model (prompt + context), shown in Bob's task summary.",
+  },
+  {
+    label: "Tokens ↓",
+    explanation: "Output tokens generated by the model, shown in Bob's task summary.",
+  },
+  {
+    label: "Cache ↓/↑ (ratio)",
+    explanation: "Prompt cache reads vs. writes from Bob's task summary.",
+  },
+  {
+    label: "Context Length %",
+    explanation: "Percentage of the model's context window shown in Bob's task summary.",
+  },
+];
 
 function ManualMetrics({ comparison }: { comparison: Comparison }): React.JSX.Element {
   const buildMeasured =
@@ -336,7 +355,10 @@ function ManualMetrics({ comparison }: { comparison: Comparison }): React.JSX.El
     <section className={`${styles.tableCard} ${styles.manualCard}`}>
       <div className={styles.tableHeader}>
         <h2>Filled in by hand <span className={styles.manualBadge}>READ FROM SCREENSHOT</span></h2>
-        <p>These do not exist in the Bob export and are never mixed with the calculated ones.</p>
+        <p>
+          These do not exist in the Bob export and are never mixed with the calculated ones.
+          Tokens ↑ are input tokens sent to the model; Tokens ↓ are output tokens generated by the model.
+        </p>
       </div>
       <div className={styles.tableScroll}>
         <table className={styles.table} aria-label="Manually filled metrics">
@@ -349,16 +371,17 @@ function ManualMetrics({ comparison }: { comparison: Comparison }): React.JSX.El
             </tr>
           </thead>
           <tbody>
-            {["Tokens ↑", "Tokens ↓", "Cache ↓/↑ (ratio)", "Context Length %"].map(
-              (label) => (
-                <tr key={label}>
-                  <th scope="row">{label}</th>
-                  <td className={styles.unavailable}>unavailable</td>
-                  <td className={styles.unavailable}>unavailable</td>
-                  <td className={styles.neutral}>— not measured</td>
-                </tr>
-              )
-            )}
+            {SCREENSHOT_METRICS.map((item) => (
+              <tr key={item.label}>
+                <th scope="row">
+                  <span>{item.label}</span>
+                  <span className={styles.metricHint}>{item.explanation}</span>
+                </th>
+                <td className={styles.unavailable}>unavailable</td>
+                <td className={styles.unavailable}>unavailable</td>
+                <td className={styles.neutral}>— not measured</td>
+              </tr>
+            ))}
             {buildMeasured ? (
               <tr>
                 <th scope="row">{buildRow.label}</th>
@@ -397,9 +420,10 @@ function MissingRoundB({
         </p>
         <ol className={styles.missingSteps}>
           <li>
-            <strong>Round A loaded</strong> — {roundA.totals.assistantTurns} turns,{" "}
+            <strong>Round A loaded</strong> — {roundA.totals.assistantTurns}{" "}
+            {roundA.totals.assistantTurns === 1 ? "turn" : "turns"},{" "}
             {overheadA !== null
-              ? `${integerFormatter.format(overheadA)} tokens of fixed overhead`
+              ? `${formatTokens(overheadA)} of fixed overhead`
               : "fixed overhead unavailable"}
           </li>
           <li>Apply the configuration Hindsight generated</li>
@@ -413,7 +437,12 @@ function MissingRoundB({
       </div>
       <aside className={styles.hypothesis}>
         <span>Registered hypothesis</span>
-        <p>projectRules leaves 0<br />Fixed overhead falls<br />Idle tools decrease<br />Regressions will be reported too</p>
+        <p>
+          Project rules leave 0<br />
+          Fixed overhead falls<br />
+          Idle tools decrease<br />
+          Regressions will be reported too
+        </p>
         <small>Registered before the run, so the metric is not chosen after seeing the number.</small>
       </aside>
     </section>
@@ -432,7 +461,7 @@ function headline(comparison: Comparison): string {
   if (ratio === null) {
     return "Fixed overhead changed from a zero baseline. Every result is in the table.";
   }
-  return `Fixed overhead ${fixedOverheadDelta < 0 ? "fell" : "rose"} ${percentFormatter.format(Math.abs(ratio))}%. Regressions and ties stay visible.`;
+  return `Fixed overhead ${fixedOverheadDelta < 0 ? "fell" : "rose"} ${formatPercent(Math.abs(ratio))}. Regressions and ties stay visible.`;
 }
 
 export function ComparisonScreen({
@@ -491,7 +520,7 @@ export function ComparisonScreen({
           const delta = deltaLabel(row);
           return (
             <article key={row.label} className={row.trend === "intentional-increase" ? styles.intentionalCard : styles.summaryCard}>
-              <span>{row.label}</span>
+              <span title={row.technicalKey}>{row.label}</span>
               <strong>
                 {row.delta == null ? (
                   <span className={styles.unavailable}>unavailable</span>

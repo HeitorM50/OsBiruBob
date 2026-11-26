@@ -282,7 +282,7 @@ describe("PrescriptionScreen", () => {
     expect(links[0].getAttribute("href")).toBe(
       "https://docs.docker.com/ai/mcp-catalog-and-toolkit/"
     );
-    expect(mcpsPanel.textContent).toContain("+~1200 tokens/turn");
+    expect(mcpsPanel.textContent).toContain("+~1,200 tokens/turn");
     expect(mcpsPanel.textContent).toContain("estimate");
     expect(mcpsPanel.textContent).toContain('"mcpServers"');
     expect(
@@ -300,7 +300,7 @@ describe("PrescriptionScreen", () => {
 
     click(tab(container, "Skills"));
     const skillsPanel = container.querySelector("#panel-skills")!;
-    expect(skillsPanel.textContent).toContain("1541 tokens");
+    expect(skillsPanel.textContent).toContain("1,541 tokens");
     expect(skillsPanel.textContent).toContain("estimate");
     expect(skillsPanel.textContent).not.toContain("Measured skill tokens:");
     expect(skillsPanel.textContent).toContain("Settings → Skills");
@@ -331,7 +331,7 @@ describe("PrescriptionScreen", () => {
     ).not.toContain("- #");
   });
 
-  it("copies the exact in-memory content", async () => {
+  it("copies the exact in-memory content and shows aria-live Copied feedback", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -345,27 +345,19 @@ describe("PrescriptionScreen", () => {
     });
 
     click(container.querySelector('[aria-label="Copy AGENTS.md"]') as Element);
-    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith(generated.content));
+    await vi.waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(generated.content);
+      const status = container.querySelector('[role="status"][aria-live="polite"]');
+      expect(status?.textContent).toBe("Copied");
+    });
   });
 
-  it("downloads a browser Blob without making a network request", () => {
-    const createObjectURL = vi.fn(
-      (_object: Blob | MediaSource): string => "blob:hindsight-test"
-    );
-    const revokeObjectURL = vi.fn();
-    Object.defineProperty(URL, "createObjectURL", {
+  it("handles clipboard errors gracefully in aria-live status", async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error("permission denied"));
+    Object.defineProperty(navigator, "clipboard", {
       configurable: true,
-      value: createObjectURL,
+      value: { writeText },
     });
-    Object.defineProperty(URL, "revokeObjectURL", {
-      configurable: true,
-      value: revokeObjectURL,
-    });
-    const anchorClick = vi
-      .spyOn(HTMLAnchorElement.prototype, "click")
-      .mockImplementation(() => undefined);
-    const fetchSpy = vi.fn();
-    vi.stubGlobal("fetch", fetchSpy);
     const source = finding();
     const generated = prescription();
     const { container } = mount({
@@ -373,16 +365,78 @@ describe("PrescriptionScreen", () => {
       findings: [source],
     });
 
-    click(
-      container.querySelector(
-        '[aria-label="Download AGENTS.md as AGENTS.md"]'
-      ) as Element
+    click(container.querySelector('[aria-label="Copy AGENTS.md"]') as Element);
+    await vi.waitFor(() => {
+      const status = container.querySelector('[role="status"][aria-live="polite"]');
+      expect(status?.textContent).toBe("Could not copy to clipboard");
+    });
+  });
+
+  it("shows estimate label with estimationBasis tooltip on prescriptions", () => {
+    const source = finding();
+    const generated = prescription({
+      kind: "custom-mode",
+      targetFile: ".bob/custom_modes.yaml",
+      content: "customModes: []",
+      estimatedTokenSaving: 1409,
+      isEstimate: true,
+      estimationBasis: "Prorated from idle tools over toolDefinitions",
+    });
+    const { container } = mount({
+      prescriptions: [generated],
+      findings: [source],
+    });
+
+    const badge = container.querySelector(
+      '[title="Prorated from idle tools over toolDefinitions"]'
     );
-    expect(createObjectURL).toHaveBeenCalledOnce();
-    expect(createObjectURL.mock.calls[0][0]).toBeInstanceOf(Blob);
-    expect(anchorClick).toHaveBeenCalledOnce();
-    expect(revokeObjectURL).toHaveBeenCalledWith("blob:hindsight-test");
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(badge).toBeTruthy();
+    expect(badge?.textContent).toBe("estimate");
+  });
+
+  it("downloads a browser Blob without making a network request and delays revoking URL", () => {
+    vi.useFakeTimers();
+    try {
+      const createObjectURL = vi.fn(
+        (_object: Blob | MediaSource): string => "blob:hindsight-test"
+      );
+      const revokeObjectURL = vi.fn();
+      Object.defineProperty(URL, "createObjectURL", {
+        configurable: true,
+        value: createObjectURL,
+      });
+      Object.defineProperty(URL, "revokeObjectURL", {
+        configurable: true,
+        value: revokeObjectURL,
+      });
+      const anchorClick = vi
+        .spyOn(HTMLAnchorElement.prototype, "click")
+        .mockImplementation(() => undefined);
+      const fetchSpy = vi.fn();
+      vi.stubGlobal("fetch", fetchSpy);
+      const source = finding();
+      const generated = prescription();
+      const { container } = mount({
+        prescriptions: [generated],
+        findings: [source],
+      });
+
+      click(
+        container.querySelector(
+          '[aria-label="Download AGENTS.md as AGENTS.md"]'
+        ) as Element
+      );
+      expect(createObjectURL).toHaveBeenCalledOnce();
+      expect(createObjectURL.mock.calls[0][0]).toBeInstanceOf(Blob);
+      expect(anchorClick).toHaveBeenCalledOnce();
+      expect(revokeObjectURL).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(1000);
+      expect(revokeObjectURL).toHaveBeenCalledWith("blob:hindsight-test");
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("redacts MCP command evidence by default and reveals per-item after warning as escaped text", () => {

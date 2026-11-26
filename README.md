@@ -7,8 +7,10 @@
 Built during the IBM TechXchange 2026 Pre-conference Dev Day Hackathon.
 
 **[Open the public Hindsight demo](https://heitorm50.github.io/OsBiruBob/)** —
-select **“See an example”** to analyse the embedded, redacted baseline without an
-installation, account, API key, or network request.
+select **“See an example”** to load both embedded, redacted rounds (Round A
+baseline and Round B after configuration) and walk through the full diagnosis,
+prescriptions, and A/B comparison without an installation, account, API key, or
+network request.
 
 ## The problem
 
@@ -71,9 +73,27 @@ credentials, telemetry, or runtime network calls.
 ### Public demo
 
 Open <https://heitorm50.github.io/OsBiruBob/> in any browser and select
-**“See an example.”** The embedded fixture is a structurally faithful, redacted
-copy of Round A. To compare your own experiment, drop Round A and Round B exports
-onto the page.
+**“See an example.”** The demo loads both embedded, redacted exports — Round A
+(baseline) and Round B (after applying Hindsight's configuration) — so every
+step works immediately, including A/B comparison. To analyse your own
+experiment, export a session from IBM Bob (**Tasks → Export JSON**) and drop
+Round A (and optionally Round B) onto the page.
+
+### Web app flow
+
+The interface is organized into four steps:
+
+1. **Load** — drop or select your Round A (baseline) and optional Round B
+   exports, or load the built-in A/B example. Everything stays in browser memory.
+2. **Diagnose** — inspect fixed overhead, conversation tokens, reported context,
+   context composition, and grouped findings. For multi-task exports, switch
+   tasks with the **Task N of M** selector; optionally enter your model's
+   context window size to calculate context pressure.
+3. **Fix** — review actionable prescriptions (`AGENTS.md`, `.bob/custom_modes.yaml`,
+   Skills, and MCP snippets), copy or download each artefact, and jump back to
+   its origin finding.
+4. **Compare** — inspect the A/B delta table (improvements, regressions, ties,
+   and screenshot-only metrics kept separate) once Round B is loaded.
 
 ### Local web app
 

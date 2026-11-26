@@ -84,11 +84,18 @@ describe("App Load → Diagnose → Fix → Compare flow", () => {
     // No separate projectRules = 0 alert card; the Finding fulfills that role
     expect(screen.queryByTestId("project-rules-alert")).toBeNull();
 
-    // Baseline aggregates, kept distinct from one another
-    expect(screen.getByTestId("fixed-overhead").textContent).toBe("10,439");
-    expect(screen.getByTestId("conversation-tokens").textContent).toBe("7,145");
-    expect(screen.getByTestId("reported-total").textContent).toBe("17,584");
-    expect(screen.getByTestId("breakdown-tokens-projectRules").textContent).toBe("0");
+    // Baseline aggregates, kept distinct from one another, with token units
+    expect(screen.getByTestId("fixed-overhead").textContent).toBe("10,439 tokens");
+    expect(screen.getByTestId("conversation-tokens").textContent).toBe("7,145 tokens");
+    expect(screen.getByTestId("reported-total").textContent).toBe("17,584 tokens");
+    expect(screen.getByTestId("breakdown-tokens-projectRules").textContent).toBe("0 tokens");
+    expect(
+      screen.getByRole("heading", {
+        name: "10,439 tokens of fixed overhead before work begins",
+      })
+    ).toBeTruthy();
+    expect(screen.getByTestId("assumed-badge").textContent).toBe("assumed");
+    expect(screen.getByTestId("glossary")).toBeTruthy();
 
     // Findings are rendered directly on Diagnose with shared labels
     expect(screen.getByText("Project rules missing")).toBeTruthy();
@@ -553,5 +560,96 @@ describe("App Load → Diagnose → Fix → Compare flow", () => {
     });
 
     await waitFor(() => expect(screen.queryByLabelText("Analyzed files")).toBeNull());
+  });
+
+  it("shows export instructions and distinct Round A / Round B slots on Load", () => {
+    render(<App />);
+    expect(
+      screen.getByRole("heading", { name: "How to export a session from IBM Bob" })
+    ).toBeTruthy();
+    expect(screen.getByText(/Tasks → Export JSON/)).toBeTruthy();
+    expect(screen.getByTestId("slot-round-a")).toBeTruthy();
+    expect(screen.getByTestId("slot-round-b")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Select Round A" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Select Round B" })).toBeTruthy();
+  });
+
+  it("defaults context window to empty (pressure unavailable) for uploaded files and computes pressure when filled", async () => {
+    render(<App readText={async () => sampleExport} />);
+    fireEvent.drop(screen.getByTestId("dropzone"), {
+      dataTransfer: { files: [exportFile("round-a.json")] },
+    });
+    expect(await screen.findByTestId("diagnose-screen")).toBeTruthy();
+
+    const input = screen.getByTestId("context-window-input") as HTMLInputElement;
+    expect(input.value).toBe("");
+    expect(screen.queryByTestId("assumed-badge")).toBeNull();
+    expect(screen.getByTestId("pressure-label").textContent).toContain(
+      "Pressure unavailable"
+    );
+
+    fireEvent.change(input, { target: { value: "200000" } });
+    // 17584 / 200000 = 8.792% → 8.8%
+    expect(screen.getByTestId("pressure-label").textContent).toContain("8.8%");
+    expect(screen.getByTestId("pressure-label").textContent).toContain(
+      "200k tokens"
+    );
+    expect(screen.getByTestId("pressure-label").textContent).not.toContain(
+      "assumed"
+    );
+
+    fireEvent.change(input, { target: { value: "" } });
+    expect(screen.getByTestId("pressure-label").textContent).toContain(
+      "Pressure unavailable"
+    );
+  });
+
+  it("supports multi-task exports with a Task N of M selector and plural task count", async () => {
+    const parsed = JSON.parse(sampleExport) as {
+      tasks: Array<{
+        task: {
+          id: string;
+          parentId?: string | null;
+          costs: {
+            contextWindowBreakdown: {
+              total: number;
+              reportedTotal: number;
+              breakdown: Record<string, number>;
+            };
+          };
+        };
+        messages: unknown[];
+      }>;
+    };
+    const secondTask = JSON.parse(JSON.stringify(parsed.tasks[0])) as (typeof parsed.tasks)[0];
+    secondTask.task.id = "second-root-task";
+    secondTask.task.parentId = null;
+    secondTask.task.costs.contextWindowBreakdown.total = 5000;
+    secondTask.task.costs.contextWindowBreakdown.reportedTotal = 8000;
+    parsed.tasks.push(secondTask);
+
+    render(<App readText={async () => JSON.stringify(parsed)} />);
+    fireEvent.drop(screen.getByTestId("dropzone"), {
+      dataTransfer: { files: [exportFile("multi-task.json")] },
+    });
+    expect(await screen.findByTestId("diagnose-screen")).toBeTruthy();
+
+    const selector = screen.getByTestId("task-selector") as HTMLSelectElement;
+    expect(screen.getByLabelText("Select task")).toBe(selector);
+    expect(selector.options[0].textContent).toContain("Task 1 of 2");
+    expect(selector.options[1].textContent).toContain("Task 2 of 2");
+    expect(screen.getByTestId("fixed-overhead").textContent).toBe("10,439 tokens");
+
+    fireEvent.change(selector, { target: { value: "1" } });
+    expect(screen.getByTestId("fixed-overhead").textContent).toBe("5,000 tokens");
+    expect(
+      screen.getByRole("heading", {
+        name: "5,000 tokens of fixed overhead before work begins",
+      })
+    ).toBeTruthy();
+
+    // Check plural "2 tasks" in the Load summary card
+    fireEvent.click(screen.getByRole("button", { name: "1 · Load" }));
+    expect(screen.getByText(/2 tasks ·/)).toBeTruthy();
   });
 });
