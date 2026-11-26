@@ -1,15 +1,16 @@
 /**
  * ContextWindowScreen — Hindsight
  *
- * Renders the full context window token breakdown extracted during the Observe
- * phase (ObserveReport → TaskReport → ContextSummary).
+ * Renders the context window summary (fixed overhead, conversation, reported
+ * total & pressure) and stacked bar decomposition with legend extracted during
+ * the Observe phase (ObserveReport → TaskReport → ContextSummary).
  *
  * Rules enforced here:
  *  - percentages always use fixedOverhead as denominator (never reportedTotal)
  *  - fixedOverhead, conversationTokens, reportedTotal are distinct and labelled
  *  - pressure shown only when maxContextWindow is explicitly non-null
- *  - projectRules === 0 triggers a highlighted alert treatment
  *  - all ten breakdown sources are always rendered (zero is not hidden)
+ *  - no duplicate projectRules = 0 alert card (the Finding covers that)
  *  - no sensitive data is rendered (no message content, paths, titles)
  */
 
@@ -21,8 +22,10 @@ import styles from "./ContextWindowScreen.module.css";
 // Types
 // ---------------------------------------------------------------------------
 
-interface ContextWindowScreenProps {
+export interface ContextWindowScreenProps {
   context: ContextSummary;
+  /** When true, renders as a <section> inside DiagnoseScreen without outer page chrome. */
+  embedded?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -47,7 +50,6 @@ interface SegmentDef {
   pattern: BarPattern;
 }
 
-// Ordered by prototype visual priority (largest first in the baseline)
 const SEGMENT_DEFS: SegmentDef[] = [
   { key: "toolDefinitions",    label: "toolDefinitions",    pattern: "solid-1"  },
   { key: "toolSystemPrompts",  label: "toolSystemPrompts",  pattern: "hatch-2"  },
@@ -65,41 +67,35 @@ const SEGMENT_DEFS: SegmentDef[] = [
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Format a token count with a comma as thousands separator ("10,439", "5,403").
- */
 function fmtTokens(n: number): string {
   return n.toLocaleString("en-US");
 }
 
-/**
- * Format a percentage to one decimal place ("51.8%").
- */
 function fmtPct(n: number): string {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+  return (
+    n.toLocaleString("en-US", {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }) + "%"
+  );
 }
 
-/**
- * Build a sorted list of segments (largest first) from the breakdown.
- * Segments with zero tokens are kept (zero is the finding).
- */
 function sortedSegments(
   breakdown: ContextSummary["breakdown"],
   fixedOverhead: number
 ): Array<SegmentDef & { tokens: number | undefined; pct: number | undefined }> {
-  return SEGMENT_DEFS
-    .map((def) => {
-      const raw = (breakdown as Record<string, number | undefined>)[def.key];
-      const tokens = typeof raw === "number" && Number.isFinite(raw) ? raw : undefined;
-      const pct =
-        tokens === undefined
-          ? undefined
-          : fixedOverhead > 0
-            ? (tokens / fixedOverhead) * 100
-            : 0;
-      return { ...def, tokens, pct };
-    })
-    .sort((a, b) => (b.tokens ?? -1) - (a.tokens ?? -1));
+  return SEGMENT_DEFS.map((def) => {
+    const raw = (breakdown as Record<string, number | undefined>)[def.key];
+    const tokens =
+      typeof raw === "number" && Number.isFinite(raw) ? raw : undefined;
+    const pct =
+      tokens === undefined
+        ? undefined
+        : fixedOverhead > 0
+          ? (tokens / fixedOverhead) * 100
+          : 0;
+    return { ...def, tokens, pct };
+  }).sort((a, b) => (b.tokens ?? -1) - (a.tokens ?? -1));
 }
 
 // ---------------------------------------------------------------------------
@@ -127,19 +123,18 @@ function AggregateRow({
       : "Pressure unavailable — maximum window not provided";
 
   return (
-    <div className={styles.aggregates}>
+    <div className={styles.aggregates} data-testid="context-summary-row">
       <div className={styles.aggregateItem}>
         <div className={styles.aggregateLabel}>Fixed overhead</div>
-        <div
-          className={styles.aggregateValue}
-          data-testid="fixed-overhead"
-        >
+        <div className={styles.aggregateValue} data-testid="fixed-overhead">
           {fmtTokens(fixedOverhead)}
         </div>
         <div className={styles.aggregateSub}>loaded before any work</div>
       </div>
 
-      <div className={styles.aggregatePlus} aria-hidden="true">+</div>
+      <div className={styles.aggregatePlus} aria-hidden="true">
+        +
+      </div>
 
       <div className={styles.aggregateItem}>
         <div className={styles.aggregateLabel}>Conversation</div>
@@ -152,14 +147,13 @@ function AggregateRow({
         <div className={styles.aggregateSub}>the work itself</div>
       </div>
 
-      <div className={styles.aggregatePlus} aria-hidden="true">=</div>
+      <div className={styles.aggregatePlus} aria-hidden="true">
+        =
+      </div>
 
       <div className={styles.aggregateItem}>
         <div className={styles.aggregateLabel}>Reported context</div>
-        <div
-          className={styles.aggregateValue}
-          data-testid="reported-total"
-        >
+        <div className={styles.aggregateValue} data-testid="reported-total">
           {fmtTokens(reportedTotal)}
         </div>
         <div
@@ -183,7 +177,10 @@ interface StackedBarProps {
   fixedOverhead: number;
 }
 
-function StackedBar({ segments, fixedOverhead }: StackedBarProps): React.JSX.Element {
+function StackedBar({
+  segments,
+  fixedOverhead,
+}: StackedBarProps): React.JSX.Element {
   if (fixedOverhead === 0) {
     return (
       <div className={styles.barEmpty} data-testid="bar-empty">
@@ -192,20 +189,20 @@ function StackedBar({ segments, fixedOverhead }: StackedBarProps): React.JSX.Ele
     );
   }
 
-  // Only label a segment when its band is actually wide enough to hold the text.
-  // At 5% the band is ~60px and clips "staticSections" to "s.." with the value
-  // cut in half; every value stays readable in the legend and the table below.
   const MIN_LABEL_PCT = 10;
 
   return (
-    <div className={styles.barOuter} role="img" aria-label="Context window breakdown">
+    <div
+      className={styles.barOuter}
+      role="img"
+      aria-label="Context window breakdown"
+    >
       {segments.map((seg) => {
         if (
           seg.tokens === undefined ||
           seg.pct === undefined ||
           (seg.pct <= 0 && fixedOverhead > 0)
         ) {
-          // Zero-width or unavailable segments are not rendered in the visual bar
           return null;
         }
         const widthPct = seg.pct;
@@ -235,52 +232,7 @@ function StackedBar({ segments, fixedOverhead }: StackedBarProps): React.JSX.Ele
 }
 
 // ---------------------------------------------------------------------------
-// projectRules alert card
-// ---------------------------------------------------------------------------
-
-interface ProjectRulesAlertProps {
-  tokens: number | undefined;
-}
-
-function ProjectRulesAlert({ tokens }: ProjectRulesAlertProps): React.JSX.Element | null {
-  if (tokens !== 0) return null;
-
-  return (
-    <div
-      className={styles.projectRulesAlert}
-      role="alert"
-      data-testid="project-rules-alert"
-    >
-      <div className={styles.projectRulesAlertSide}>
-        <div
-          className={styles.projectRulesZero}
-          aria-label="projectRules: 0 tokens"
-        >
-          0
-        </div>
-        <div className={styles.projectRulesKey}>projectRules</div>
-      </div>
-      <div className={styles.projectRulesAlertBody}>
-        <h3 className={styles.projectRulesAlertTitle}>
-          This project has no AGENTS.md
-        </h3>
-        <p className={styles.projectRulesAlertText}>
-          The slice of the window that would carry project knowledge came back
-          empty. The agent rediscovers the structure, the conventions and the
-          commands from scratch in every new session — and pays for that
-          rediscovery every time.
-        </p>
-        <div className={styles.projectRulesAlertMeta}>
-          <span className={styles.badgeHigh}>HIGH CONFIDENCE</span>
-          <code className={styles.fieldPath}>breakdown.projectRules</code>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Breakdown table
+// Legend / Breakdown table
 // ---------------------------------------------------------------------------
 
 interface BreakdownTableProps {
@@ -289,11 +241,8 @@ interface BreakdownTableProps {
 
 function BreakdownTable({ segments }: BreakdownTableProps): React.JSX.Element {
   return (
-    <div className={styles.tableSection}>
-      <h2 className={styles.tableSectionTitle}>The ten sources</h2>
-      <p className={styles.tableSectionSub}>
-        Sources at zero stay in the list — the zero is the finding.
-      </p>
+    <div className={styles.tableSection} data-testid="context-legend">
+      <h2 className={styles.tableSectionTitle}>Context composition</h2>
       <div className={styles.tableScroll}>
         <div className={styles.tableInner}>
           <div className={styles.tableHeader}>
@@ -302,6 +251,13 @@ function BreakdownTable({ segments }: BreakdownTableProps): React.JSX.Element {
             <div className={styles.tableRight}>Share</div>
           </div>
           {segments.map((seg) => {
+            const swatch = (
+              <span
+                className={`${styles.legendSwatch} ${styles[`bar-${seg.pattern}`]}`}
+                aria-hidden="true"
+              />
+            );
+
             if (seg.tokens === undefined || seg.pct === undefined) {
               return (
                 <div
@@ -309,76 +265,47 @@ function BreakdownTable({ segments }: BreakdownTableProps): React.JSX.Element {
                   className={styles.tableRowMuted}
                   data-testid={`breakdown-row-${seg.key}`}
                 >
-                  <div className={styles.tableRowMutedName}>
+                  <div className={styles.tableRowLabel}>
+                    {swatch}
                     <span>{seg.label}</span>
                   </div>
-                  <div className={styles.tableRight} data-testid={`breakdown-tokens-${seg.key}`}>
+                  <div
+                    className={styles.tableRight}
+                    data-testid={`breakdown-tokens-${seg.key}`}
+                  >
                     unavailable
                   </div>
-                  <div className={styles.tableRight} data-testid={`breakdown-pct-${seg.key}`}>
+                  <div
+                    className={styles.tableRight}
+                    data-testid={`breakdown-pct-${seg.key}`}
+                  >
                     —
                   </div>
                 </div>
               );
             }
 
-            const isProjectRulesZero = seg.key === "projectRules" && seg.tokens === 0;
-            const isMcpZero = seg.key === "mcpToolDefinitions" && seg.tokens === 0;
+            const isZero = seg.tokens === 0;
             const isTopThree = seg.pct >= 10;
-
-            if (isProjectRulesZero) {
-              return (
-                <div
-                  key={seg.key}
-                  className={styles.tableRowAlert}
-                  data-testid={`breakdown-row-${seg.key}`}
-                >
-                  <div className={styles.tableRowAlertName}>
-                    <span>{seg.label}</span>
-                    <span className={styles.findingBadge}>FINDING</span>
-                  </div>
-                  <div className={`${styles.tableRight} ${styles.tableAlertValue}`} data-testid={`breakdown-tokens-${seg.key}`}>
-                    {fmtTokens(seg.tokens)}
-                  </div>
-                  <div className={`${styles.tableRight} ${styles.tableAlertValue}`} data-testid={`breakdown-pct-${seg.key}`}>
-                    {fmtPct(seg.pct)}
-                  </div>
-                </div>
-              );
-            }
-
-            if (isMcpZero) {
-              return (
-                <div
-                  key={seg.key}
-                  className={styles.tableRowMuted}
-                  data-testid={`breakdown-row-${seg.key}`}
-                >
-                  <div className={styles.tableRowMutedName}>
-                    <span>{seg.label}</span>
-                    <span className={styles.mcpNote}>no MCP server connected</span>
-                  </div>
-                  <div className={styles.tableRight} data-testid={`breakdown-tokens-${seg.key}`}>
-                    {fmtTokens(seg.tokens)}
-                  </div>
-                  <div className={styles.tableRight} data-testid={`breakdown-pct-${seg.key}`}>
-                    {fmtPct(seg.pct)}
-                  </div>
-                </div>
-              );
-            }
 
             return (
               <div
                 key={seg.key}
-                className={styles.tableRow}
+                className={isZero ? styles.tableRowMuted : styles.tableRow}
                 data-testid={`breakdown-row-${seg.key}`}
               >
-                <div className={isTopThree ? styles.tableRowNameBold : styles.tableRowName}>
-                  {seg.label}
+                <div
+                  className={`${styles.tableRowLabel} ${
+                    isTopThree ? styles.tableRowNameBold : styles.tableRowName
+                  }`}
+                >
+                  {swatch}
+                  <span>{seg.label}</span>
                 </div>
                 <div
-                  className={`${styles.tableRight} ${isTopThree ? styles.tableRowValueBold : ""}`}
+                  className={`${styles.tableRight} ${
+                    isTopThree ? styles.tableRowValueBold : ""
+                  }`}
                   data-testid={`breakdown-tokens-${seg.key}`}
                 >
                   {fmtTokens(seg.tokens)}
@@ -399,11 +326,12 @@ function BreakdownTable({ segments }: BreakdownTableProps): React.JSX.Element {
 }
 
 // ---------------------------------------------------------------------------
-// Main screen
+// Main component
 // ---------------------------------------------------------------------------
 
 export default function ContextWindowScreen({
   context,
+  embedded = false,
 }: ContextWindowScreenProps): React.JSX.Element {
   const {
     fixedOverhead,
@@ -415,28 +343,17 @@ export default function ContextWindowScreen({
   } = context;
 
   const segments = sortedSegments(breakdown, fixedOverhead);
-  const rawProjectRules = (breakdown as Record<string, number | undefined>).projectRules;
-  const projectRulesTokens =
-    typeof rawProjectRules === "number" && Number.isFinite(rawProjectRules)
-      ? rawProjectRules
-      : undefined;
 
-  return (
-    <main className={styles.screen} data-testid="context-window-screen">
-      {/* Section header */}
-      <div className={styles.sectionLabel}>
-        Diagnosis · context window
-      </div>
-      <h1 className={styles.heading}>
-        Ten thousand tokens were spent before the agent read a single line of code.
-      </h1>
-      <p className={styles.lead}>
-        This is the fixed overhead: instructions, tool definitions and Skills
-        loaded at the start of every session. It never appears on any screen the
-        agent shows you.
-      </p>
+  const body = (
+    <>
+      {!embedded && (
+        <>
+          <div className={styles.sectionLabel}>Diagnose · context window</div>
+          <h1 className={styles.heading}>Context window breakdown</h1>
+        </>
+      )}
 
-      {/* Three aggregate numbers */}
+      {/* Part 1: Summary row */}
       <AggregateRow
         fixedOverhead={fixedOverhead}
         conversationTokens={conversationTokens}
@@ -445,21 +362,27 @@ export default function ContextWindowScreen({
         maxContextWindow={maxContextWindow}
       />
 
-      {/* Stacked bar */}
+      {/* Part 2: Context composition bar + legend */}
       <StackedBar segments={segments} fixedOverhead={fixedOverhead} />
-
-      <div className={styles.barNote}>
-        <span>
-          Every band has its own fill — hatched or solid — so it never relies
-          on colour alone to be read.
-        </span>
-      </div>
-
-      {/* projectRules = 0 alert */}
-      <ProjectRulesAlert tokens={projectRulesTokens} />
-
-      {/* Full breakdown table */}
       <BreakdownTable segments={segments} />
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <section
+        className={styles.embeddedSection}
+        data-testid="context-window-screen"
+        aria-label="Context window breakdown"
+      >
+        {body}
+      </section>
+    );
+  }
+
+  return (
+    <main className={styles.screen} data-testid="context-window-screen">
+      {body}
     </main>
   );
 }

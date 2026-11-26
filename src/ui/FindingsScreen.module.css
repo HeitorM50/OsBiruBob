@@ -11,6 +11,21 @@
   padding: 44px 28px 56px;
 }
 
+.embeddedSection {
+  min-width: 0;
+}
+
+.embeddedHeader {
+  margin-bottom: 12px;
+}
+
+.embeddedTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
 /* ── Header ─────────────────────────────────────────────────────── */
 
 .header {
@@ -126,8 +141,20 @@
   border-bottom: none;
 }
 
+.findingRowFocused {
+  box-shadow: inset 3px 0 0 var(--acc, #a3401f);
+  background: var(--accsoft, #fbf3f0);
+}
+
+.findingHeaderBar {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
 .findingHeader {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   border: 0;
   background: none;
   text-align: left;
@@ -139,6 +166,34 @@
   color: var(--ink, #14181c);
   font-family: inherit;
   font-size: 1rem;
+}
+
+.findingActions {
+  flex: none;
+  padding: 16px 18px 16px 0;
+}
+
+.seeFixButton {
+  border: 1px solid var(--line2, #dcdfe3);
+  border-radius: 5px;
+  padding: 6px 12px;
+  background: var(--soft, #f4f6f8);
+  color: var(--ink, #14181c);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.seeFixButton:hover {
+  border-color: var(--acc, #a3401f);
+  color: var(--acc, #a3401f);
+}
+
+.seeFixButton:focus-visible {
+  outline: 2px solid var(--focus, #2f5d8c);
+  outline-offset: 2px;
 }
 
 .findingHeader:hover {

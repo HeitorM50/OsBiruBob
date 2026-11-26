@@ -4,6 +4,7 @@ import rodadaBExport from "../../benchmark/rodada-b.json?raw";
 import { compare } from "../compare";
 import {
   prescribeAgentsMd,
+  prescribeCustomMode,
   prescribeMcpEnablement,
   prescribeOverheadReduction,
 } from "../prescribe";
@@ -14,16 +15,22 @@ import {
 } from "./analysis";
 import { readFileText } from "./file-reader";
 import styles from "./App.module.css";
-import { FindingsScreen } from "./FindingsScreen";
+import { DiagnoseScreen } from "./DiagnoseScreen";
 import { PrescriptionScreen } from "./PrescriptionScreen";
 import { ComparisonScreen } from "./ComparisonScreen";
-import ContextWindowScreen from "./ContextWindowScreen";
 
 const DEMO_MAX_CONTEXT_WINDOW = 270_000;
 
 type Theme = "light" | "dark";
-type Screen = "input" | "diagnosis" | "findings" | "prescriptions" | "comparison";
+type Screen = "load" | "diagnose" | "fix" | "compare";
 type UploadMode = "replace" | "add-round-b";
+
+const STEPS: ReadonlyArray<{ id: Screen; label: string }> = [
+  { id: "load", label: "Load" },
+  { id: "diagnose", label: "Diagnose" },
+  { id: "fix", label: "Fix" },
+  { id: "compare", label: "Compare" },
+];
 
 function getInitialTheme(): Theme {
   if (
@@ -70,7 +77,11 @@ export default function App({
   const uploadModeRef = useRef<UploadMode>("replace");
   const nextId = useRef(1);
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
-  const [activeScreen, setActiveScreen] = useState<Screen>("input");
+  const [activeScreen, setActiveScreen] = useState<Screen>("load");
+  const [focusedFindingId, setFocusedFindingId] = useState<string | null>(null);
+  const [focusedPrescriptionId, setFocusedPrescriptionId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -87,6 +98,7 @@ export default function App({
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [activeScreen]);
+
   const [analyses, setAnalyses] = useState<LoadedAnalysis[]>([]);
   const [errors, setErrors] = useState<InputError[]>([]);
   const [loadingNames, setLoadingNames] = useState<string[]>([]);
@@ -112,6 +124,8 @@ export default function App({
 
     setDragActive(false);
     setErrors([]);
+    setFocusedFindingId(null);
+    setFocusedPrescriptionId(null);
     setLoadingNames(files.map((file) => file.name));
 
     const results = await Promise.all(
@@ -142,7 +156,7 @@ export default function App({
 
     setErrors(rejected);
     if (rejected.length > 0) {
-      setActiveScreen("input");
+      setActiveScreen("load");
     } else if (accepted.length > 0) {
       if (mode === "add-round-b") {
         setAnalyses((current) =>
@@ -151,7 +165,7 @@ export default function App({
       } else {
         setAnalyses(accepted);
       }
-      setActiveScreen(mode === "add-round-b" ? "comparison" : "diagnosis");
+      setActiveScreen(mode === "add-round-b" ? "compare" : "diagnose");
     }
     setLoadingNames([]);
   }
@@ -162,6 +176,8 @@ export default function App({
     nextId.current = 1;
     setAnalyses([]);
     setErrors([]);
+    setFocusedFindingId(null);
+    setFocusedPrescriptionId(null);
     setLoadingNames(["sample-export.json", "rodada-b.json"]);
     await nextFrame();
 
@@ -188,10 +204,10 @@ export default function App({
 
     if (newErrors.length > 0) {
       setErrors(newErrors);
-      setActiveScreen("input");
+      setActiveScreen("load");
     } else if (newAnalyses.length > 0) {
       setAnalyses(newAnalyses);
-      setActiveScreen("diagnosis");
+      setActiveScreen("diagnose");
     }
     setLoadingNames([]);
   }
@@ -202,7 +218,9 @@ export default function App({
     setErrors([]);
     setLoadingNames([]);
     setDragActive(false);
-    setActiveScreen("input");
+    setFocusedFindingId(null);
+    setFocusedPrescriptionId(null);
+    setActiveScreen("load");
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -212,23 +230,41 @@ export default function App({
     void loadFiles(Array.from(event.dataTransfer.files));
   }
 
+  function navigateToPrescription(prescriptionId: string): void {
+    setFocusedFindingId(null);
+    setFocusedPrescriptionId(prescriptionId);
+    setActiveScreen("fix");
+  }
+
+  function navigateToFinding(findingId: string): void {
+    setFocusedPrescriptionId(null);
+    setFocusedFindingId(findingId);
+    setActiveScreen("diagnose");
+  }
+
   const selectedAnalysis = analyses[0];
-  const prescriptions = selectedAnalysis
-    ? [
-        ...prescribeAgentsMd(selectedAnalysis.diagnosis.findings),
-        ...prescribeOverheadReduction(selectedAnalysis.diagnosis.findings),
-        ...prescribeMcpEnablement(selectedAnalysis.diagnosis.findings),
-      ]
-    : [];
-  const contextPressure =
-    selectedAnalysis?.report.tasks
-      .map((task) => task.context?.pressure ?? null)
-      .find((pressure) => pressure !== null) ?? null;
+
+  const prescriptions = useMemo(() => {
+    if (!selectedAnalysis) return [];
+    const rootTaskIds = selectedAnalysis.report.tasks
+      .filter((task) => task.parentId === null)
+      .map((task) => task.taskId);
+    const { findings } = selectedAnalysis.diagnosis;
+    return [
+      ...prescribeAgentsMd(findings, { rootTaskIds }),
+      ...prescribeCustomMode(findings),
+      ...prescribeOverheadReduction(findings),
+      ...prescribeMcpEnablement(findings),
+    ];
+  }, [selectedAnalysis]);
+
   // Prefer a root task that actually carries a breakdown: completed tasks in a
-  // multi-task export have none, and the diagnosis screen needs one to render.
+  // multi-task export have none, and the Diagnose screen needs one to render.
   const rootContext =
-    selectedAnalysis?.report.tasks.find((task) => !task.isSubtask && task.context !== null)
-      ?.context ?? null;
+    selectedAnalysis?.report.tasks.find(
+      (task) => task.parentId === null && task.context !== null
+    )?.context ?? null;
+
   const comparison = useMemo(
     () =>
       analyses[0] !== undefined && analyses[1] !== undefined
@@ -236,6 +272,15 @@ export default function App({
         : null,
     [analyses]
   );
+
+  const progressWidth =
+    activeScreen === "compare"
+      ? "100%"
+      : activeScreen === "fix"
+        ? "75%"
+        : activeScreen === "diagnose"
+          ? "50%"
+          : "25%";
 
   return (
     <div className={styles.app} data-theme={theme}>
@@ -250,51 +295,28 @@ export default function App({
           </div>
 
           <nav aria-label="Analysis steps" className={styles.steps}>
-            {["Input", "Diagnosis", "Findings", "Prescriptions", "Comparison"].map(
-              (step, index) => {
-                const isInput = index === 0;
-                const isDiagnosis = index === 1;
-                const isFindings = index === 2;
-                const isPrescriptions = index === 3;
-                const isComparison = index === 4;
-                const enabled =
-                  isInput ||
-                  ((isDiagnosis || isFindings || isPrescriptions || isComparison) &&
-                    selectedAnalysis !== undefined);
-                const active =
-                  (isInput && activeScreen === "input") ||
-                  (isDiagnosis && activeScreen === "diagnosis") ||
-                  (isFindings && activeScreen === "findings") ||
-                  (isPrescriptions && activeScreen === "prescriptions") ||
-                  (isComparison && activeScreen === "comparison");
-                return (
-                  <button
-                    key={step}
-                    type="button"
-                    className={active ? styles.activeStep : styles.step}
-                    disabled={!enabled}
-                    aria-current={active ? "step" : undefined}
-                    onClick={() => {
-                      if (isInput) setActiveScreen("input");
-                      if (isDiagnosis && selectedAnalysis) {
-                        setActiveScreen("diagnosis");
-                      }
-                      if (isFindings && selectedAnalysis) {
-                        setActiveScreen("findings");
-                      }
-                      if (isPrescriptions && selectedAnalysis) {
-                        setActiveScreen("prescriptions");
-                      }
-                      if (isComparison && selectedAnalysis) {
-                        setActiveScreen("comparison");
-                      }
-                    }}
-                  >
-                    {index + 1} · {step}
-                  </button>
-                );
-              }
-            )}
+            {STEPS.map((step, index) => {
+              const enabled =
+                step.id === "load" || selectedAnalysis !== undefined;
+              const active = activeScreen === step.id;
+              return (
+                <button
+                  key={step.id}
+                  type="button"
+                  className={active ? styles.activeStep : styles.step}
+                  disabled={!enabled}
+                  aria-current={active ? "step" : undefined}
+                  onClick={() => {
+                    if (!enabled) return;
+                    setFocusedFindingId(null);
+                    setFocusedPrescriptionId(null);
+                    setActiveScreen(step.id);
+                  }}
+                >
+                  {index + 1} · {step.label}
+                </button>
+              );
+            })}
           </nav>
 
           <div className={styles.headerActions}>
@@ -315,18 +337,7 @@ export default function App({
         <div className={styles.progressTrack} aria-hidden="true">
           <div
             className={styles.progressValue}
-            style={{
-              width:
-                activeScreen === "comparison"
-                  ? "100%"
-                  : activeScreen === "prescriptions"
-                  ? "80%"
-                  : activeScreen === "findings"
-                    ? "60%"
-                    : activeScreen === "diagnosis"
-                      ? "40%"
-                      : "20%",
-            }}
+            style={{ width: progressWidth }}
           />
         </div>
       </header>
@@ -347,35 +358,25 @@ export default function App({
         }}
       />
 
-      {activeScreen === "diagnosis" && selectedAnalysis ? (
-        rootContext ? (
-          <ContextWindowScreen context={rootContext} />
-        ) : (
-          <main className={styles.main} data-testid="diagnosis-empty-state">
-            <section className={styles.emptyState}>
-              <span className={styles.eyebrow}>Diagnosis · context window</span>
-              <h1>Context window breakdown unavailable</h1>
-              <p>
-                This export has no root task with a <code>contextWindowBreakdown</code>.
-                IBM Bob drops the breakdown once a task reaches status completed, so
-                this is a normal export state rather than an error. You can still inspect
-                Findings, Prescriptions and Comparison.
-              </p>
-            </section>
-          </main>
-        )
-      ) : activeScreen === "findings" && selectedAnalysis ? (
-        <FindingsScreen findings={selectedAnalysis.diagnosis.findings} />
-      ) : activeScreen === "prescriptions" && selectedAnalysis ? (
+      {activeScreen === "diagnose" && selectedAnalysis ? (
+        <DiagnoseScreen
+          context={rootContext}
+          findings={selectedAnalysis.diagnosis.findings}
+          prescriptions={prescriptions}
+          onNavigateToPrescription={navigateToPrescription}
+          focusedFindingId={focusedFindingId}
+        />
+      ) : activeScreen === "fix" && selectedAnalysis ? (
         <main className={styles.prescriptionMain}>
           <PrescriptionScreen
             prescriptions={prescriptions}
             findings={selectedAnalysis.diagnosis.findings}
             existingAgentsMd={null}
-            contextPressure={contextPressure}
+            onNavigateToFinding={navigateToFinding}
+            focusedPrescriptionId={focusedPrescriptionId}
           />
         </main>
-      ) : activeScreen === "comparison" && selectedAnalysis ? (
+      ) : activeScreen === "compare" && selectedAnalysis ? (
         <ComparisonScreen
           comparison={comparison}
           roundA={selectedAnalysis.report}
@@ -383,7 +384,10 @@ export default function App({
             uploadModeRef.current = "add-round-b";
             inputRef.current?.click();
           }}
-          onViewPrescriptions={() => setActiveScreen("prescriptions")}
+          onViewPrescriptions={() => {
+            setFocusedPrescriptionId(null);
+            setActiveScreen("fix");
+          }}
         />
       ) : (
         <main className={styles.main}>
@@ -396,129 +400,171 @@ export default function App({
             </p>
           </section>
 
-        {loading ? (
-          <section className={styles.loadingPanel} aria-busy="true" aria-live="polite">
-            <span className={styles.spinner} aria-hidden="true" />
-            <h2>
-              Analyzing <code>{loadingNames.join(", ")}</code>
-            </h2>
-            <p>Not a single byte left your machine.</p>
-            <ol className={styles.loadingSteps}>
-              <li>Validating the export format</li>
-              <li>Extracting context and tool metrics</li>
-              <li>Running the available detectors</li>
-            </ol>
-          </section>
-        ) : (
-          <section
-            className={`${styles.dropzone} ${dragActive ? styles.dropzoneActive : ""}`}
-            onDragEnter={(event) => {
-              event.preventDefault();
-              setDragActive(true);
-            }}
-            onDragOver={(event) => event.preventDefault()}
-            onDragLeave={() => setDragActive(false)}
-            onDrop={handleDrop}
-            data-testid="dropzone"
-          >
-            <div className={styles.dropIcon} aria-hidden="true">↓</div>
-            <h2>Drop your export files here</h2>
-            <p>or pick them from your computer · JSON</p>
-            <div className={styles.dropActions}>
-              <button type="button" className={styles.primaryButton} onClick={() => void loadExample()}>
-                See an example — real session, built in
-              </button>
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={() => {
-                  uploadModeRef.current = "replace";
-                  inputRef.current?.click();
-                }}
-              >
-                Select files
-              </button>
-            </div>
-            <small>Nothing to install, no account, no API key.</small>
-          </section>
-        )}
-
-        <section className={styles.capabilities} aria-label="Capabilities by number of files">
-          <article className={styles.capabilityCard}>
-            <strong>1 file</strong>
-            <span>Full session diagnosis</span>
-          </article>
-          <article className={styles.capabilityCard}>
-            <strong>2 files</strong>
-            <span>A/B comparison of the same task</span>
-          </article>
-          <article className={styles.privacyCard}>
-            <strong><span className={styles.statusDot} aria-hidden="true" />100% local processing</strong>
-            <span>
-              The export can contain code, paths and commands. No file is uploaded
-              or stored; the analysis runs offline in this browser.
-            </span>
-          </article>
-        </section>
-
-        {errors.length > 0 && (
-          <section className={styles.errorList} aria-label="Rejected files" aria-live="polite">
-            {errors.map((error) => (
-              <article className={styles.errorCard} key={error.id}>
-                <span className={styles.errorIcon} aria-hidden="true">!</span>
-                <div>
-                  <h2>
-                    {error.code === "not-bob-export"
-                      ? "Valid JSON, but not a Bob session export"
-                      : "We could not read this file"}
-                  </h2>
-                  <p><code>{error.fileName}</code> — {error.message}</p>
-                </div>
-              </article>
-            ))}
-          </section>
-        )}
-
-        {analyses.length > 0 && (
-          <section className={styles.results} aria-label="Analyzed files">
-            <div className={styles.resultsHeader}>
-              <div>
-                <span className={styles.eyebrow}>Input complete</span>
-                <h2>{analyses.length} {analyses.length === 1 ? "session analyzed" : "sessions analyzed"}</h2>
+          {loading ? (
+            <section
+              className={styles.loadingPanel}
+              aria-busy="true"
+              aria-live="polite"
+            >
+              <span className={styles.spinner} aria-hidden="true" />
+              <h2>
+                Analyzing <code>{loadingNames.join(", ")}</code>
+              </h2>
+              <p>Not a single byte left your machine.</p>
+              <ol className={styles.loadingSteps}>
+                <li>Validating the export format</li>
+                <li>Extracting context and tool metrics</li>
+                <li>Running the available detectors</li>
+              </ol>
+            </section>
+          ) : (
+            <section
+              className={`${styles.dropzone} ${dragActive ? styles.dropzoneActive : ""}`}
+              onDragEnter={(event) => {
+                event.preventDefault();
+                setDragActive(true);
+              }}
+              onDragOver={(event) => event.preventDefault()}
+              onDragLeave={() => setDragActive(false)}
+              onDrop={handleDrop}
+              data-testid="dropzone"
+            >
+              <div className={styles.dropIcon} aria-hidden="true">
+                ↓
               </div>
-              <button type="button" className={styles.clearButton} onClick={clearAnalyses}>
-                Clear analyses
-              </button>
-            </div>
+              <h2>Drop your export files here</h2>
+              <p>or pick them from your computer · JSON</p>
+              <div className={styles.dropActions}>
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  onClick={() => void loadExample()}
+                >
+                  See an example — real session, built in
+                </button>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => {
+                    uploadModeRef.current = "replace";
+                    inputRef.current?.click();
+                  }}
+                >
+                  Select files
+                </button>
+              </div>
+              <small>Nothing to install, no account, no API key.</small>
+            </section>
+          )}
 
-            <ol className={styles.analysisList}>
-              {analyses.map((analysis, index) => (
-                <li key={analysis.id} className={styles.analysisCard}>
-                  <div>
-                    <span className={styles.roundBadge}>{roundLabel(index)}</span>
-                    {analysis.source === "demo" && <span className={styles.demoBadge}>Example</span>}
-                  </div>
-                  <code>{analysis.fileName}</code>
-                  <span>
-                    {analysis.report.totals.taskCount} task · {analysis.report.totals.assistantTurns} turns · {analysis.diagnosis.findings.length} findings
-                  </span>
-                </li>
-              ))}
-            </ol>
-
-            <div className={styles.readiness} role="status">
-              <p>
-                <strong>Diagnosis ready.</strong>{" "}
-                {canCompare
-                  ? "Rounds A and B identified; the comparison is enabled."
-                  : "Add a Round B to enable the comparison."}
-              </p>
-              {hasCrossSessionEvidence && (
-                <p>Three or more sessions available for future recurring analyses.</p>
-              )}
-            </div>
+          <section
+            className={styles.capabilities}
+            aria-label="Capabilities by number of files"
+          >
+            <article className={styles.capabilityCard}>
+              <strong>1 file</strong>
+              <span>Full session diagnosis</span>
+            </article>
+            <article className={styles.capabilityCard}>
+              <strong>2 files</strong>
+              <span>A/B comparison of the same task</span>
+            </article>
+            <article className={styles.privacyCard}>
+              <strong>
+                <span className={styles.statusDot} aria-hidden="true" />
+                100% local processing
+              </strong>
+              <span>
+                The export can contain code, paths and commands. No file is
+                uploaded or stored; the analysis runs offline in this browser.
+              </span>
+            </article>
           </section>
-        )}
+
+          {errors.length > 0 && (
+            <section
+              className={styles.errorList}
+              aria-label="Rejected files"
+              aria-live="polite"
+            >
+              {errors.map((error) => (
+                <article className={styles.errorCard} key={error.id}>
+                  <span className={styles.errorIcon} aria-hidden="true">
+                    !
+                  </span>
+                  <div>
+                    <h2>
+                      {error.code === "not-bob-export"
+                        ? "Valid JSON, but not a Bob session export"
+                        : "We could not read this file"}
+                    </h2>
+                    <p>
+                      <code>{error.fileName}</code> — {error.message}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </section>
+          )}
+
+          {analyses.length > 0 && (
+            <section className={styles.results} aria-label="Analyzed files">
+              <div className={styles.resultsHeader}>
+                <div>
+                  <span className={styles.eyebrow}>Input complete</span>
+                  <h2>
+                    {analyses.length}{" "}
+                    {analyses.length === 1
+                      ? "session analyzed"
+                      : "sessions analyzed"}
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  className={styles.clearButton}
+                  onClick={clearAnalyses}
+                >
+                  Clear analyses
+                </button>
+              </div>
+
+              <ol className={styles.analysisList}>
+                {analyses.map((analysis, index) => (
+                  <li key={analysis.id} className={styles.analysisCard}>
+                    <div>
+                      <span className={styles.roundBadge}>
+                        {roundLabel(index)}
+                      </span>
+                      {analysis.source === "demo" && (
+                        <span className={styles.demoBadge}>Example</span>
+                      )}
+                    </div>
+                    <code>{analysis.fileName}</code>
+                    <span>
+                      {analysis.report.totals.taskCount} task ·{" "}
+                      {analysis.report.totals.assistantTurns} turns ·{" "}
+                      {analysis.diagnosis.findings.length} findings
+                    </span>
+                  </li>
+                ))}
+              </ol>
+
+              <div className={styles.readiness} role="status">
+                <p>
+                  <strong>Diagnosis ready.</strong>{" "}
+                  {canCompare
+                    ? "Rounds A and B identified; the comparison is enabled."
+                    : "Add a Round B to enable the comparison."}
+                </p>
+                {hasCrossSessionEvidence && (
+                  <p>
+                    Three or more sessions available for future recurring
+                    analyses.
+                  </p>
+                )}
+              </div>
+            </section>
+          )}
         </main>
       )}
     </div>

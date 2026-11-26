@@ -3,10 +3,10 @@
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import React from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { diagnoseWithCatalogs } from "../diagnose";
-import type { Finding, FindingEvidence } from "../domain/types";
+import type { Finding, FindingEvidence, Prescription } from "../domain/types";
 import { observe } from "../observe";
 import { parseSession } from "../parser";
 import { FindingsScreen } from "./FindingsScreen";
@@ -268,5 +268,49 @@ describe("regressions and architecture", () => {
     expandFinding(/Project rules missing/);
     expect(screen.getAllByText("Not supplied by detector.")).toHaveLength(2);
     expect(screen.getByText("No source excerpt supplied by detector.")).toBeTruthy();
+  });
+
+  it("links each finding with a matching prescription via See fix → and auto-expands focusedFindingId", () => {
+    const onNavigate = vi.fn();
+    const f = makeFinding({ id: "finding-rules" });
+    const p: Prescription = {
+      id: "prescription-agents",
+      sessionId: "session",
+      taskId: "task",
+      findingIds: ["finding-rules"],
+      kind: "agents-md-file",
+      status: "pending",
+      createdAt: 1,
+      content: "# AGENTS.md",
+    };
+
+    render(
+      <FindingsScreen
+        findings={[f]}
+        prescriptions={[p]}
+        onNavigateToPrescription={onNavigate}
+        focusedFindingId="finding-rules"
+      />
+    );
+
+    const row = document.querySelector('[data-finding-id="finding-rules"]');
+    expect(row?.getAttribute("data-focused")).toBe("true");
+    // Auto-expanded when focused
+    expect(screen.getByText("Source excerpt")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "See fix →" }));
+    expect(onNavigate).toHaveBeenCalledWith("prescription-agents");
+  });
+
+  it("distinguishes measured token impact from estimated token impact", () => {
+    const measured = makeFinding({
+      id: "f-skill",
+      kind: "skill-overhead",
+      tokenImpact: 1541,
+      tokenImpactIsEstimate: false,
+    });
+    render(<FindingsScreen findings={[measured]} />);
+    expect(screen.getByText("MEASURED")).toBeTruthy();
+    expect(screen.getByText("Measured: 1541 tokens")).toBeTruthy();
   });
 });
