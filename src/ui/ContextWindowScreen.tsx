@@ -376,10 +376,13 @@ export default function ContextWindowScreen({
       ? parsedWindow
       : context.maxContextWindow;
 
-  const effectivePressure =
+  // Valores não finitos (ex.: 1e309 no JSON vira Infinity) tornam a pressão indisponível.
+  const rawPressure =
     effectiveMaxWindow !== null && effectiveMaxWindow > 0
       ? context.reportedTotal / effectiveMaxWindow
       : null;
+  const effectivePressure =
+    rawPressure !== null && Number.isFinite(rawPressure) ? rawPressure : null;
 
   const assumed = isControlled
     ? contextWindowAssumed && effectiveMaxWindow !== null
