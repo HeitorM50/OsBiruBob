@@ -590,9 +590,9 @@ export interface ComparisonMetrics {
   conversationTokensB: number;
   conversationTokensDelta: number;
 
-  fixedOverheadA: number;
-  fixedOverheadB: number;
-  fixedOverheadDelta: number;
+  fixedOverheadA: number | null;
+  fixedOverheadB: number | null;
+  fixedOverheadDelta: number | null;
 
   assistantTurnsA: number;
   assistantTurnsB: number;

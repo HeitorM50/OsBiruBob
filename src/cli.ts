@@ -270,7 +270,7 @@ function formatComparison(cmp: Comparison): string {
     `  ${"Cost (USD)".padEnd(28)} ${`$${m.costA.toFixed(6)}`.padStart(12)} ${`$${m.costB.toFixed(6)}`.padStart(12)} ${signF(m.costDelta, 6).padStart(12)}`
   );
   lines.push(
-    `  ${"Fixed overhead (tokens)".padEnd(28)} ${String(m.fixedOverheadA).padStart(12)} ${String(m.fixedOverheadB).padStart(12)} ${sign(m.fixedOverheadDelta).padStart(12)}`
+    `  ${"Fixed overhead (tokens)".padEnd(28)} ${(m.fixedOverheadA !== null ? String(m.fixedOverheadA) : "n/a").padStart(12)} ${(m.fixedOverheadB !== null ? String(m.fixedOverheadB) : "n/a").padStart(12)} ${(m.fixedOverheadDelta !== null ? sign(m.fixedOverheadDelta) : "n/a").padStart(12)}`
   );
   lines.push(
     `  ${"Context tokens".padEnd(28)} ${String(m.contextTokensA).padStart(12)} ${String(m.contextTokensB).padStart(12)} ${sign(m.contextTokensDelta).padStart(12)}`

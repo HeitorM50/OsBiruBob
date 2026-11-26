@@ -86,14 +86,20 @@ function fmtPct(n: number): string {
 function sortedSegments(
   breakdown: ContextSummary["breakdown"],
   fixedOverhead: number
-): Array<SegmentDef & { tokens: number; pct: number }> {
+): Array<SegmentDef & { tokens: number | undefined; pct: number | undefined }> {
   return SEGMENT_DEFS
     .map((def) => {
-      const tokens = breakdown[def.key] ?? 0;
-      const pct = fixedOverhead > 0 ? (tokens / fixedOverhead) * 100 : 0;
+      const raw = (breakdown as Record<string, number | undefined>)[def.key];
+      const tokens = typeof raw === "number" && Number.isFinite(raw) ? raw : undefined;
+      const pct =
+        tokens === undefined
+          ? undefined
+          : fixedOverhead > 0
+            ? (tokens / fixedOverhead) * 100
+            : 0;
       return { ...def, tokens, pct };
     })
-    .sort((a, b) => b.tokens - a.tokens);
+    .sort((a, b) => (b.tokens ?? -1) - (a.tokens ?? -1));
 }
 
 // ---------------------------------------------------------------------------
@@ -194,8 +200,12 @@ function StackedBar({ segments, fixedOverhead }: StackedBarProps): React.JSX.Ele
   return (
     <div className={styles.barOuter} role="img" aria-label="Context window breakdown">
       {segments.map((seg) => {
-        if (seg.pct <= 0 && fixedOverhead > 0) {
-          // Zero-width segments are not rendered in the visual bar but appear in legend
+        if (
+          seg.tokens === undefined ||
+          seg.pct === undefined ||
+          (seg.pct <= 0 && fixedOverhead > 0)
+        ) {
+          // Zero-width or unavailable segments are not rendered in the visual bar
           return null;
         }
         const widthPct = seg.pct;
@@ -229,7 +239,7 @@ function StackedBar({ segments, fixedOverhead }: StackedBarProps): React.JSX.Ele
 // ---------------------------------------------------------------------------
 
 interface ProjectRulesAlertProps {
-  tokens: number;
+  tokens: number | undefined;
 }
 
 function ProjectRulesAlert({ tokens }: ProjectRulesAlertProps): React.JSX.Element | null {
@@ -292,6 +302,26 @@ function BreakdownTable({ segments }: BreakdownTableProps): React.JSX.Element {
             <div className={styles.tableRight}>Share</div>
           </div>
           {segments.map((seg) => {
+            if (seg.tokens === undefined || seg.pct === undefined) {
+              return (
+                <div
+                  key={seg.key}
+                  className={styles.tableRowMuted}
+                  data-testid={`breakdown-row-${seg.key}`}
+                >
+                  <div className={styles.tableRowMutedName}>
+                    <span>{seg.label}</span>
+                  </div>
+                  <div className={styles.tableRight} data-testid={`breakdown-tokens-${seg.key}`}>
+                    unavailable
+                  </div>
+                  <div className={styles.tableRight} data-testid={`breakdown-pct-${seg.key}`}>
+                    —
+                  </div>
+                </div>
+              );
+            }
+
             const isProjectRulesZero = seg.key === "projectRules" && seg.tokens === 0;
             const isMcpZero = seg.key === "mcpToolDefinitions" && seg.tokens === 0;
             const isTopThree = seg.pct >= 10;
@@ -385,10 +415,14 @@ export default function ContextWindowScreen({
   } = context;
 
   const segments = sortedSegments(breakdown, fixedOverhead);
-  const projectRulesTokens = breakdown.projectRules ?? 0;
+  const rawProjectRules = (breakdown as Record<string, number | undefined>).projectRules;
+  const projectRulesTokens =
+    typeof rawProjectRules === "number" && Number.isFinite(rawProjectRules)
+      ? rawProjectRules
+      : undefined;
 
   return (
-    <div className={styles.screen} data-testid="context-window-screen">
+    <main className={styles.screen} data-testid="context-window-screen">
       {/* Section header */}
       <div className={styles.sectionLabel}>
         Diagnosis · context window
@@ -426,6 +460,6 @@ export default function ContextWindowScreen({
 
       {/* Full breakdown table */}
       <BreakdownTable segments={segments} />
-    </div>
+    </main>
   );
 }
