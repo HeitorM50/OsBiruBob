@@ -88,6 +88,13 @@
 .table th, .table td { border-bottom: 1px solid var(--line, #eef0f2); padding: 12px 18px; text-align: right; }
 .table th:first-child { text-align: left; }
 .table tbody th { color: var(--ink, #14181c); font-weight: 400; }
+.metricHint {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink3, #7b838c);
+}
 .table tbody tr:last-child th, .table tbody tr:last-child td { border-bottom: 0; }
 .table .emphasis th, .table .emphasis td { font-weight: 600; }
 .intentionalRow { background: var(--accsoft, #fbf3f0); }

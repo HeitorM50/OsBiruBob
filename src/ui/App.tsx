@@ -23,7 +23,7 @@ const DEMO_MAX_CONTEXT_WINDOW = 270_000;
 
 type Theme = "light" | "dark";
 type Screen = "load" | "diagnose" | "fix" | "compare";
-type UploadMode = "replace" | "add-round-b";
+type UploadMode = "replace" | "set-round-a" | "add-round-b";
 
 const STEPS: ReadonlyArray<{ id: Screen; label: string }> = [
   { id: "load", label: "Load" },
@@ -67,6 +67,13 @@ function nextFrame(): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, 0));
 }
 
+function defaultTaskIndex(analysis: LoadedAnalysis | undefined): number {
+  if (!analysis) return 0;
+  const roots = analysis.report.tasks.filter((task) => task.parentId === null);
+  const firstWithContext = roots.findIndex((task) => task.context !== null);
+  return firstWithContext >= 0 ? firstWithContext : 0;
+}
+
 export default function App({
   readText = readFileText,
   exampleContent = sampleExport,
@@ -82,6 +89,9 @@ export default function App({
   const [focusedPrescriptionId, setFocusedPrescriptionId] = useState<
     string | null
   >(null);
+  const [maxContextWindowInput, setMaxContextWindowInput] = useState("");
+  const [contextWindowAssumed, setContextWindowAssumed] = useState(false);
+  const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -162,10 +172,28 @@ export default function App({
         setAnalyses((current) =>
           current.length > 0 ? [current[0], ...accepted] : accepted
         );
+        setActiveScreen("compare");
+      } else if (mode === "set-round-a") {
+        setAnalyses((current) =>
+          current.length > 1
+            ? [accepted[0], ...current.slice(1)]
+            : accepted
+        );
+        if (contextWindowAssumed) {
+          setMaxContextWindowInput("");
+          setContextWindowAssumed(false);
+        }
+        setSelectedTaskIndex(defaultTaskIndex(accepted[0]));
+        setActiveScreen("diagnose");
       } else {
         setAnalyses(accepted);
+        if (contextWindowAssumed) {
+          setMaxContextWindowInput("");
+          setContextWindowAssumed(false);
+        }
+        setSelectedTaskIndex(defaultTaskIndex(accepted[0]));
+        setActiveScreen("diagnose");
       }
-      setActiveScreen(mode === "add-round-b" ? "compare" : "diagnose");
     }
     setLoadingNames([]);
   }
@@ -207,6 +235,9 @@ export default function App({
       setActiveScreen("load");
     } else if (newAnalyses.length > 0) {
       setAnalyses(newAnalyses);
+      setMaxContextWindowInput(String(DEMO_MAX_CONTEXT_WINDOW));
+      setContextWindowAssumed(true);
+      setSelectedTaskIndex(defaultTaskIndex(newAnalyses[0]));
       setActiveScreen("diagnose");
     }
     setLoadingNames([]);
@@ -220,6 +251,9 @@ export default function App({
     setDragActive(false);
     setFocusedFindingId(null);
     setFocusedPrescriptionId(null);
+    setMaxContextWindowInput("");
+    setContextWindowAssumed(false);
+    setSelectedTaskIndex(0);
     setActiveScreen("load");
     if (inputRef.current) inputRef.current.value = "";
   }
@@ -236,13 +270,37 @@ export default function App({
     setActiveScreen("fix");
   }
 
+  const selectedAnalysis = analyses[0];
+
+  const rootTasks = useMemo(
+    () =>
+      selectedAnalysis?.report.tasks.filter((task) => task.parentId === null) ??
+      [],
+    [selectedAnalysis]
+  );
+
+  const safeTaskIndex =
+    selectedTaskIndex >= 0 && selectedTaskIndex < rootTasks.length
+      ? selectedTaskIndex
+      : 0;
+  const selectedTask = rootTasks[safeTaskIndex] ?? null;
+
   function navigateToFinding(findingId: string): void {
     setFocusedPrescriptionId(null);
+    if (selectedAnalysis && rootTasks.length > 1) {
+      const finding = selectedAnalysis.diagnosis.findings.find(
+        (f) => f.id === findingId
+      );
+      if (finding) {
+        const ownerIndex = rootTasks.findIndex(
+          (t) => t.taskId === finding.taskId
+        );
+        if (ownerIndex >= 0) setSelectedTaskIndex(ownerIndex);
+      }
+    }
     setFocusedFindingId(findingId);
     setActiveScreen("diagnose");
   }
-
-  const selectedAnalysis = analyses[0];
 
   const prescriptions = useMemo(() => {
     if (!selectedAnalysis) return [];
@@ -258,12 +316,16 @@ export default function App({
     ];
   }, [selectedAnalysis]);
 
-  // Prefer a root task that actually carries a breakdown: completed tasks in a
-  // multi-task export have none, and the Diagnose screen needs one to render.
-  const rootContext =
-    selectedAnalysis?.report.tasks.find(
-      (task) => task.parentId === null && task.context !== null
-    )?.context ?? null;
+  const diagnoseFindings = useMemo(() => {
+    if (!selectedAnalysis) return [];
+    if (rootTasks.length <= 1 || !selectedTask) {
+      return selectedAnalysis.diagnosis.findings;
+    }
+    const rootTaskIdSet = new Set(rootTasks.map((t) => t.taskId));
+    return selectedAnalysis.diagnosis.findings.filter(
+      (f) => f.taskId === selectedTask.taskId || !rootTaskIdSet.has(f.taskId)
+    );
+  }, [selectedAnalysis, rootTasks, selectedTask]);
 
   const comparison = useMemo(
     () =>
@@ -360,11 +422,20 @@ export default function App({
 
       {activeScreen === "diagnose" && selectedAnalysis ? (
         <DiagnoseScreen
-          context={rootContext}
-          findings={selectedAnalysis.diagnosis.findings}
+          context={selectedTask?.context ?? null}
+          findings={diagnoseFindings}
           prescriptions={prescriptions}
           onNavigateToPrescription={navigateToPrescription}
           focusedFindingId={focusedFindingId}
+          tasks={rootTasks}
+          selectedTaskIndex={safeTaskIndex}
+          onSelectTaskIndex={setSelectedTaskIndex}
+          maxContextWindowInput={maxContextWindowInput}
+          onMaxContextWindowChange={(value) => {
+            setMaxContextWindowInput(value);
+            setContextWindowAssumed(false);
+          }}
+          contextWindowAssumed={contextWindowAssumed}
         />
       ) : activeScreen === "fix" && selectedAnalysis ? (
         <main className={styles.prescriptionMain}>
@@ -458,6 +529,81 @@ export default function App({
           )}
 
           <section
+            className={styles.roundSlots}
+            aria-label="Round A and Round B slots"
+          >
+            <article className={styles.slotCard} data-testid="slot-round-a">
+              <div className={styles.slotHeader}>
+                <strong>Round A — Baseline</strong>
+                <span className={styles.slotStatus}>
+                  {analyses[0] ? "Loaded" : "Required"}
+                </span>
+              </div>
+              <p className={styles.slotDesc}>
+                Your baseline IBM Bob session before applying configuration
+                changes.
+              </p>
+              <button
+                type="button"
+                className={styles.slotButton}
+                onClick={() => {
+                  uploadModeRef.current = "set-round-a";
+                  inputRef.current?.click();
+                }}
+              >
+                {analyses[0] ? "Replace Round A" : "Select Round A"}
+              </button>
+            </article>
+
+            <article className={styles.slotCard} data-testid="slot-round-b">
+              <div className={styles.slotHeader}>
+                <strong>Round B — After fixes (optional)</strong>
+                <span className={styles.slotStatus}>
+                  {analyses[1] ? "Loaded" : "Optional"}
+                </span>
+              </div>
+              <p className={styles.slotDesc}>
+                The same task re-run in a clean conversation after applying
+                Hindsight&apos;s fixes, to enable A/B comparison.
+              </p>
+              <button
+                type="button"
+                className={styles.slotButton}
+                onClick={() => {
+                  uploadModeRef.current = "add-round-b";
+                  inputRef.current?.click();
+                }}
+              >
+                {analyses[1] ? "Replace Round B" : "Select Round B"}
+              </button>
+            </article>
+          </section>
+
+          <section
+            className={styles.exportGuide}
+            aria-label="How to export a session from IBM Bob"
+          >
+            <h2>How to export a session from IBM Bob</h2>
+            <ol className={styles.exportSteps}>
+              <li>
+                Open the <strong>Tasks</strong> panel in IBM Bob IDE.
+              </li>
+              <li>
+                Open the menu on the task you want to inspect and choose{" "}
+                <strong>Export JSON</strong> (<code>Tasks → Export JSON</code>).
+              </li>
+              <li>
+                Save the generated <code>.json</code> file and drop it above or
+                pick it in the Round A / Round B slots.
+              </li>
+            </ol>
+            <p className={styles.exportNote}>
+              Everything runs locally in your browser — your export never leaves
+              this machine and is cleared on reload.
+            </p>
+          </section>
+
+          <section
             className={styles.capabilities}
             aria-label="Capabilities by number of files"
           >
@@ -529,24 +675,30 @@ export default function App({
               </div>
 
               <ol className={styles.analysisList}>
-                {analyses.map((analysis, index) => (
-                  <li key={analysis.id} className={styles.analysisCard}>
-                    <div>
-                      <span className={styles.roundBadge}>
-                        {roundLabel(index)}
+                {analyses.map((analysis, index) => {
+                  const taskCount = analysis.report.totals.taskCount;
+                  const turnCount = analysis.report.totals.assistantTurns;
+                  const findingCount = analysis.diagnosis.findings.length;
+                  return (
+                    <li key={analysis.id} className={styles.analysisCard}>
+                      <div>
+                        <span className={styles.roundBadge}>
+                          {roundLabel(index)}
+                        </span>
+                        {analysis.source === "demo" && (
+                          <span className={styles.demoBadge}>Example</span>
+                        )}
+                      </div>
+                      <code>{analysis.fileName}</code>
+                      <span>
+                        {taskCount} {taskCount === 1 ? "task" : "tasks"} ·{" "}
+                        {turnCount} {turnCount === 1 ? "turn" : "turns"} ·{" "}
+                        {findingCount}{" "}
+                        {findingCount === 1 ? "finding" : "findings"}
                       </span>
-                      {analysis.source === "demo" && (
-                        <span className={styles.demoBadge}>Example</span>
-                      )}
-                    </div>
-                    <code>{analysis.fileName}</code>
-                    <span>
-                      {analysis.report.totals.taskCount} task ·{" "}
-                      {analysis.report.totals.assistantTurns} turns ·{" "}
-                      {analysis.diagnosis.findings.length} findings
-                    </span>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ol>
 
               <div className={styles.readiness} role="status">

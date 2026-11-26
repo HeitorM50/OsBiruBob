@@ -161,13 +161,19 @@ describe("Baseline rendering (rodada-a.json values)", () => {
     // Small enough that no thousands separator is added
     const tokensEl = html.match(/data-testid="breakdown-tokens-roleDefinition"[^>]*>([^<]+)</);
     expect(tokensEl).not.toBeNull();
-    expect(tokensEl![1].trim()).toBe("34");
+    expect(tokensEl![1].trim()).toBe("34 tokens");
   });
 
   it("staticSections shows 563 tokens", () => {
     const tokensEl = html.match(/data-testid="breakdown-tokens-staticSections"[^>]*>([^<]+)</);
     expect(tokensEl).not.toBeNull();
-    expect(tokensEl![1].trim()).toBe("563");
+    expect(tokensEl![1].trim()).toBe("563 tokens");
+  });
+
+  it("provides accessible text for bar segments narrower than 10%", () => {
+    // staticSections is 5.4% (< 10%) and must still have accessible text, not aria-hidden
+    expect(html).toContain("Static prompt sections: 563 tokens (5.4%)");
+    expect(html).toContain('title="toolDefinitions"');
   });
 });
 
@@ -189,7 +195,7 @@ describe("projectRules === 0 (no duplicate alert)", () => {
       /data-testid="breakdown-tokens-projectRules"[^>]*>([^<]+)</
     );
     expect(tokensEl).not.toBeNull();
-    expect(tokensEl![1].trim()).toBe("0");
+    expect(tokensEl![1].trim()).toBe("0 tokens");
 
     const pctEl = html.match(
       /data-testid="breakdown-pct-projectRules"[^>]*>([^<]+)</

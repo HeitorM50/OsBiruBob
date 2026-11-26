@@ -192,18 +192,31 @@ describe("states, badges, and ordering", () => {
   });
 
   it("labels token and cost impacts as hypotheses or estimates, never measurements", () => {
-    render(<FindingsScreen findings={[makeFinding({ tokenImpact: 1000, costImpact: 0.42 })]} />);
+    render(
+      <FindingsScreen
+        findings={[
+          makeFinding({
+            tokenImpact: 1000,
+            tokenImpactIsEstimate: true,
+            estimationBasis: "Prorated across idle tools",
+            costImpact: 0.42,
+          }),
+        ]}
+      />
+    );
     const label = screen.getByText(/Hypothesis\/estimate/);
     expect(label.textContent).toContain("not a measured value");
-    expect(label.textContent).toContain("1000 estimated tokens");
+    expect(label.textContent).toContain("1,000 estimated tokens");
     expect(label.textContent).toContain("$0.42 estimated cost");
+    const badge = screen.getByTitle("Prorated across idle tools");
+    expect(badge.textContent).toContain("ESTIMATE");
   });
 
-  it("shows confidence and explicit unavailable severity on every baseline finding", () => {
+  it("shows confidence on every baseline finding and does not show SEVERITY UNAVAILABLE", () => {
     const findings = loadBaselineFindings();
     render(<FindingsScreen findings={findings} />);
     expect(screen.getAllByLabelText(/^Confidence:/)).toHaveLength(findings.length);
-    expect(screen.getAllByLabelText("Severity: unavailable")).toHaveLength(findings.length);
+    expect(screen.queryByText("SEVERITY UNAVAILABLE")).toBeNull();
   });
 
   it("orders by supplied severity without mutating the input", () => {
@@ -310,7 +323,7 @@ describe("regressions and architecture", () => {
       tokenImpactIsEstimate: false,
     });
     render(<FindingsScreen findings={[measured]} />);
-    expect(screen.getByText("MEASURED")).toBeTruthy();
-    expect(screen.getByText("Measured: 1541 tokens")).toBeTruthy();
+    expect(screen.getByText(/MEASURED/)).toBeTruthy();
+    expect(screen.getByText("Measured: 1,541 tokens")).toBeTruthy();
   });
 });

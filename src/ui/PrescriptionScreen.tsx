@@ -20,6 +20,7 @@ import type {
   Prescription,
 } from "../domain/types";
 import { findingKindLabel } from "./finding-labels";
+import { formatInteger, formatTokens } from "./format";
 import { InlineSensitiveReveal, isSensitiveEvidence } from "./SensitiveReveal";
 import styles from "./PrescriptionScreen.module.css";
 
@@ -108,8 +109,16 @@ function diffLines(oldText: string | null, newText: string): DiffLine[] {
 // Browser action helpers (Copy / Download)
 // ---------------------------------------------------------------------------
 
-function copyToClipboard(text: string): void {
-  void navigator.clipboard.writeText(text);
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+    return false;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function downloadText(text: string, filename: string): void {
@@ -121,7 +130,9 @@ function downloadText(text: string, filename: string): void {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1000);
 }
 
 function isSafeHttpUrl(url: string | null | undefined): url is string {
@@ -175,15 +186,40 @@ function ActionBar({
   label: string;
   showDownload?: boolean;
 }) {
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
+    "idle"
+  );
+  const resetTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current !== null) {
+        window.clearTimeout(resetTimerRef.current);
+      }
+    };
+  }, []);
+
+  async function handleCopy(): Promise<void> {
+    if (resetTimerRef.current !== null) {
+      window.clearTimeout(resetTimerRef.current);
+    }
+    const ok = await copyToClipboard(text);
+    setCopyStatus(ok ? "copied" : "error");
+    resetTimerRef.current = window.setTimeout(() => {
+      setCopyStatus("idle");
+      resetTimerRef.current = null;
+    }, 2500);
+  }
+
   return (
     <div className={styles.actionBar}>
       <button
         type="button"
         className={styles.actionBtn}
-        onClick={() => copyToClipboard(text)}
+        onClick={() => void handleCopy()}
         aria-label={`Copy ${label}`}
       >
-        Copy
+        {copyStatus === "copied" ? "Copied" : "Copy"}
       </button>
       {showDownload && filename && (
         <button
@@ -195,12 +231,41 @@ function ActionBar({
           Download
         </button>
       )}
+      <span
+        role="status"
+        aria-live="polite"
+        className={
+          copyStatus === "error"
+            ? styles.copyFeedbackError
+            : styles.copyFeedback
+        }
+      >
+        {copyStatus === "copied"
+          ? "Copied"
+          : copyStatus === "error"
+            ? "Could not copy to clipboard"
+            : ""}
+      </span>
     </div>
   );
 }
 
-function EstimateBadge({ label = "estimate" }: { label?: string }) {
-  return <span className={styles.chipEstimate}>{label}</span>;
+function EstimateBadge({
+  label = "estimate",
+  basis,
+}: {
+  label?: string;
+  basis?: string;
+}) {
+  return (
+    <span
+      className={styles.chipEstimate}
+      title={basis}
+      aria-label={basis ? `${label}: ${basis}` : label}
+    >
+      {label}
+    </span>
+  );
 }
 
 function StepsList({
@@ -356,6 +421,18 @@ function AgentsMdTab({
                 <strong className={styles.panelTitle}>AGENTS.md</strong>
                 {isNewFile && <span className={styles.chipGood}>new file</span>}
               </div>
+              {(p.estimatedTokenSaving !== undefined ||
+                p.isEstimate === true ||
+                p.estimationBasis !== undefined) && (
+                <span className={styles.metricPill}>
+                  {p.estimatedTokenSaving !== undefined &&
+                    `~${formatTokens(p.estimatedTokenSaving)} `}
+                  <EstimateBadge
+                    label={p.isEstimate === false ? "measured" : "estimate"}
+                    basis={p.estimationBasis}
+                  />
+                </span>
+              )}
             </div>
 
             {p.rationale && <p className={styles.bodyText}>{p.rationale}</p>}
@@ -471,10 +548,16 @@ function ToolsTab({
                 </strong>
                 <span className={styles.chipGood}>custom mode</span>
               </div>
-              {p.estimatedTokenSaving !== undefined && (
+              {(p.estimatedTokenSaving !== undefined ||
+                p.isEstimate === true ||
+                p.estimationBasis !== undefined) && (
                 <span className={styles.metricPill}>
-                  ~{Math.round(p.estimatedTokenSaving)} tokens{" "}
-                  <EstimateBadge />
+                  {p.estimatedTokenSaving !== undefined &&
+                    `~${formatTokens(p.estimatedTokenSaving)} `}
+                  <EstimateBadge
+                    label={p.isEstimate === false ? "measured" : "estimate"}
+                    basis={p.estimationBasis}
+                  />
                 </span>
               )}
             </div>
@@ -547,9 +630,19 @@ function ToolsTab({
                   {g.tools.length} tool{g.tools.length !== 1 ? "s" : ""}
                 </span>
               </div>
-              {saving !== undefined && (
+              {(saving !== undefined ||
+                g.prescription.isEstimate === true ||
+                g.prescription.estimationBasis !== undefined) && (
                 <span className={styles.metricPill}>
-                  ~{Math.round(saving)} tokens <EstimateBadge />
+                  {saving !== undefined && `~${formatTokens(saving)} `}
+                  <EstimateBadge
+                    label={
+                      g.prescription.isEstimate === false
+                        ? "measured"
+                        : "estimate"
+                    }
+                    basis={g.prescription.estimationBasis}
+                  />
                 </span>
               )}
             </div>
@@ -618,12 +711,18 @@ function SkillsTab({
               <strong className={styles.panelTitle}>
                 {findingKindLabel("skill-overhead")}
               </strong>
-              {p.estimatedTokenSaving !== undefined && (
+              {(p.estimatedTokenSaving !== undefined ||
+                p.isEstimate === true ||
+                p.estimationBasis !== undefined) && (
                 <span className={styles.metricPill}>
-                  {isMeasured
-                    ? `${Math.round(p.estimatedTokenSaving)} tokens`
-                    : `~${Math.round(p.estimatedTokenSaving)} tokens`}{" "}
-                  <EstimateBadge label={isMeasured ? "measured" : "estimate"} />
+                  {p.estimatedTokenSaving !== undefined &&
+                    (isMeasured
+                      ? `${formatTokens(p.estimatedTokenSaving)} `
+                      : `~${formatTokens(p.estimatedTokenSaving)} `)}
+                  <EstimateBadge
+                    label={isMeasured ? "measured" : "estimate"}
+                    basis={p.estimationBasis}
+                  />
                 </span>
               )}
             </div>
@@ -707,10 +806,16 @@ function McpsTab({
                   {sourceFindings[0]?.confidence ?? "unknown"} confidence
                 </span>
               </div>
-              {p.estimatedTokenCost !== undefined && (
+              {(p.estimatedTokenCost !== undefined ||
+                p.isEstimate === true ||
+                p.estimationBasis !== undefined) && (
                 <span className={styles.metricPill}>
-                  +~{Math.round(p.estimatedTokenCost)} tokens/turn{" "}
-                  <EstimateBadge />
+                  {p.estimatedTokenCost !== undefined &&
+                    `+~${formatInteger(p.estimatedTokenCost)} tokens/turn `}
+                  <EstimateBadge
+                    label={p.isEstimate === false ? "measured" : "estimate"}
+                    basis={p.estimationBasis}
+                  />
                 </span>
               )}
             </div>

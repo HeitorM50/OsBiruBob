@@ -20,6 +20,7 @@ import {
   findingGroupLabel,
   findingKindLabel,
 } from "./finding-labels";
+import { formatEstimatedCost, formatInteger, formatTokens } from "./format";
 import {
   SensitiveRevealControl,
   containsAbsolutePath,
@@ -195,7 +196,9 @@ function EvidenceBlock({
     <div className={styles.evidenceBlock}>
       <dl className={styles.evidenceMetaList}>
         <div className={styles.evidenceMeta}>
-          <dt className={styles.evidenceMetaLabel}>turnIndices</dt>
+          <dt className={styles.evidenceMetaLabel} title="turnIndices">
+            Assistant turns
+          </dt>
           <dd className={styles.evidenceMetaValue}>
             {evidence.turnIndices?.length
               ? `[${evidence.turnIndices.join(", ")}]`
@@ -203,7 +206,9 @@ function EvidenceBlock({
           </dd>
         </div>
         <div className={styles.evidenceMeta}>
-          <dt className={styles.evidenceMetaLabel}>fieldPath</dt>
+          <dt className={styles.evidenceMetaLabel} title="fieldPath">
+            Export field
+          </dt>
           <dd className={styles.evidenceFieldPath}>{fieldPath}</dd>
         </div>
       </dl>
@@ -269,12 +274,18 @@ function FindingRow({
   const detailId = useId();
   const severity = suppliedSeverity(finding);
   const sensitive = isSensitiveEvidence(finding.evidence);
+  const basis = finding.tokenImpactEstimateBasis ?? finding.estimationBasis;
   const hasImpact =
     finding.tokenImpact !== undefined || finding.costImpact !== undefined;
   const measured =
     hasImpact &&
     finding.costImpact === undefined &&
     isFindingTokenImpactMeasured(finding);
+  const isEstimate =
+    !measured &&
+    (hasImpact ||
+      finding.tokenImpactIsEstimate === true ||
+      basis !== undefined);
 
   return (
     <article
@@ -308,23 +319,37 @@ function FindingRow({
             {hasImpact && (
               <span className={styles.estimateHint}>
                 {measured ? (
-                  <>Measured: {Math.round(finding.tokenImpact!)} tokens</>
+                  <>Measured: {formatTokens(finding.tokenImpact!)}</>
                 ) : (
                   <>
                     Hypothesis/estimate — not a measured value:
                     {finding.tokenImpact !== undefined &&
-                      ` ${Math.round(finding.tokenImpact)} estimated tokens`}
+                      ` ${formatInteger(finding.tokenImpact)} estimated tokens`}
                     {finding.costImpact !== undefined &&
-                      ` · $${finding.costImpact} estimated cost`}
+                      ` · ${formatEstimatedCost(finding.costImpact)} estimated cost`}
                   </>
                 )}
               </span>
             )}
           </span>
           <span className={styles.badges}>
-            {hasImpact && (
-              <span className={styles.badgeEstimate}>
-                {measured ? "MEASURED" : "ESTIMATE"}
+            {(hasImpact || isEstimate) && (
+              <span
+                className={styles.badgeEstimate}
+                title={basis}
+                aria-label={
+                  measured
+                    ? `Measured impact: ${formatTokens(finding.tokenImpact!)}`
+                    : basis
+                      ? `Estimate: ${basis}`
+                      : "Estimate"
+                }
+              >
+                {measured
+                  ? `MEASURED · ${formatTokens(finding.tokenImpact!)}`
+                  : finding.tokenImpact !== undefined
+                    ? `ESTIMATE · ~${formatTokens(finding.tokenImpact)}`
+                    : "ESTIMATE"}
               </span>
             )}
             <span
@@ -333,16 +358,14 @@ function FindingRow({
             >
               CONFIDENCE {CONFIDENCE_LABELS[finding.confidence]}
             </span>
-            <span
-              className={`${styles.badge} ${
-                severity ? levelClass(severity) : styles.badgeUnavailable
-              }`}
-              aria-label={`Severity: ${severity ?? "unavailable"}`}
-            >
-              {severity
-                ? `SEVERITY ${severity.toUpperCase()}`
-                : "SEVERITY UNAVAILABLE"}
-            </span>
+            {severity && (
+              <span
+                className={`${styles.badge} ${levelClass(severity)}`}
+                aria-label={`Severity: ${severity}`}
+              >
+                SEVERITY {severity.toUpperCase()}
+              </span>
+            )}
           </span>
         </button>
 

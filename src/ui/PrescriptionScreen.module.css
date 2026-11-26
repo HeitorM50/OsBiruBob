@@ -71,6 +71,12 @@
   border-bottom-color: var(--acc, #a3401f);
 }
 
+.tab:focus-visible,
+.tabActive:focus-visible {
+  outline: 2px solid var(--focus, #2f5d8c);
+  outline-offset: -2px;
+}
+
 .tabHint {
   margin: 10px 2px 0;
   font-size: 12px;
@@ -277,9 +283,22 @@
 
 .actionBar {
   display: flex;
+  align-items: center;
   gap: 8px;
   flex-wrap: wrap;
   margin-top: 12px;
+}
+
+.copyFeedback {
+  font-size: 12px;
+  color: var(--good, #1f6b45);
+  font-weight: 500;
+}
+
+.copyFeedbackError {
+  font-size: 12px;
+  color: var(--acc, #a3401f);
+  font-weight: 500;
 }
 
 .actionBtn {

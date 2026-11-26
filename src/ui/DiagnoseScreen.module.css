@@ -11,6 +11,42 @@
   margin-bottom: 8px;
 }
 
+.headerRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.taskSelector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.taskSelectorLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink2, #4a525b);
+  white-space: nowrap;
+}
+
+.taskSelect {
+  padding: 7px 10px;
+  border: 1px solid var(--line2, #dcdfe3);
+  border-radius: 6px;
+  background: var(--panel, #fff);
+  color: var(--ink, #14181c);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.taskSelect:focus-visible {
+  outline: 2px solid var(--focus, #2f5d8c);
+  outline-offset: 2px;
+}
+
 .eyebrow {
   font-size: 12px;
   letter-spacing: 0.14em;
