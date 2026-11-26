@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { ObserveReport, HumanIntervention } from "../domain/types";
+import type { ObserveReport, HumanIntervention } from "../domain/types";
 import { detectHumanIntervention } from "./human-intervention";
 
 /**
@@ -7,17 +7,19 @@ import { detectHumanIntervention } from "./human-intervention";
  */
 function createReport(
   humanInterventions: HumanIntervention[],
-  totalTurns: number = 5,
-  isSubtask = false
+  totalTurns = 5,
+  isSubtask = false,
+  sessionId = "test-session",
+  parentId: string | null = isSubtask ? "parent-1" : null
 ): ObserveReport {
   return {
-    sessionId: "test-session",
+    sessionId,
     exportedAt: 1724961600000,
     workspace: "test-workspace",
     tasks: [
       {
         taskId: "task-1",
-        parentId: isSubtask ? "parent-1" : null,
+        parentId,
         isSubtask,
         title: "Test Task",
         modeId: "test-mode",
@@ -92,7 +94,7 @@ function createReport(
       },
     ],
     totals: {
-      taskCount: 1,
+      taskCount: isSubtask ? 0 : 1,
       subtaskCount: isSubtask ? 1 : 0,
       cost: 0.01,
       assistantTurns: totalTurns,
@@ -123,10 +125,9 @@ function createIntervention(
 
 describe("detectHumanIntervention", () => {
   test("baseline real (benchmark/rodada-a.json) — 0 achados", () => {
-    // Baseline tem uma única mensagem user (o prompt), que não conta como intervenção
     const report = createReport([], 5);
     const findings = detectHumanIntervention(report);
-    
+
     expect(findings).toHaveLength(0);
   });
 
@@ -134,21 +135,21 @@ describe("detectHumanIntervention", () => {
     const interventions: HumanIntervention[] = [
       createIntervention("msg-user-1", 2, "Use TypeScript ao invés de JavaScript"),
     ];
-    
+
     const report = createReport(interventions, 5);
     const findings = detectHumanIntervention(report);
-    
+
     expect(findings).toHaveLength(1);
     expect(findings[0].kind).toBe("human-intervention");
     expect(findings[0].evidence.turnIndices).toEqual([2]);
     expect(findings[0].evidence.redactable).toBe(true);
+    expect(findings[0].evidence.descriptionSafe).toBe(true);
   });
 
   test("só o prompt inicial — 0 achados", () => {
-    // Prompt inicial não está em humanInterventions, está na primeira mensagem user
     const report = createReport([], 5);
     const findings = detectHumanIntervention(report);
-    
+
     expect(findings).toHaveLength(0);
   });
 
@@ -157,11 +158,11 @@ describe("detectHumanIntervention", () => {
       createIntervention("msg-user-1", 2, "Use TypeScript"),
       createIntervention("msg-user-2", 3, "Adicione testes"),
     ];
-    
+
     const report = createReport(interventions, 5);
     const findings = detectHumanIntervention(report);
-    
-    expect(findings).toHaveLength(1); // Agrupadas em 1 finding
+
+    expect(findings).toHaveLength(1);
     expect(findings[0].metric.interventionCount).toBe(2);
     expect(findings[0].evidence.turnIndices).toEqual([2, 3]);
   });
@@ -169,76 +170,99 @@ describe("detectHumanIntervention", () => {
   test("duas intervenções não consecutivas — separadas", () => {
     const interventions: HumanIntervention[] = [
       createIntervention("msg-user-1", 1, "Use TypeScript"),
-      createIntervention("msg-user-2", 4, "Adicione testes"), // não consecutiva
+      createIntervention("msg-user-2", 4, "Adicione testes"),
     ];
-    
+
     const report = createReport(interventions, 5);
     const findings = detectHumanIntervention(report);
-    
-    expect(findings).toHaveLength(2); // Separadas em 2 findings
+
+    expect(findings).toHaveLength(2);
   });
 
   test("resposta a ask_followup_question conta como intervenção", () => {
     const interventions: HumanIntervention[] = [
       createIntervention("msg-user-1", 2, "Sim, use Node 20"),
     ];
-    
+
     const report = createReport(interventions, 5);
     const findings = detectHumanIntervention(report);
-    
+
     expect(findings).toHaveLength(1);
     expect(findings[0].kind).toBe("human-intervention");
   });
 
-  test("evidence.redactable é true", () => {
+  test("evidence.redactable é true e conteúdo sensível nunca vaza em description, prescription, id ou metric", () => {
+    const secretA = "Use internal API key SECRET-TOKEN-123";
+    const secretB = "Deploy to /private/prod/cluster";
     const interventions: HumanIntervention[] = [
-      createIntervention("msg-user-1", 2, "Conteúdo sensível"),
+      createIntervention("msg-user-1", 2, secretA),
+      createIntervention("msg-user-2", 3, secretB),
     ];
-    
-    const report = createReport(interventions, 5);
-    const findings = detectHumanIntervention(report);
-    
-    expect(findings).toHaveLength(1);
-    expect(findings[0].evidence.redactable).toBe(true);
+
+    const singleReport = createReport([interventions[0]], 5);
+    const [singleFinding] = detectHumanIntervention(singleReport);
+
+    expect(singleFinding.evidence.redactable).toBe(true);
+    expect(singleFinding.description).toContain("1");
+    expect(singleFinding.description).toContain("2");
+    expect(singleFinding.description).not.toContain(secretA);
+    expect(singleFinding.description).not.toContain("SECRET-TOKEN-123");
+    expect(singleFinding.prescription).toBeUndefined();
+    expect(singleFinding.id).not.toContain("SECRET");
+    expect(JSON.stringify(singleFinding.metric)).not.toContain(secretA);
+    expect(singleFinding.evidence.rawValue).toEqual([secretA]);
+
+    const groupedReport = createReport(interventions, 5);
+    const [groupedFinding] = detectHumanIntervention(groupedReport);
+
+    expect(groupedFinding.description).toContain("2");
+    expect(groupedFinding.description).not.toContain(secretA);
+    expect(groupedFinding.description).not.toContain(secretB);
+    expect(groupedFinding.prescription).toBeUndefined();
+    expect(JSON.stringify(groupedFinding.metric)).not.toContain(secretA);
+    expect(JSON.stringify(groupedFinding.metric)).not.toContain(secretB);
+    expect(groupedFinding.evidence.rawValue).toEqual([secretA, secretB]);
   });
 
-  test("subtask não gera achado", () => {
+  test("subtask (isSubtask ou parentId !== null) não gera achado", () => {
     const interventions: HumanIntervention[] = [
       createIntervention("msg-user-1", 2, "Use TypeScript"),
     ];
-    
-    const report = createReport(interventions, 5, true); // isSubtask = true
-    const findings = detectHumanIntervention(report);
-    
-    expect(findings).toHaveLength(0);
+
+    expect(detectHumanIntervention(createReport(interventions, 5, true))).toHaveLength(0);
+    expect(
+      detectHumanIntervention(createReport(interventions, 5, false, "test-session", "parent-99"))
+    ).toHaveLength(0);
   });
 
-  test("tokenImpact é estimativa baseada no número de intervenções", () => {
+  test("tokenImpact é rotulado como estimativa com base de cálculo (I-6)", () => {
     const interventions: HumanIntervention[] = [
       createIntervention("msg-user-1", 1, "Use TypeScript"),
       createIntervention("msg-user-2", 2, "Adicione testes"),
       createIntervention("msg-user-3", 3, "Use ESLint"),
     ];
-    
+
     const report = createReport(interventions, 5);
-    const findings = detectHumanIntervention(report);
-    
-    expect(findings).toHaveLength(1); // Agrupadas
-    // 3 intervenções = 3 * 100 = 300 tokens
-    expect(findings[0].metric.estimatedWastedTokens).toBe(300);
+    const [finding] = detectHumanIntervention(report);
+
+    expect(finding.tokenImpact).toBe(300);
+    expect(finding.tokenImpactIsEstimate).toBe(true);
+    expect(finding.tokenImpactEstimateBasis).toBeTruthy();
+    expect(finding.metric.estimatedWastedTokens).toBe(300);
+    expect(finding.metric.tokenImpactIsEstimate).toBe(true);
+    expect(finding.metric.tokenImpactEstimateBasis).toBe(finding.tokenImpactEstimateBasis);
   });
 
-  test("prescription contém o conteúdo das intervenções (para F4)", () => {
+  test("id inclui sessionId para evitar colisão entre sessões", () => {
     const interventions: HumanIntervention[] = [
       createIntervention("msg-user-1", 2, "Regra 1"),
-      createIntervention("msg-user-2", 3, "Regra 2"),
     ];
-    
-    const report = createReport(interventions, 5);
-    const findings = detectHumanIntervention(report);
-    
-    expect(findings).toHaveLength(1);
-    expect(findings[0].prescription).toContain("Regra 1");
-    expect(findings[0].prescription).toContain("Regra 2");
+
+    const [findingA] = detectHumanIntervention(createReport(interventions, 5, false, "session-a"));
+    const [findingB] = detectHumanIntervention(createReport(interventions, 5, false, "session-b"));
+
+    expect(findingA.id).toContain("session-a");
+    expect(findingB.id).toContain("session-b");
+    expect(findingA.id).not.toBe(findingB.id);
   });
 });

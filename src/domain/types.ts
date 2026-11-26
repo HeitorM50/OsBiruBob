@@ -525,6 +525,10 @@ export interface Finding {
   description?: string;
   /** Estimated token impact — no rounding (I-3). */
   tokenImpact?: number;
+  /** True when tokenImpact is a heuristic/rateio estimate rather than a measured value (I-6). */
+  tokenImpactIsEstimate?: boolean;
+  /** Formula or heuristic basis explaining how tokenImpact was estimated (I-6). */
+  tokenImpactEstimateBasis?: string;
   /** Estimated cost impact — no rounding (I-3). */
   costImpact?: number;
 }

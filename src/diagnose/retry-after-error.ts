@@ -21,6 +21,9 @@ export function detectRetryAfterError(report: ObserveReport): Finding[] {
   const findings: Finding[] = [];
 
   for (const task of report.tasks) {
+    // Exclude subtasks from session-level diagnostics (I-5).
+    if (task.isSubtask || task.parentId !== null) continue;
+
     // Sort by turnIndex ascending (ObserveReport toolCalls are already ordered,
     // but we sort defensively to guarantee determinism).
     const sorted = [...task.toolCalls].sort((a, b) => a.turnIndex - b.turnIndex);
