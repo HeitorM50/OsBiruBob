@@ -89,7 +89,8 @@ describe("Baseline rendering (rodada-a.json values)", () => {
     expect(() => renderScreen(ctx)).not.toThrow();
   });
 
-  it("contains data-testid context-window-screen root", () => {
+  it("contains data-testid context-window-screen root as a <main> landmark", () => {
+    expect(html).toContain('<main');
     expect(html).toContain('data-testid="context-window-screen"');
   });
 
@@ -246,6 +247,32 @@ describe("projectRules > 0 — no alert rendered", () => {
 
   it("still renders the projectRules row", () => {
     expect(html).toContain('data-testid="breakdown-row-projectRules"');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 3b. Missing breakdown field (absence ≠ zero)
+// ---------------------------------------------------------------------------
+
+describe("Missing breakdown fields (absence is not zero)", () => {
+  const partialBreakdown = { ...makeContext().breakdown } as Record<string, number>;
+  delete partialBreakdown.projectRules;
+  const ctx = makeContext({
+    breakdown: partialBreakdown as ContextSummary["breakdown"],
+  });
+  const html = renderScreen(ctx);
+
+  it("does NOT trigger the 'no AGENTS.md' alert when projectRules is absent", () => {
+    expect(html).not.toContain('data-testid="project-rules-alert"');
+    expect(html).not.toContain("This project has no AGENTS.md");
+  });
+
+  it("renders 'unavailable' instead of 0 for an absent breakdown field", () => {
+    const tokensEl = html.match(
+      /data-testid="breakdown-tokens-projectRules"[^>]*>([^<]+)</
+    );
+    expect(tokensEl).not.toBeNull();
+    expect(tokensEl![1].trim()).toBe("unavailable");
   });
 });
 

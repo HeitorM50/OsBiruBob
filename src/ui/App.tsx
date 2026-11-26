@@ -23,6 +23,18 @@ const DEMO_MAX_CONTEXT_WINDOW = 270_000;
 
 type Theme = "light" | "dark";
 type Screen = "input" | "diagnosis" | "findings" | "prescriptions" | "comparison";
+type UploadMode = "replace" | "add-round-b";
+
+function getInitialTheme(): Theme {
+  if (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  ) {
+    return "dark";
+  }
+  return "light";
+}
 
 interface LoadedAnalysis extends AnalyzedExport {
   id: number;
@@ -55,9 +67,19 @@ export default function App({
 }: AppProps): React.JSX.Element {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const uploadModeRef = useRef<UploadMode>("replace");
   const nextId = useRef(1);
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [activeScreen, setActiveScreen] = useState<Screen>("input");
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+  }, [theme]);
+
+  function toggleTheme(): void {
+    setTheme((current) => (current === "light" ? "dark" : "light"));
+  }
 
   // Each step is a separate page, not a section of one long document. Without
   // this, switching steps while scrolled down keeps the old offset and the new
@@ -82,7 +104,10 @@ export default function App({
     return { ...error, id: nextId.current++ };
   }
 
-  async function loadFiles(files: readonly File[]): Promise<void> {
+  async function loadFiles(
+    files: readonly File[],
+    mode: UploadMode = "replace"
+  ): Promise<void> {
     if (files.length === 0 || loading) return;
 
     setDragActive(false);
@@ -115,11 +140,19 @@ export default function App({
       .filter((result) => !result.ok)
       .map((result) => errorWithId(result.error));
 
-    if (accepted.length > 0) {
-      setAnalyses((current) => [...current, ...accepted]);
-      setActiveScreen("diagnosis");
-    }
     setErrors(rejected);
+    if (rejected.length > 0) {
+      setActiveScreen("input");
+    } else if (accepted.length > 0) {
+      if (mode === "add-round-b") {
+        setAnalyses((current) =>
+          current.length > 0 ? [current[0], ...accepted] : accepted
+        );
+      } else {
+        setAnalyses(accepted);
+      }
+      setActiveScreen(mode === "add-round-b" ? "comparison" : "diagnosis");
+    }
     setLoadingNames([]);
   }
 
@@ -153,11 +186,13 @@ export default function App({
     if (resultB.ok) newAnalyses.push(withId(resultB.value));
     else newErrors.push(errorWithId(resultB.error));
 
-    if (newAnalyses.length > 0) {
+    if (newErrors.length > 0) {
+      setErrors(newErrors);
+      setActiveScreen("input");
+    } else if (newAnalyses.length > 0) {
       setAnalyses(newAnalyses);
       setActiveScreen("diagnosis");
     }
-    if (newErrors.length > 0) setErrors(newErrors);
     setLoadingNames([]);
   }
 
@@ -270,7 +305,7 @@ export default function App({
             <button
               type="button"
               className={styles.themeButton}
-              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+              onClick={toggleTheme}
               aria-label="Toggle theme"
             >
               {theme === "light" ? "Dark theme" : "Light theme"}
@@ -296,8 +331,39 @@ export default function App({
         </div>
       </header>
 
-      {activeScreen === "diagnosis" && rootContext ? (
-        <ContextWindowScreen context={rootContext} />
+      <input
+        ref={inputRef}
+        id={inputId}
+        className={styles.fileInput}
+        type="file"
+        accept=".json,application/json"
+        multiple
+        aria-label="Select JSON exports from IBM Bob"
+        onChange={(event) => {
+          const mode = uploadModeRef.current;
+          uploadModeRef.current = "replace";
+          void loadFiles(Array.from(event.currentTarget.files ?? []), mode);
+          event.currentTarget.value = "";
+        }}
+      />
+
+      {activeScreen === "diagnosis" && selectedAnalysis ? (
+        rootContext ? (
+          <ContextWindowScreen context={rootContext} />
+        ) : (
+          <main className={styles.main} data-testid="diagnosis-empty-state">
+            <section className={styles.emptyState}>
+              <span className={styles.eyebrow}>Diagnosis · context window</span>
+              <h1>Context window breakdown unavailable</h1>
+              <p>
+                This export has no root task with a <code>contextWindowBreakdown</code>.
+                IBM Bob drops the breakdown once a task reaches status completed, so
+                this is a normal export state rather than an error. You can still inspect
+                Findings, Prescriptions and Comparison.
+              </p>
+            </section>
+          </main>
+        )
       ) : activeScreen === "findings" && selectedAnalysis ? (
         <FindingsScreen findings={selectedAnalysis.diagnosis.findings} />
       ) : activeScreen === "prescriptions" && selectedAnalysis ? (
@@ -314,8 +380,8 @@ export default function App({
           comparison={comparison}
           roundA={selectedAnalysis.report}
           onAddRoundB={() => {
-            setActiveScreen("input");
-            window.setTimeout(() => inputRef.current?.click(), 0);
+            uploadModeRef.current = "add-round-b";
+            inputRef.current?.click();
           }}
           onViewPrescriptions={() => setActiveScreen("prescriptions")}
         />
@@ -365,23 +431,13 @@ export default function App({
               <button
                 type="button"
                 className={styles.secondaryButton}
-                onClick={() => inputRef.current?.click()}
+                onClick={() => {
+                  uploadModeRef.current = "replace";
+                  inputRef.current?.click();
+                }}
               >
                 Select files
               </button>
-                <input
-                ref={inputRef}
-                id={inputId}
-                className={styles.fileInput}
-                type="file"
-                accept=".json,application/json"
-                multiple
-                aria-label="Select JSON exports from IBM Bob"
-                onChange={(event) => {
-                  void loadFiles(Array.from(event.currentTarget.files ?? []));
-                  event.currentTarget.value = "";
-                }}
-              />
             </div>
             <small>Nothing to install, no account, no API key.</small>
           </section>

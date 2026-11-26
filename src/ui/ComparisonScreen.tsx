@@ -7,9 +7,9 @@ type TrendRule = "lower-is-better" | "intentional-increase";
 
 interface MetricRow {
   label: string;
-  valueA: number | undefined;
-  valueB: number | undefined;
-  delta: number | undefined;
+  valueA: number | null | undefined;
+  valueB: number | null | undefined;
+  delta: number | null | undefined;
   kind: ValueKind;
   trend: TrendRule;
   displayA?: string;
@@ -44,9 +44,11 @@ function rootTasks(report: ObserveReport): ObserveReport["tasks"] {
   return report.tasks.filter((task) => !task.isSubtask);
 }
 
-function roundAFixedOverhead(report: ObserveReport): number {
-  return rootTasks(report).reduce(
-    (total, task) => total + (task.context?.fixedOverhead ?? 0),
+function roundAFixedOverhead(report: ObserveReport): number | null {
+  const withContext = rootTasks(report).filter((task) => task.context !== null);
+  if (withContext.length === 0) return null;
+  return withContext.reduce(
+    (total, task) => total + task.context!.fixedOverhead,
     0
   );
 }
@@ -71,7 +73,7 @@ function percentage(delta: number, baseline: number): number | null {
 }
 
 function signedPercent(value: number): string {
-  if (value === 0) return "0,0%";
+  if (value === 0) return `${percentFormatter.format(0)}%`;
   return `${value > 0 ? "+" : "−"}${percentFormatter.format(Math.abs(value))}%`;
 }
 
@@ -80,7 +82,7 @@ function deltaLabel(row: MetricRow): {
   text: string;
   className: string;
 } {
-  if (row.valueA === undefined || row.delta === undefined) {
+  if (row.valueA == null || row.delta == null) {
     return { symbol: "—", text: "not measured", className: styles.neutral };
   }
 
@@ -118,11 +120,11 @@ function Value({
   kind,
   display,
 }: {
-  value: number | undefined;
+  value: number | null | undefined;
   kind: ValueKind;
   display?: string;
 }): React.JSX.Element {
-  if (value === undefined) return <span className={styles.unavailable}>unavailable</span>;
+  if (value == null) return <span className={styles.unavailable}>unavailable</span>;
   return (
     <data
       value={String(value)}
@@ -145,7 +147,7 @@ function DeltaCell({ row }: { row: MetricRow }): React.JSX.Element {
 
   return (
     <td className={delta.className}>
-      {row.delta === undefined ? (
+      {row.delta == null ? (
         content
       ) : (
         <data
@@ -383,6 +385,7 @@ function MissingRoundB({
   onAddRoundB,
   onViewPrescriptions,
 }: Omit<ComparisonScreenProps, "comparison">): React.JSX.Element {
+  const overheadA = roundAFixedOverhead(roundA);
   return (
     <section className={styles.missingCard}>
       <div className={styles.missingContent}>
@@ -392,7 +395,12 @@ function MissingRoundB({
           apply the prescriptions and run the same task again.
         </p>
         <ol className={styles.missingSteps}>
-          <li><strong>Round A loaded</strong> — {roundA.totals.assistantTurns} turns, {integerFormatter.format(roundAFixedOverhead(roundA))} tokens of fixed overhead</li>
+          <li>
+            <strong>Round A loaded</strong> — {roundA.totals.assistantTurns} turns,{" "}
+            {overheadA !== null
+              ? `${integerFormatter.format(overheadA)} tokens of fixed overhead`
+              : "fixed overhead unavailable"}
+          </li>
           <li>Apply the configuration Hindsight generated</li>
           <li>Run the same task in a new conversation</li>
           <li>Add the second export</li>
@@ -413,6 +421,9 @@ function MissingRoundB({
 
 function headline(comparison: Comparison): string {
   const { fixedOverheadA, fixedOverheadDelta } = comparison.metrics;
+  if (fixedOverheadA === null || fixedOverheadDelta === null) {
+    return "Fixed overhead unavailable in one or both rounds. Available results stay in the table.";
+  }
   const ratio = percentage(fixedOverheadDelta, fixedOverheadA);
   if (fixedOverheadDelta === 0) {
     return "Fixed overhead did not change. Ties and regressions stay in the table.";
@@ -480,8 +491,19 @@ export function ComparisonScreen({
           return (
             <article key={row.label} className={row.trend === "intentional-increase" ? styles.intentionalCard : styles.summaryCard}>
               <span>{row.label}</span>
-              <strong>{signedValue(row.delta ?? 0, row.kind)}</strong>
-              <b className={delta.className}><span aria-hidden="true">{delta.symbol}</span> {delta.text.split(" · ").slice(1).join(" · ")}</b>
+              <strong>
+                {row.delta == null ? (
+                  <span className={styles.unavailable}>unavailable</span>
+                ) : (
+                  signedValue(row.delta, row.kind)
+                )}
+              </strong>
+              <b className={delta.className}>
+                <span aria-hidden="true">{delta.symbol}</span>{" "}
+                {row.delta == null
+                  ? delta.text
+                  : delta.text.split(" · ").slice(1).join(" · ")}
+              </b>
               <small><Value value={row.valueA} kind={row.kind} display={row.displayA} /> → <Value value={row.valueB} kind={row.kind} display={row.displayB} /></small>
             </article>
           );
