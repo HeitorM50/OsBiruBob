@@ -147,4 +147,93 @@ describe("ComparisonScreen", () => {
     expect(add).toHaveBeenCalledOnce();
     expect(prescribe).toHaveBeenCalledOnce();
   });
+
+  it("formats zero percentage delta with en-US decimal dot (0.0%), not comma", () => {
+    const source = compare(reportA, reportB);
+    const zeroDelta: Comparison = {
+      ...source,
+      metrics: {
+        ...source.metrics,
+        assistantTurnsA: 5,
+        assistantTurnsB: 5,
+        assistantTurnsDelta: 0,
+      },
+    };
+    const { container } = renderComparison(zeroDelta);
+
+    expect(container.textContent).toContain("0.0%");
+    expect(container.textContent).not.toContain("0,0%");
+  });
+
+  it("renders unavailable (never 0) in summary cards when a delta is missing", () => {
+    const source = compare(reportA, reportB);
+    const missingProjectRules: Comparison = {
+      ...source,
+      metrics: {
+        ...source.metrics,
+        projectRulesTokensA: undefined,
+        projectRulesTokensB: undefined,
+        projectRulesTokensDelta: undefined,
+      },
+    };
+    renderComparison(missingProjectRules);
+
+    const highlights = screen.getByLabelText("Comparison highlights");
+    expect(within(highlights).getAllByText("unavailable").length).toBeGreaterThan(0);
+    expect(within(highlights).getByText(/not measured/)).toBeTruthy();
+  });
+
+  it("renders unavailable for Fixed overhead from real compare() when reports lack breakdown", () => {
+    const noCtxA: ObserveReport = {
+      ...reportA,
+      tasks: reportA.tasks.map((task) => ({ ...task, context: null })),
+    };
+    const noCtxB: ObserveReport = {
+      ...reportB,
+      tasks: reportB.tasks.map((task) => ({ ...task, context: null })),
+    };
+    const realComparison = compare(noCtxA, noCtxB);
+    render(
+      <ComparisonScreen
+        comparison={realComparison}
+        roundA={noCtxA}
+        onAddRoundB={vi.fn()}
+        onViewPrescriptions={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.getByRole("heading", { name: /Fixed overhead unavailable/ })
+    ).toBeTruthy();
+
+    const highlights = screen.getByLabelText("Comparison highlights");
+    expect(within(highlights).getAllByText("unavailable").length).toBeGreaterThan(0);
+    expect(within(highlights).getAllByText(/not measured/).length).toBeGreaterThan(0);
+
+    const table = screen.getByRole("table", { name: "Metrics calculated by Hindsight" });
+    const overheadRow = within(table)
+      .getByRole("rowheader", { name: "Fixed overhead" })
+      .closest("tr");
+    expect(overheadRow).not.toBeNull();
+    expect(within(overheadRow!).getAllByText("unavailable")).toHaveLength(2);
+    expect(within(overheadRow!).getByText(/not measured/)).toBeTruthy();
+  });
+
+  it("renders fixed overhead unavailable in MissingRoundB when Round A has no context breakdown", () => {
+    const reportWithoutContext: ObserveReport = {
+      ...reportA,
+      tasks: reportA.tasks.map((task) => ({ ...task, context: null })),
+    };
+    render(
+      <ComparisonScreen
+        comparison={null}
+        roundA={reportWithoutContext}
+        onAddRoundB={vi.fn()}
+        onViewPrescriptions={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/fixed overhead unavailable/)).toBeTruthy();
+    expect(screen.queryByText(/0 tokens of fixed overhead/)).toBeNull();
+  });
 });

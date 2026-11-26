@@ -44,12 +44,14 @@ function makeToolCallRecord(
 
 function makeTaskReport(
   taskId: string,
-  toolCalls: ToolCallRecord[]
+  toolCalls: ToolCallRecord[],
+  overrides: Partial<Pick<TaskReport, "parentId" | "isSubtask">> = {}
 ): TaskReport {
   return {
     taskId,
     parentId: null,
     isSubtask: false,
+    ...overrides,
     title: "[REDACTED]",
     modeId: "synthetic-test-mode",
     createdAt: 1_787_958_109_275,
@@ -390,5 +392,36 @@ describe("detectRetryAfterError", () => {
 
     expect(first).toEqual(second);
     expect(report).toEqual(before);
+  });
+
+  // I-5: subtasks are excluded from session-level diagnostics.
+  it("ignores subtasks (isSubtask or parentId !== null) per I-5", () => {
+    const subtaskCalls = [
+      makeToolCallRecord({ callId: "s1", name: "read_file", turnIndex: 0, isError: true }),
+      makeToolCallRecord({ callId: "s2", name: "read_file", turnIndex: 1, isError: false }),
+    ];
+    const rootCalls = [
+      makeToolCallRecord({ callId: "r1", name: "write_file", turnIndex: 0, isError: true }),
+      makeToolCallRecord({ callId: "r2", name: "write_file", turnIndex: 1, isError: false }),
+    ];
+
+    const subtask = makeTaskReport("subtask-1", subtaskCalls, {
+      parentId: "root-task",
+      isSubtask: true,
+    });
+    const subtaskWithOnlyParentId = makeTaskReport("subtask-2", subtaskCalls, {
+      parentId: "root-task",
+      isSubtask: false,
+    });
+    const rootTask = makeTaskReport("root-task", rootCalls);
+
+    expect(detectRetryAfterError(makeReport([subtask]))).toHaveLength(0);
+    expect(detectRetryAfterError(makeReport([subtaskWithOnlyParentId]))).toHaveLength(0);
+
+    const mixedFindings = detectRetryAfterError(
+      makeReport([subtask, rootTask, subtaskWithOnlyParentId])
+    );
+    expect(mixedFindings).toHaveLength(1);
+    expect(mixedFindings[0].taskId).toBe("root-task");
   });
 });

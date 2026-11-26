@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import { describe, expect, it } from "vitest";
-import type { Finding, FindingKind, PrescriptionKind } from "../domain/types";
+import type { Finding, FindingKind, PrescriptionKind, Session } from "../domain/types";
 import { diagnose } from "../diagnose/index";
 import { observe } from "../observe/index";
 import { parseSession } from "../parser/index";
@@ -11,10 +11,7 @@ const SENSITIVE_PATH = "C:/private/customer/secret-plan.ts";
 const SENSITIVE_MESSAGE = "Deploy with password hunter2";
 const SENSITIVE_ERROR = "token=private-api-token";
 
-function finding(
-  kind: FindingKind,
-  overrides: Partial<Finding> = {}
-): Finding {
+function finding(kind: FindingKind, overrides: Partial<Finding> = {}): Finding {
   const prescriptionHints: Partial<Record<string, PrescriptionKind>> = {
     "project-rules-absent": "agents-md-file",
     "human-intervention": "agents-md-section",
@@ -31,15 +28,51 @@ function finding(
     taskId: "task-1",
     kind,
     detectedAt: 1_725_000_000_000,
-    evidence: {
-      type: "cross-reference",
-      redactable: false,
-    },
+    evidence: { type: "cross-reference", redactable: false },
     confidence: "high",
     metric: {},
     prescriptionHint: prescriptionHints[kind] ?? "agents-md-section",
     ...overrides,
   };
+}
+
+/** One finding of every supported kind, with realistic, safe metrics. */
+function fullSet(taskId = "task-1"): Finding[] {
+  return [
+    finding("project-rules-absent", { id: `pra:${taskId}`, taskId }),
+    finding("mcp-candidate", {
+      id: `mcp:${taskId}`,
+      taskId,
+      metric: { serverLabel: "Docker MCP Server", binaries: ["docker"], hitCount: 2, httpHitCount: 0 },
+    }),
+    finding("redundant-read", {
+      id: `rr:${taskId}`,
+      taskId,
+      metric: { path: SENSITIVE_PATH, readCount: 3, distinctTurns: 3 },
+    }),
+    finding("retry-after-error", {
+      id: `retry:${taskId}`,
+      taskId,
+      metric: { toolName: "execute_command", attemptCount: 2, successObserved: true },
+    }),
+    finding("unused-tool", {
+      id: `unused:${taskId}`,
+      taskId,
+      metric: {
+        idleTools: [
+          { name: "grep", group: "code-navigation", essential: false },
+          { name: "FindSymbol", group: "code-navigation", essential: false },
+          { name: "attempt_completion", group: "core", essential: true },
+        ],
+      },
+    }),
+    finding("human-intervention", {
+      id: `hi:${taskId}`,
+      taskId,
+      metric: { interventionCount: 2 },
+      prescription: SENSITIVE_MESSAGE,
+    }),
+  ];
 }
 
 function sensitiveFinding(kind: FindingKind): Finding {
@@ -51,16 +84,34 @@ function sensitiveFinding(kind: FindingKind): Finding {
       messageIds: [`message:${SENSITIVE_MESSAGE}`],
       toolCallIds: [`tool:${SENSITIVE_PATH}`],
       rawValue: SENSITIVE_ERROR,
+      externalCommands: [`docker run ${SENSITIVE_PATH}`],
     },
     metric: {
       path: SENSITIVE_PATH,
       command: SENSITIVE_MESSAGE,
+      // Free-form strings in identifier slots must be dropped, not rendered.
+      toolName: SENSITIVE_PATH,
+      serverLabel: `<script>${SENSITIVE_MESSAGE}`,
+      binaries: [SENSITIVE_PATH, "docker"],
+      idleTools: [{ name: SENSITIVE_PATH, group: SENSITIVE_MESSAGE }],
       attemptCount: 2,
       readCount: 3,
+      distinctTurns: 2,
+      interventionCount: 1,
     },
     description: `Sensitive description: ${SENSITIVE_MESSAGE}`,
     prescription: `Sensitive proposed rule: ${SENSITIVE_ERROR}`,
   });
+}
+
+function ruleLines(markdown: string): string[] {
+  return markdown.split("\n").filter((line) => line.startsWith("- "));
+}
+
+function file(findings: readonly Finding[]) {
+  const files = prescribeAgentsMd(findings).filter((item) => item.kind === "agents-md-file");
+  expect(files).toHaveLength(1);
+  return files[0];
 }
 
 describe("prescribeAgentsMd", () => {
@@ -68,144 +119,155 @@ describe("prescribeAgentsMd", () => {
     expect(prescribeAgentsMd([])).toEqual([]);
   });
 
-  it("ignores unknown and non-AGENTS.md finding families", () => {
-    const findings = [
-      finding("unused-tool"),
-      finding("skill-overhead"),
-      finding("mcp-candidate"),
-      finding("future-finding"),
-    ];
-
-    expect(prescribeAgentsMd(findings)).toEqual([]);
+  it("ignores unknown and unsupported finding families", () => {
+    expect(
+      prescribeAgentsMd([finding("skill-overhead"), finding("future-finding")])
+    ).toEqual([]);
   });
 
-  it("creates a minimal file prescription for project-rules-absent", () => {
-    const source = finding("project-rules-absent");
-    const prescriptions = prescribeAgentsMd([source]);
+  it("renders the target sections in a stable order, only when supported", () => {
+    const markdown = file(fullSet()).content ?? "";
+    const headings = markdown.split("\n").filter((line) => line.startsWith("## "));
+    expect(headings).toEqual([
+      "## Environment",
+      "## Commands",
+      "## Tool policy",
+      "## Working agreements",
+    ]);
 
-    expect(prescriptions).toHaveLength(1);
-    expect(prescriptions[0]).toMatchObject({
-      sessionId: source.sessionId,
-      taskId: source.taskId,
-      findingIds: [source.id],
-      kind: "agents-md-file",
-      status: "pending",
-      createdAt: source.detectedAt,
-      targetFile: "AGENTS.md",
-    });
-    expect(prescriptions[0].content).toContain("# AGENTS.md");
-    expect(prescriptions[0].content).toContain("## Working guidelines");
+    const onlyRetry = file([fullSet()[3]]).content ?? "";
+    expect(onlyRetry.split("\n").filter((line) => line.startsWith("## "))).toEqual([
+      "## Tool policy",
+    ]);
   });
 
-  it.each([
-    ["human-intervention", "Confirm ambiguous requirements"],
-    ["redundant-read", "Reuse information already gathered"],
-    ["retry-after-error", "Inspect and address the cause"],
-  ] as const)("creates a safe section for %s", (kind, expectedText) => {
-    const source = finding(kind);
-    const prescriptions = prescribeAgentsMd([source]);
-    const section = prescriptions.find((item) => item.kind === "agents-md-section");
-    const file = prescriptions.find((item) => item.kind === "agents-md-file");
+  it("derives rule text from finding metrics", () => {
+    const markdown = file(fullSet()).content ?? "";
 
-    expect(section).toMatchObject({
-      findingIds: [source.id],
-      createdAt: source.detectedAt,
-      status: "pending",
-    });
-    expect(section?.content).toContain(expectedText);
-    expect(file?.findingIds).toEqual([source.id]);
-    expect(file?.content).toContain(expectedText);
+    expect(markdown).toContain("This repo uses `docker` from the shell (2 shell commands observed)");
+    expect(markdown).toContain("Docker MCP Server");
+    expect(markdown).toContain("1 file re-read in 2 extra turns");
+    expect(markdown).toContain("When `execute_command` fails");
+    expect(markdown).toContain("1 retry chain, 2 attempts");
+    expect(markdown).toContain("2 loaded tools stayed idle");
+    expect(markdown).toContain("Idle (code-navigation): `FindSymbol`, `grep`.");
+    expect(markdown).not.toContain("attempt_completion"); // essential tools are never listed
+    expect(markdown).toContain("2 mid-task user messages in 1 separate moment");
   });
 
-  it("derives file createdAt from the latest used finding", () => {
-    const older = finding("project-rules-absent", { detectedAt: 100 });
-    const newer = finding("retry-after-error", {
-      id: "retry-safe-id",
-      detectedAt: 300,
-    });
-
-    const file = prescribeAgentsMd([newer, older]).find(
-      (item) => item.kind === "agents-md-file"
-    );
-
-    expect(file?.createdAt).toBe(300);
-    expect(file?.findingIds).toEqual([older.id, newer.id]);
+  it("emits command placeholders instead of inventing commands", () => {
+    const markdown = file([finding("project-rules-absent")]).content ?? "";
+    expect(markdown).toContain("Test: <!-- fill in: test command -->");
+    expect(markdown).toContain("Build: <!-- fill in: build command -->");
+    expect(markdown).toContain("Lint / typecheck: <!-- fill in: lint command -->");
+    expect(markdown).not.toMatch(/npm|yarn|pnpm|make /);
   });
 
-  it("is deterministic when equivalent findings arrive in a different order", () => {
-    const findings = [
-      finding("retry-after-error", { id: "retry-id", detectedAt: 30 }),
-      finding("project-rules-absent", { id: "project-id", detectedAt: 10 }),
-      finding("human-intervention", { id: "human-id", detectedAt: 20 }),
-    ];
+  it("ends every rule with a hindsight trace comment", () => {
+    const markdown = file(fullSet()).content ?? "";
+    const rules = ruleLines(markdown);
+    expect(rules.length).toBeGreaterThan(0);
+    for (const rule of rules) {
+      expect(rule).toMatch(/ <!-- hindsight: [a-z-]+ ×\d+ -->$/);
+    }
+    expect(markdown).toContain("<!-- hindsight: retry-after-error ×1 -->");
+  });
 
+  it("counts supporting findings in the trace comment", () => {
+    const markdown =
+      file([
+        finding("retry-after-error", { id: "a", metric: { toolName: "read_file", attemptCount: 2 } }),
+        finding("retry-after-error", { id: "b", metric: { toolName: "read_file", attemptCount: 3 } }),
+        finding("redundant-read", { id: "c", metric: { distinctTurns: 2 } }),
+        finding("redundant-read", { id: "d", metric: { distinctTurns: 4 } }),
+      ]).content ?? "";
+
+    expect(markdown).toContain("(2 retry chains, 5 attempts). <!-- hindsight: retry-after-error ×2 -->");
+    expect(markdown).toContain("2 files re-read in 4 extra turns");
+    expect(markdown).toContain("<!-- hindsight: redundant-read ×2 -->");
+  });
+
+  it("is byte-identical for the same findings in any order", () => {
+    const findings = fullSet();
     const forward = prescribeAgentsMd(findings);
     const reverse = prescribeAgentsMd([...findings].reverse());
+    const shuffled = prescribeAgentsMd([findings[3], findings[0], findings[5], findings[1], findings[4], findings[2]]);
 
     expect(reverse).toEqual(forward);
+    expect(shuffled).toEqual(forward);
+    expect(renderAgentsMd(reverse)).toBe(renderAgentsMd(forward));
   });
 
-  it("deduplicates repeated Finding IDs and duplicate rendered rules", () => {
-    const first = finding("redundant-read", { id: "same-finding" });
-    const duplicate = { ...first };
-    const another = finding("redundant-read", {
-      id: "another-finding",
-      detectedAt: first.detectedAt + 1,
-    });
-
-    const prescriptions = prescribeAgentsMd([first, duplicate, another]);
-    const sections = prescriptions.filter((item) => item.kind === "agents-md-section");
-    const markdown = renderAgentsMd(prescriptions);
-    const rule = "Reuse information already gathered";
-
-    expect(sections).toHaveLength(2);
-    expect(markdown.split(rule)).toHaveLength(2);
+  it("deduplicates repeated Finding IDs", () => {
+    const first = finding("redundant-read", { id: "same", metric: { distinctTurns: 2 } });
+    const markdown = file([first, { ...first }]).content ?? "";
+    expect(markdown).toContain("<!-- hindsight: redundant-read ×1 -->");
   });
 
-  it("keeps sessions and tasks in separate file prescriptions", () => {
-    const prescriptions = prescribeAgentsMd([
-      finding("project-rules-absent", { id: "one" }),
-      finding("human-intervention", { id: "two", taskId: "task-2" }),
-      finding("retry-after-error", {
-        id: "three",
-        sessionId: "session-2",
-        taskId: "task-1",
-      }),
-    ]);
-
+  it("aggregates a multi-task session into a single document", () => {
+    const prescriptions = prescribeAgentsMd([...fullSet("task-1"), ...fullSet("task-2")]);
     const files = prescriptions.filter((item) => item.kind === "agents-md-file");
-    expect(files).toHaveLength(3);
-    expect(files.map((item) => `${item.sessionId}/${item.taskId}`).sort()).toEqual([
-      "session-1/task-1",
-      "session-1/task-2",
-      "session-2/task-1",
-    ]);
+    const markdown = renderAgentsMd(prescriptions);
+
+    expect(files).toHaveLength(1);
+    expect(files[0].taskId).toBe("task-1");
+    expect(files[0].findingIds).toHaveLength(12);
+    expect(markdown.match(/^# AGENTS\.md$/gm)).toHaveLength(1);
+    expect(markdown).not.toContain("---");
+    expect(markdown).toContain("(4 shell commands observed)");
+    expect(markdown).toContain("<!-- hindsight: unused-tool ×2 -->");
+    expect(markdown.split("When `execute_command` fails")).toHaveLength(2);
   });
 
-  it.each([
-    "human-intervention",
-    "redundant-read",
-    "retry-after-error",
-  ] as const)("does not leak sensitive fields for %s", (kind) => {
-    const source = sensitiveFinding(kind);
-    const prescriptions = prescribeAgentsMd([source]);
-    const markdown = renderAgentsMd(prescriptions);
-    const publicIds = prescriptions.map((item) => item.id).join("\n");
+  it("drops subtask findings when root task IDs are provided", () => {
+    const findings = [
+      ...fullSet("root"),
+      finding("retry-after-error", {
+        id: "sub-retry",
+        taskId: "subtask",
+        metric: { toolName: "write_file", attemptCount: 2 },
+      }),
+    ];
+    const markdown = renderAgentsMd(prescribeAgentsMd(findings, { rootTaskIds: ["root"] }));
+    expect(markdown).not.toContain("write_file");
+    expect(markdown).toContain("execute_command");
+  });
 
+  it("keeps separate sessions in separate file prescriptions", () => {
+    const prescriptions = prescribeAgentsMd([
+      ...fullSet(),
+      finding("project-rules-absent", { id: "other", sessionId: "session-2" }),
+    ]);
+    const files = prescriptions.filter((item) => item.kind === "agents-md-file");
+    expect(files.map((item) => item.sessionId)).toEqual(["session-1", "session-2"]);
+  });
+
+  it("does not leak sensitive fields or free-form metric strings", () => {
+    const sources = [
+      "human-intervention",
+      "redundant-read",
+      "retry-after-error",
+      "mcp-candidate",
+      "unused-tool",
+      "project-rules-absent",
+    ].map((kind) => sensitiveFinding(kind));
+    const prescriptions = prescribeAgentsMd(sources);
+    const markdown = renderAgentsMd(prescriptions);
+    const publicText = prescriptions
+      .map((item) => `${item.id}\n${item.rationale ?? ""}\n${item.content ?? ""}`)
+      .join("\n");
+
+    expect(markdown).not.toBe("");
     for (const secret of [
-      source.id,
-      source.description,
-      source.prescription,
+      ...sources.map((item) => item.id),
       SENSITIVE_PATH,
       SENSITIVE_MESSAGE,
       SENSITIVE_ERROR,
-      source.evidence.messageIds?.[0],
-      source.evidence.toolCallIds?.[0],
+      "secret-plan",
+      "<script>",
     ]) {
-      if (secret) {
-        expect(markdown).not.toContain(secret);
-        expect(publicIds).not.toContain(secret);
-      }
+      expect(markdown).not.toContain(secret);
+      expect(publicText).not.toContain(secret);
     }
   });
 
@@ -214,10 +276,7 @@ describe("prescribeAgentsMd", () => {
     Object.freeze(source.evidence);
     Object.freeze(source.metric);
     Object.freeze(source);
-    const input = Object.freeze([source]);
-
-    expect(() => prescribeAgentsMd(input)).not.toThrow();
-    expect(source.description).toContain(SENSITIVE_MESSAGE);
+    expect(() => prescribeAgentsMd(Object.freeze([source]))).not.toThrow();
   });
 });
 
@@ -240,42 +299,63 @@ describe("renderAgentsMd", () => {
     ).toBe("");
   });
 
-  it("composes a minimal document from section-only input", () => {
-    const section = prescribeAgentsMd([finding("redundant-read")]).find(
-      (item) => item.kind === "agents-md-section"
-    );
-    if (!section) throw new Error("Expected section prescription");
-
-    const markdown = renderAgentsMd([section]);
-    expect(markdown).toContain("# AGENTS.md");
-    expect(markdown).toContain(section.content);
+  it("composes the same document from section-only input", () => {
+    const prescriptions = prescribeAgentsMd(fullSet());
+    const sections = prescriptions.filter((item) => item.kind === "agents-md-section");
+    expect(sections).toHaveLength(4);
+    expect(renderAgentsMd([...sections].reverse())).toBe(renderAgentsMd(prescriptions));
   });
 });
 
-describe("baseline integration", () => {
-  it("runs parse → observe → diagnose → prescribe without leaking private export content", () => {
-    const raw = readFileSync(
-      join(process.cwd(), "fixtures/sample-export.json"),
-      "utf-8"
-    );
-    const parsed = parseSession(raw);
+describe("real exports", () => {
+  function load(relative: string): { session: Session; markdown: string; findings: Finding[] } {
+    const parsed = parseSession(readFileSync(join(process.cwd(), relative), "utf-8"));
     if (!parsed.ok) throw new Error(parsed.error.message);
+    const report = observe(parsed.value);
+    const findings = diagnose(report);
+    const rootTaskIds = report.tasks.filter((task) => !task.isSubtask).map((task) => task.taskId);
+    const markdown = renderAgentsMd(prescribeAgentsMd(findings, { rootTaskIds }));
+    return { session: parsed.value, markdown, findings };
+  }
 
-    const findings = diagnose(observe(parsed.value));
-    const prescriptions = prescribeAgentsMd(findings);
-    const files = prescriptions.filter((item) => item.kind === "agents-md-file");
-    const markdown = renderAgentsMd(prescriptions);
+  /** Every string an export may carry that must never reach the draft. */
+  function privateStrings(session: Session): string[] {
+    const values = new Set<string>();
+    for (const entry of session.tasks) {
+      values.add(entry.task.title);
+      values.add(entry.task.env.staticEnvInfo.primaryWorkspace);
+      for (const message of entry.messages as unknown as Array<Record<string, unknown>>) {
+        const data = (message.data ?? {}) as Record<string, unknown>;
+        if (typeof data.content === "string") values.add(data.content);
+        for (const call of (data.toolCalls ?? []) as Array<Record<string, unknown>>) {
+          const args = (call.arguments ?? {}) as Record<string, unknown>;
+          for (const value of Object.values(args)) {
+            if (typeof value === "string") values.add(value);
+          }
+          if (typeof call.arguments === "string") values.add(call.arguments);
+        }
+      }
+    }
+    return [...values].filter((value) => value.trim().length >= 6);
+  }
 
-    expect(files).toHaveLength(1);
-    expect(files[0].findingIds).toEqual(
-      findings
-        .filter((item) => item.kind === "project-rules-absent")
-        .map((item) => item.id)
-    );
-    expect(prescriptions.some((item) => item.kind === "disable-tool")).toBe(false);
-    expect(prescriptions.some((item) => item.kind === "disable-skill")).toBe(false);
-    expect(markdown).toContain("# AGENTS.md");
-    expect(markdown).not.toContain(parsed.value.tasks[0].task.title);
-    expect(markdown).not.toContain(parsed.value.tasks[0].task.env.staticEnvInfo.primaryWorkspace);
-  });
+  it.each(["fixtures/sample-export.json", "benchmark/rodada-a.json"])(
+    "produces a traceable draft without private content for %s",
+    (relative) => {
+      const { session, markdown } = load(relative);
+
+      expect(markdown.match(/^# AGENTS\.md$/gm)).toHaveLength(1);
+      expect(markdown).toContain("## Environment");
+      expect(markdown).toContain("`docker`");
+      expect(markdown).toContain("## Commands");
+      expect(markdown).toContain("## Tool policy");
+      for (const rule of ruleLines(markdown)) expect(rule).toMatch(/<!-- hindsight: [a-z-]+ ×\d+ -->$/);
+
+      const secrets = privateStrings(session);
+      expect(secrets.length).toBeGreaterThan(0);
+      for (const secret of secrets) expect(markdown).not.toContain(secret);
+      expect(markdown).not.toMatch(/[A-Za-z]:[\\/]|\/home\/|\/Users\/|\.tsx?\b|\.json\b/);
+      expect(load(relative).markdown).toBe(markdown);
+    }
+  );
 });

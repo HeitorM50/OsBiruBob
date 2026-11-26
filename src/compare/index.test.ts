@@ -376,3 +376,41 @@ describe("compare — denominator-zero safety", () => {
     expect(Number.isFinite(m.fixedOverheadDelta)).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Test 8 — missing context breakdown returns null (absence ≠ zero)
+// ---------------------------------------------------------------------------
+
+describe("compare — missing contextWindowBreakdown (absence is not zero)", () => {
+  it("returns null for fixedOverheadA, fixedOverheadB and fixedOverheadDelta when both reports lack breakdown", () => {
+    const baseA = makeReport({ sessionId: "sess-a" });
+    const baseB = makeReport({ sessionId: "sess-b" });
+    const reportA: ObserveReport = {
+      ...baseA,
+      tasks: baseA.tasks.map((t) => ({ ...t, context: null })),
+    };
+    const reportB: ObserveReport = {
+      ...baseB,
+      tasks: baseB.tasks.map((t) => ({ ...t, context: null })),
+    };
+
+    const result = compare(reportA, reportB);
+    expect(result.metrics.fixedOverheadA).toBeNull();
+    expect(result.metrics.fixedOverheadB).toBeNull();
+    expect(result.metrics.fixedOverheadDelta).toBeNull();
+  });
+
+  it("returns null for fixedOverheadDelta when only one round lacks breakdown", () => {
+    const reportA = makeReport({ sessionId: "sess-a", fixedOverhead: 5000 });
+    const baseB = makeReport({ sessionId: "sess-b" });
+    const reportB: ObserveReport = {
+      ...baseB,
+      tasks: baseB.tasks.map((t) => ({ ...t, context: null })),
+    };
+
+    const result = compare(reportA, reportB);
+    expect(result.metrics.fixedOverheadA).toBe(5000);
+    expect(result.metrics.fixedOverheadB).toBeNull();
+    expect(result.metrics.fixedOverheadDelta).toBeNull();
+  });
+});

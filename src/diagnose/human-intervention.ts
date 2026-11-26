@@ -1,41 +1,46 @@
-import { ObserveReport, Finding, HumanIntervention, TaskReport } from "../domain/types";
+import type {
+  ObserveReport,
+  Finding,
+  HumanIntervention,
+  TaskReport,
+} from "../domain/types";
+
+const ESTIMATED_TOKENS_PER_INTERVENTION = 100;
+const TOKEN_IMPACT_ESTIMATE_BASIS =
+  "100 tokens per human intervention (heuristic)";
+
 /**
  * Detector de intervenção humana — mensagem do usuário depois da primeira.
  *
  * Regras:
  * - A primeira mensagem user é o prompt da tarefa, nunca intervenção
  * - Toda mensagem user seguinte conta, inclusive resposta a ask_followup_question
- * - content é redactable: true
+ * - content é redactable: true e nunca aparece em id, description, prescription ou metric
  * - Intervenções consecutivas são agrupadas
+ * - Subtasks (isSubtask || parentId !== null) são ignoradas (I-5)
  */
 export function detectHumanIntervention(report: ObserveReport): Finding[] {
   const findings: Finding[] = [];
-  
-  // Processar cada task separadamente
-  for (const task of report.tasks) {
-    // Pular subtasks (não agregamos nelas)
-    if (task.isSubtask) {
+
+  for (let taskIndex = 0; taskIndex < report.tasks.length; taskIndex++) {
+    const task = report.tasks[taskIndex];
+    if (task.isSubtask || task.parentId !== null) {
       continue;
     }
-    
-    // Se não há intervenções humanas, não há nada a fazer
+
     if (task.humanInterventions.length === 0) {
       continue;
     }
-    
-    // Agrupar intervenções consecutivas
+
     const groupedInterventions = groupConsecutiveInterventions(
-      task.humanInterventions,
-      task.turns.length
+      task.humanInterventions
     );
-    
-    // Criar um Finding por grupo de intervenções
+
     for (const group of groupedInterventions) {
-      const finding = createFinding(report, task, group);
-      findings.push(finding);
+      findings.push(createFinding(report, task, taskIndex, group));
     }
   }
-  
+
   return findings;
 }
 
@@ -45,24 +50,23 @@ export function detectHumanIntervention(report: ObserveReport): Finding[] {
  * Intervenções são consecutivas se ocorrem em turnos adjacentes ou no mesmo turno.
  */
 function groupConsecutiveInterventions(
-  interventions: HumanIntervention[],
-  totalTurns: number
+  interventions: HumanIntervention[]
 ): HumanIntervention[][] {
   if (interventions.length === 0) {
     return [];
   }
-  
-  // Ordenar por afterTurnIndex
-  const sorted = [...interventions].sort((a, b) => a.afterTurnIndex - b.afterTurnIndex);
-  
+
+  const sorted = [...interventions].sort(
+    (a, b) => a.afterTurnIndex - b.afterTurnIndex
+  );
+
   const groups: HumanIntervention[][] = [];
   let currentGroup: HumanIntervention[] = [sorted[0]];
-  
+
   for (let i = 1; i < sorted.length; i++) {
     const prev = sorted[i - 1];
     const curr = sorted[i];
-    
-    // Intervenções são consecutivas se estão no mesmo turno ou em turnos adjacentes
+
     if (curr.afterTurnIndex - prev.afterTurnIndex <= 1) {
       currentGroup.push(curr);
     } else {
@@ -70,9 +74,9 @@ function groupConsecutiveInterventions(
       currentGroup = [curr];
     }
   }
-  
+
   groups.push(currentGroup);
-  
+
   return groups;
 }
 
@@ -82,24 +86,27 @@ function groupConsecutiveInterventions(
 function createFinding(
   report: ObserveReport,
   task: TaskReport,
+  taskIndex: number,
   interventions: HumanIntervention[]
 ): Finding {
-  // Contar número de intervenções no grupo
   const interventionCount = interventions.length;
-  
-  // Extrair conteúdos (para F4 consumir)
-  const contents = interventions.map(i => i.content);
-  
-  // Estimar tokens desperdiçados: ~100 tokens por intervenção (estimativa conservadora)
-  const estimatedWastedTokens = interventionCount * 100;
-  
-  // Extrair turnos envolvidos
-  const turnIndices = interventions.map(i => i.afterTurnIndex);
+  const contents = interventions.map((i) => i.content);
+  const estimatedWastedTokens =
+    interventionCount * ESTIMATED_TOKENS_PER_INTERVENTION;
+
+  const turnIndices = interventions.map((i) => i.afterTurnIndex);
   const minTurn = Math.min(...turnIndices);
   const maxTurn = Math.max(...turnIndices);
-  
+
+  const description =
+    interventionCount === 1
+      ? `1 human intervention after turn ${minTurn}.`
+      : minTurn === maxTurn
+        ? `${interventionCount} human interventions after turn ${minTurn}.`
+        : `${interventionCount} human interventions between turns ${minTurn}-${maxTurn}.`;
+
   return {
-    id: `human-intervention-${task.taskId}-turn-${minTurn}`,
+    id: `human-intervention:${report.sessionId}:${task.taskId}:turn-${minTurn}`,
     sessionId: report.sessionId,
     taskId: task.taskId,
     kind: "human-intervention",
@@ -107,9 +114,11 @@ function createFinding(
     evidence: {
       type: "message",
       redactable: true,
-      messageIds: interventions.map(i => i.messageId),
+      descriptionSafe: true,
+      messageIds: interventions.map((i) => i.messageId),
       turnIndices,
-      fieldPath: `tasks[${task.taskId}].humanInterventions`,
+      fieldPath: `tasks[${taskIndex}].humanInterventions`,
+      rawValue: contents,
     },
     confidence: "high",
     metric: {
@@ -117,13 +126,13 @@ function createFinding(
       firstTurn: minTurn,
       lastTurn: maxTurn,
       estimatedWastedTokens,
+      tokenImpactIsEstimate: true,
+      tokenImpactEstimateBasis: TOKEN_IMPACT_ESTIMATE_BASIS,
     },
     prescriptionHint: "agents-md-section",
-    description: interventionCount === 1
-      ? `Human intervention at turn ${minTurn}. Content: "${interventions[0].content.slice(0, 100)}..."`
-      : `${interventionCount} human interventions between turns ${minTurn}-${maxTurn}. Rules missing from AGENTS.md.`,
+    description,
     tokenImpact: estimatedWastedTokens,
-    // Preservar conteúdo para F4 consumir (mas marcar como redactable)
-    prescription: contents.join("\n\n"),
+    tokenImpactIsEstimate: true,
+    tokenImpactEstimateBasis: TOKEN_IMPACT_ESTIMATE_BASIS,
   };
 }

@@ -9,6 +9,8 @@ import App from "./App";
 
 beforeEach(() => {
   vi.stubGlobal("scrollTo", vi.fn());
+  delete document.documentElement.dataset.theme;
+  document.documentElement.style.colorScheme = "";
 });
 
 afterEach(() => {
@@ -219,28 +221,66 @@ describe("App input screen", () => {
     expect(screen.getByText("Round A")).toBeTruthy();
   });
 
-  it("accepts files through the selector and drag-and-drop, assigning A and B", async () => {
+  it("replaces previous files on new upload and assigns Round A and Round B from the new batch", async () => {
     const readText = vi.fn(async () => sampleExport);
     render(<App readText={readText} />);
 
+    // Load bundled example first (Round A = sample-export.json, Round B = rodada-b.json)
+    fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
+    await returnToInputAfterAnalysis();
+    expect(screen.getAllByText("sample-export.json").length).toBeGreaterThan(0);
+
+    // Upload a single new file — must replace the demo files, not append as Session 3
     const selector = screen.getByLabelText("Select JSON exports from IBM Bob");
-    fireEvent.change(selector, { target: { files: [exportFile("round-a.json")] } });
+    fireEvent.change(selector, { target: { files: [exportFile("custom-a.json")] } });
 
     await returnToInputAfterAnalysis();
     expect(screen.getByText("Round A")).toBeTruthy();
-    expect(screen.getAllByText("round-a.json")).toHaveLength(2);
+    expect(screen.getAllByText("custom-a.json")).toHaveLength(2);
+    expect(screen.queryByText("sample-export.json")).toBeNull();
     expect(screen.getByText(/Add a Round B/)).toBeTruthy();
 
+    // Drop a two-file batch — replaces previous analysis, assigning Round A = 1st, Round B = 2nd
     const dropzone = screen.getByTestId("dropzone");
     fireEvent.dragEnter(dropzone);
     fireEvent.dragLeave(dropzone);
-    fireEvent.drop(dropzone, { dataTransfer: { files: [exportFile("round-b.json")] } });
+    fireEvent.drop(dropzone, {
+      dataTransfer: { files: [exportFile("round-a.json"), exportFile("round-b.json")] },
+    });
 
     await returnToInputAfterAnalysis();
+    expect(screen.getByText("Round A")).toBeTruthy();
     expect(screen.getByText("Round B")).toBeTruthy();
+    expect(screen.getAllByText("round-a.json").length).toBeGreaterThan(0);
     expect(screen.getByText("round-b.json")).toBeTruthy();
+    expect(screen.queryByText("custom-a.json")).toBeNull();
     expect(screen.getByText(/comparison is enabled/)).toBeTruthy();
-    expect(readText).toHaveBeenCalledTimes(2);
+    expect(readText).toHaveBeenCalledTimes(3);
+  });
+
+  it("opens the file picker synchronously from Add Round B and keeps Round A", async () => {
+    const readText = vi.fn(async (file: File) =>
+      file.name === "round-b.json" ? roundBExport : sampleExport
+    );
+    render(<App readText={readText} />);
+
+    fireEvent.drop(screen.getByTestId("dropzone"), {
+      dataTransfer: { files: [exportFile("round-a.json")] },
+    });
+    await screen.findByTestId("context-window-screen");
+
+    fireEvent.click(screen.getByRole("button", { name: "5 · Comparison" }));
+    const fileInput = screen.getByLabelText("Select JSON exports from IBM Bob") as HTMLInputElement;
+    const clickSpy = vi.spyOn(fileInput, "click");
+
+    fireEvent.click(screen.getByRole("button", { name: "Add Round B" }));
+    // Must be called synchronously inside the click handler (not inside setTimeout)
+    expect(clickSpy).toHaveBeenCalledOnce();
+
+    fireEvent.change(fileInput, { target: { files: [exportFile("round-b.json")] } });
+    expect(
+      await screen.findByRole("table", { name: "Metrics calculated by Hindsight" })
+    ).toBeTruthy();
   });
 
   it("keeps N files and exposes the three-session capability without inventing a Skill", async () => {
@@ -273,24 +313,90 @@ describe("App input screen", () => {
     expect(screen.getByText("Round A")).toBeTruthy();
   });
 
-  it("keeps valid files from a mixed batch and reports each rejected file", async () => {
+  it("keeps previous analyses untouched and stays on Input when a batch has any rejected file (1st invalid, 2nd valid)", async () => {
     const readText = async (file: File): Promise<string> => {
-      if (file.name === "valid.json") return sampleExport;
+      if (file.name === "existing-a.json") return sampleExport;
+      if (file.name === "valid-b.json") return roundBExport;
       if (file.name === "broken.json") return "{";
       return JSON.stringify({ name: "hindsight" });
     };
     render(<App readText={readText} />);
 
+    // Load a valid baseline first
     fireEvent.drop(screen.getByTestId("dropzone"), {
-      dataTransfer: { files: [exportFile("valid.json"), exportFile("broken.json"), exportFile("package.json")] },
+      dataTransfer: { files: [exportFile("existing-a.json")] },
+    });
+    await returnToInputAfterAnalysis();
+    expect(screen.getAllByText("existing-a.json")).toHaveLength(2);
+
+    // Drop a mixed batch where 1st is invalid and 2nd is valid:
+    // must NOT replace existing-a.json and must NOT promote valid-b.json to Round A
+    fireEvent.drop(screen.getByTestId("dropzone"), {
+      dataTransfer: {
+        files: [exportFile("broken.json"), exportFile("valid-b.json"), exportFile("package.json")],
+      },
     });
 
-    await returnToInputAfterAnalysis();
-    expect(screen.getByText("Round A")).toBeTruthy();
-    expect(screen.getAllByText("valid.json")).toHaveLength(2);
-    expect(screen.getByText(/broken.json/)).toBeTruthy();
-    expect(screen.getByText(/package.json/)).toBeTruthy();
-    expect(screen.getByText("Valid JSON, but not a Bob session export")).toBeTruthy();
+    expect(await screen.findByText("Valid JSON, but not a Bob session export")).toBeTruthy();
+    expect(screen.queryByTestId("context-window-screen")).toBeNull();
+    expect(screen.getByText(/broken\.json/)).toBeTruthy();
+    expect(screen.getByText(/package\.json/)).toBeTruthy();
+    expect(screen.getAllByText("existing-a.json")).toHaveLength(2);
+    expect(screen.queryByText("valid-b.json")).toBeNull();
+  });
+
+  it("keeps Round A intact and returns to Input with error when Add Round B receives an invalid file", async () => {
+    const readText = async (file: File): Promise<string> => {
+      if (file.name === "round-a.json") return sampleExport;
+      return "{";
+    };
+    render(<App readText={readText} />);
+
+    fireEvent.drop(screen.getByTestId("dropzone"), {
+      dataTransfer: { files: [exportFile("round-a.json")] },
+    });
+    await screen.findByTestId("context-window-screen");
+
+    fireEvent.click(screen.getByRole("button", { name: "5 · Comparison" }));
+    const fileInput = screen.getByLabelText("Select JSON exports from IBM Bob") as HTMLInputElement;
+    fireEvent.click(screen.getByRole("button", { name: "Add Round B" }));
+    fireEvent.change(fileInput, { target: { files: [exportFile("broken-b.json")] } });
+
+    expect(await screen.findByText(/broken-b\.json/)).toBeTruthy();
+    expect(screen.getByTestId("dropzone")).toBeTruthy();
+    expect(screen.getAllByText("round-a.json")).toHaveLength(2);
+    expect(screen.queryByText("Round B")).toBeNull();
+  });
+
+  it("stays on Input when one of the example exports fails validation", async () => {
+    render(<App exampleContent={sampleExport} exampleContentB="{" />);
+    fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
+
+    expect(await screen.findByText(/rodada-b\.json/)).toBeTruthy();
+    expect(screen.queryByTestId("context-window-screen")).toBeNull();
+  });
+
+  it("renders a dedicated empty state on Diagnosis when no root task has a context breakdown", async () => {
+    const noBreakdown = JSON.parse(sampleExport) as {
+      tasks: Array<{ task: { costs: { contextWindowBreakdown?: unknown } } }>;
+    };
+    for (const entry of noBreakdown.tasks) {
+      delete entry.task.costs.contextWindowBreakdown;
+    }
+
+    render(<App readText={async () => JSON.stringify(noBreakdown)} />);
+    fireEvent.drop(screen.getByTestId("dropzone"), {
+      dataTransfer: { files: [exportFile("completed-only.json")] },
+    });
+
+    expect(await screen.findByTestId("diagnosis-empty-state")).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Context window breakdown unavailable" })
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "2 · Diagnosis" }).getAttribute("aria-current")
+    ).toBe("step");
+    expect(screen.queryByTestId("dropzone")).toBeNull();
   });
 
   it("turns read errors into a safe message", async () => {
@@ -346,6 +452,8 @@ describe("App input screen", () => {
     const first = render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Toggle theme" }));
     expect(screen.getByRole("button", { name: "Toggle theme" }).textContent).toBe("Light theme");
+    expect(document.documentElement.dataset.theme).toBe("dark");
+    expect(document.documentElement.style.colorScheme).toBe("dark");
     fireEvent.click(screen.getByRole("button", { name: /See an example/ }));
     expect(await screen.findByTestId("context-window-screen")).toBeTruthy();
     first.unmount();
@@ -353,6 +461,25 @@ describe("App input screen", () => {
     render(<App />);
     expect(screen.queryByLabelText("Analyzed files")).toBeNull();
     expect(screen.getByRole("button", { name: "Toggle theme" }).textContent).toBe("Dark theme");
+    expect(document.documentElement.dataset.theme).toBe("light");
+    expect(document.documentElement.style.colorScheme).toBe("light");
+  });
+
+  it("follows prefers-color-scheme on initial render", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockImplementation((query: string) => ({
+        matches: query === "(prefers-color-scheme: dark)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }))
+    );
+
+    render(<App />);
+    expect(screen.getByRole("button", { name: "Toggle theme" }).textContent).toBe("Light theme");
+    expect(document.documentElement.dataset.theme).toBe("dark");
+    expect(document.documentElement.style.colorScheme).toBe("dark");
   });
 
   it("shows a controlled error when the embedded example is invalid", async () => {

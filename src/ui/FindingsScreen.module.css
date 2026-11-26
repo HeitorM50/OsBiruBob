@@ -102,7 +102,7 @@
   background: var(--panel, #fff);
   overflow: hidden;
   margin-bottom: 24px;
-  scroll-margin-top: 16px;
+  scroll-margin-top: 84px;
 }
 
 .groupHeader {
@@ -375,7 +375,7 @@
 .revealConfirmButton {
   border: 0;
   background: var(--acc, #a3401f);
-  color: #fff;
+  color: var(--accent-ink, #fff);
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;

@@ -531,6 +531,10 @@ export interface Finding {
   description?: string;
   /** Estimated token impact — no rounding (I-3). */
   tokenImpact?: number;
+  /** True when tokenImpact is a heuristic/rateio estimate rather than a measured value (I-6). */
+  tokenImpactIsEstimate?: boolean;
+  /** Formula or heuristic basis explaining how tokenImpact was estimated (I-6). */
+  tokenImpactEstimateBasis?: string;
   /** Estimated cost impact — no rounding (I-3). */
   costImpact?: number;
   /** Human-readable basis explaining how tokenImpact was calculated or measured. */
@@ -629,9 +633,9 @@ export interface ComparisonMetrics {
   conversationTokensB: number;
   conversationTokensDelta: number;
 
-  fixedOverheadA: number;
-  fixedOverheadB: number;
-  fixedOverheadDelta: number;
+  fixedOverheadA: number | null;
+  fixedOverheadB: number | null;
+  fixedOverheadDelta: number | null;
 
   assistantTurnsA: number;
   assistantTurnsB: number;

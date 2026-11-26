@@ -60,9 +60,11 @@ function sumContextTokens(report: ObserveReport): number {
 }
 
 /** Sum fixedOverhead (contextWindowBreakdown.total) across root tasks. */
-function sumFixedOverhead(report: ObserveReport): number {
-  return rootTasks(report).reduce(
-    (acc, task) => acc + (task.context?.fixedOverhead ?? 0),
+function sumFixedOverhead(report: ObserveReport): number | null {
+  const withContext = rootTasks(report).filter((task) => task.context !== null);
+  if (withContext.length === 0) return null;
+  return withContext.reduce(
+    (acc, task) => acc + task.context!.fixedOverhead,
     0
   );
 }
@@ -220,7 +222,10 @@ export function compare(reportA: ObserveReport, reportB: ObserveReport): Compari
 
     fixedOverheadA,
     fixedOverheadB,
-    fixedOverheadDelta: fixedOverheadB - fixedOverheadA,
+    fixedOverheadDelta:
+      fixedOverheadA !== null && fixedOverheadB !== null
+        ? fixedOverheadB - fixedOverheadA
+        : null,
 
     assistantTurnsA,
     assistantTurnsB,
