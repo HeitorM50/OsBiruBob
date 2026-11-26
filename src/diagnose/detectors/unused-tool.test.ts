@@ -2,21 +2,30 @@
  * Tests for the unused-tool detector (diagnose/detectors/unused-tool.ts)
  *
  * Covers:
- *  1. Baseline characterization — benchmark/rodada-a.json
- *  2. Complete tool usage (no idle tools → zero findings)
- *  3. Missing toolInventory → zero findings, no throw
- *  4. Empty available array → zero findings, no NaN
- *  5. Estimation flag verification (I-6)
- *  6. Multi-task: tasks with idle tools fire; tasks without do not
+ *  1. Baseline characterization with real tool-catalog.json (benchmark/rodada-a.json)
+ *  2. Protected search/diff tools (grep, glob, apply_diff) never appear as candidates
+ *  3. Unknown tools fall back to group "other" (never "outros")
+ *  4. Subtasks (parentId !== null / isSubtask: true) are excluded (I-5)
+ *  5. Bob-group-based estimation (I-6) with explicit estimationBasis
+ *  6. Edge cases: all tools used, missing/null inventory, empty available, multi-task
  */
 
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import type { ObserveReport, TaskReport } from "../../domain/types";
+import type {
+  ObserveReport,
+  TaskReport,
+  ToolCatalogEntry,
+} from "../../domain/types";
 import { parseSession } from "../../parser/index";
 import { observe } from "../../observe/index";
-import { detectUnusedTools } from "./unused-tool";
+import {
+  BOB_TOOL_GROUPS,
+  detectUnusedTools,
+  PROTECTED_TOOLS,
+  UNKNOWN_TOOL_GROUP,
+} from "./unused-tool";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -30,6 +39,11 @@ function loadReport(relativePath: string): ObserveReport {
   return observe(parsed.value);
 }
 
+function loadToolCatalogJson(): ToolCatalogEntry[] {
+  const abs = resolve(__dirname, "../../../data/tool-catalog.json");
+  return JSON.parse(readFileSync(abs, "utf-8")) as ToolCatalogEntry[];
+}
+
 /** Build a minimal TaskReport for synthetic scenarios. */
 function makeTask(
   taskId: string,
@@ -37,6 +51,7 @@ function makeTask(
   used: string[],
   idle: string[],
   toolDefinitionTokens = 5403,
+  overrides: Partial<TaskReport> = {}
 ): TaskReport {
   const idleRatio = available.length > 0 ? idle.length / available.length : null;
   const estimatedTokensPerTool =
@@ -106,6 +121,7 @@ function makeTask(
       allowedPermissions: ["read", "edit", "execute"],
       approvedCommands: [],
     },
+    ...overrides,
   };
 }
 
@@ -116,8 +132,8 @@ function makeReport(tasks: TaskReport[]): ObserveReport {
     workspace: "file:///test",
     tasks,
     totals: {
-      taskCount: tasks.length,
-      subtaskCount: 0,
+      taskCount: tasks.filter((t) => !t.isSubtask).length,
+      subtaskCount: tasks.filter((t) => t.isSubtask).length,
       cost: 0,
       assistantTurns: 0,
       toolCalls: 0,
@@ -130,196 +146,239 @@ function makeReport(tasks: TaskReport[]): ObserveReport {
 }
 
 // ---------------------------------------------------------------------------
-// 1. Baseline characterization — benchmark/rodada-a.json
+// 1. Baseline characterization with real tool-catalog.json (rodada-a.json)
 // ---------------------------------------------------------------------------
 
-describe("detectUnusedTools — baseline characterization (rodada-a.json)", () => {
+describe("detectUnusedTools — baseline characterization (rodada-a.json + tool-catalog.json)", () => {
   const report = loadReport("benchmark/rodada-a.json");
-  const findings = detectUnusedTools(report);
+  const catalog = loadToolCatalogJson();
+  const findings = detectUnusedTools(report, catalog);
 
   it("produces exactly one Finding", () => {
     expect(findings).toHaveLength(1);
-  });
-
-  it("finding.kind is 'unused-tool'", () => {
     expect(findings[0].kind).toBe("unused-tool");
-  });
-
-  it("finding.confidence is 'high'", () => {
     expect(findings[0].confidence).toBe("high");
-  });
-
-  it("finding.prescriptionHint is 'disable-tool'", () => {
     expect(findings[0].prescriptionHint).toBe("disable-tool");
-  });
-
-  it("identifies exactly 18 unused tools", () => {
-    const { unusedTools } = findings[0].evidence;
-    expect(unusedTools).toBeDefined();
-    expect(unusedTools!.length).toBe(18);
-  });
-
-  it("includes 'read_xlsx' in unused tools", () => {
-    expect(findings[0].evidence.unusedTools).toContain("read_xlsx");
-  });
-
-  it("includes 'create_chart' in unused tools", () => {
-    expect(findings[0].evidence.unusedTools).toContain("create_chart");
-  });
-
-  it("includes 'spawn_subagent' in unused tools", () => {
-    expect(findings[0].evidence.unusedTools).toContain("spawn_subagent");
-  });
-
-  it("includes 'use_skill' in unused tools", () => {
-    expect(findings[0].evidence.unusedTools).toContain("use_skill");
-  });
-
-  it("idleRatio is approximately 0.7826 (18/23)", () => {
-    const rv = findings[0].evidence.rawValue as Record<string, unknown>;
-    const idleRatio = rv.idleRatio as number;
-    expect(Math.abs(idleRatio - 18 / 23)).toBeLessThan(1e-10);
-  });
-
-  it("tokenImpact is approximately 4230 tokens", () => {
-    // 5403 / 23 ≈ 234.9 per tool; 18 × 234.9 ≈ 4228.7
-    expect(findings[0].tokenImpact).toBeDefined();
-    expect(Math.abs(findings[0].tokenImpact! - (5403 / 23) * 18)).toBeLessThan(1);
-  });
-
-  it("tokenImpactIsEstimate flag is true (I-6)", () => {
-    const rv = findings[0].evidence.rawValue as Record<string, unknown>;
-    expect(rv.tokenImpactIsEstimate).toBe(true);
-  });
-
-  it("evidence.redactable is false", () => {
     expect(findings[0].evidence.redactable).toBe(false);
   });
 
-  it("finding has a session id", () => {
-    expect(typeof findings[0].sessionId).toBe("string");
-    expect(findings[0].sessionId.length).toBeGreaterThan(0);
+  it("maps tool-catalog.json only to real Bob groups or 'other' (no invented groups)", () => {
+    const allowedGroups = new Set<string>([...BOB_TOOL_GROUPS, UNKNOWN_TOOL_GROUP]);
+    for (const entry of catalog) {
+      expect(allowedGroups.has(entry.group), `Invalid group "${entry.group}" for ${entry.name}`).toBe(true);
+    }
+    expect(catalog.find((e) => e.name === "read_file")?.group).toBe("read");
+    expect(catalog.find((e) => e.name === "list_files")?.group).toBe("read");
+    expect(catalog.find((e) => e.name === "apply_diff")?.group).toBe("edit");
   });
 
-  it("finding has a task id", () => {
-    expect(typeof findings[0].taskId).toBe("string");
-    expect(findings[0].taskId.length).toBeGreaterThan(0);
+  it("never suggests grep, glob, or apply_diff as disable candidates", () => {
+    const candidates = findings[0].evidence.unusedTools ?? [];
+    for (const protectedTool of ["grep", "glob", "apply_diff"]) {
+      expect(candidates).not.toContain(protectedTool);
+    }
+  });
+
+  it("identifies the exact retained and disableable Bob groups", () => {
+    expect(findings[0].metric.retainedBobGroups).toEqual([
+      "read",
+      "edit",
+      "execute",
+      "todo",
+    ]);
+    expect(findings[0].metric.disableableBobGroups).toEqual([
+      "skill",
+      "subtask",
+      "subagent",
+      "mode",
+      "workflow",
+    ]);
+  });
+
+  it("excludes idle tools locked inside active Bob groups (read, edit) from candidates", () => {
+    const candidates = findings[0].evidence.unusedTools ?? [];
+    expect(candidates).not.toContain("read_xlsx");
+    expect(candidates).not.toContain("GetSymbolsOverview");
+    expect(candidates).not.toContain("insert_content");
+    expect(candidates).not.toContain("ask_followup_question");
+    expect(candidates).toEqual(
+      expect.arrayContaining([
+        "use_skill",
+        "switch_mode",
+        "spawn_subagent",
+        "start_subtask",
+        "start_workflow",
+        "create_html_artifact",
+        "create_chart",
+      ])
+    );
+    expect(candidates).toHaveLength(7);
+  });
+
+  it("estimates tokenImpact strictly by disableable Bob groups (5/23 * 5403, unrounded)", () => {
+    expect(findings[0].metric.disableableBobToolCount).toBe(5);
+    expect(findings[0].tokenImpact).toBe((5403 / 23) * 5);
+    expect(findings[0].metric.tokenImpactIsEstimate).toBe(true);
+    expect(findings[0].estimationBasis).toContain("5/23");
+    expect(findings[0].estimationBasis).toContain("group");
+  });
+
+  it("preserves exact unrounded idleRatio (18/23)", () => {
+    expect(findings[0].metric.idleRatio).toBe(18 / 23);
   });
 });
 
-describe("detectUnusedTools — deterministic metadata", () => {
-  it("uses report.exportedAt and produces identical Findings for identical input", () => {
-    const report = loadReport("benchmark/rodada-a.json");
-    const first = detectUnusedTools(report);
-    const second = detectUnusedTools(report);
+// ---------------------------------------------------------------------------
+// 2. Protected tools (grep, glob, apply_diff) even without catalog
+// ---------------------------------------------------------------------------
 
+describe("detectUnusedTools — protected search and diff tools", () => {
+  it("never suggests grep, glob, or apply_diff even when catalog is empty", () => {
+    const available = ["read_file", "grep", "glob", "apply_diff", "switch_mode"];
+    const report = makeReport([
+      makeTask("t1", available, ["read_file"], ["grep", "glob", "apply_diff", "switch_mode"]),
+    ]);
+    const [finding] = detectUnusedTools(report, []);
+    expect(finding).toBeDefined();
+    expect(finding.evidence.unusedTools).toEqual(["switch_mode"]);
+    for (const tool of PROTECTED_TOOLS) {
+      expect(finding.evidence.unusedTools).not.toContain(tool);
+    }
+  });
+
+  it("emits no finding when the only idle tools are grep, glob, and apply_diff", () => {
+    const report = makeReport([
+      makeTask(
+        "t1",
+        ["read_file", "grep", "glob", "apply_diff"],
+        ["read_file"],
+        ["grep", "glob", "apply_diff"]
+      ),
+    ]);
+    expect(detectUnusedTools(report, [])).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 3. Unknown tools fall back to "other" (never "outros")
+// ---------------------------------------------------------------------------
+
+describe("detectUnusedTools — unknown tool fallback", () => {
+  it("assigns group 'other' (not 'outros') to tools absent from the catalog", () => {
+    const report = makeReport([
+      makeTask("t1", ["read_file", "future_tool"], ["read_file"], ["future_tool"]),
+    ]);
+    const [finding] = detectUnusedTools(report, []);
+    expect(finding).toBeDefined();
+    expect(finding.metric.idleTools).toEqual([
+      {
+        name: "future_tool",
+        group: "other",
+        purpose: null,
+        essential: false,
+      },
+    ]);
+    expect(finding.tokenImpact).toBeUndefined();
+    expect(JSON.stringify(finding)).not.toContain("outros");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 4. Subtasks excluded (I-5)
+// ---------------------------------------------------------------------------
+
+describe("detectUnusedTools — subtasks excluded (I-5)", () => {
+  const catalog = loadToolCatalogJson();
+
+  it("ignores subtasks with parentId !== null or isSubtask: true", () => {
+    const rootTask = makeTask(
+      "root-1",
+      ["read_file", "use_skill"],
+      ["read_file"],
+      ["use_skill"],
+      1000
+    );
+    const subtaskByFlag = makeTask(
+      "sub-1",
+      ["read_file", "use_skill"],
+      ["read_file"],
+      ["use_skill"],
+      1000,
+      { parentId: "root-1", isSubtask: true }
+    );
+    const subtaskByParentOnly = makeTask(
+      "sub-2",
+      ["read_file", "switch_mode"],
+      ["read_file"],
+      ["switch_mode"],
+      1000,
+      { parentId: "root-1", isSubtask: false }
+    );
+
+    const findings = detectUnusedTools(
+      makeReport([rootTask, subtaskByFlag, subtaskByParentOnly]),
+      catalog
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].taskId).toBe("root-1");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 5. Determinism and edge cases
+// ---------------------------------------------------------------------------
+
+describe("detectUnusedTools — edge cases and determinism", () => {
+  const catalog = loadToolCatalogJson();
+
+  it("is deterministic for identical input", () => {
+    const report = loadReport("benchmark/rodada-a.json");
+    const first = detectUnusedTools(report, catalog);
+    const second = detectUnusedTools(report, catalog);
     expect(first).toEqual(second);
     expect(first[0].detectedAt).toBe(report.exportedAt);
   });
-});
 
-// ---------------------------------------------------------------------------
-// 2. Complete tool usage — zero idle tools → zero findings
-// ---------------------------------------------------------------------------
-
-describe("detectUnusedTools — all tools used", () => {
-  it("returns an empty array when idle list is empty", () => {
+  it("returns empty array when all tools are used", () => {
     const tools = ["read_file", "write_file", "list_files"];
     const report = makeReport([makeTask("t1", tools, tools, [])]);
-    const findings = detectUnusedTools(report);
-    expect(findings).toHaveLength(0);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 3. Missing toolInventory → zero findings, no throw
-// ---------------------------------------------------------------------------
-
-describe("detectUnusedTools — missing toolInventory", () => {
-  it("returns an empty array when toolInventory is absent", () => {
-    const task = makeTask("t1", [], [], []);
-    // Simulate missing inventory by deleting the key entirely
-    const taskAny = task as unknown as Record<string, unknown>;
-    delete taskAny["toolInventory"];
-    const report = makeReport([task]);
-    expect(() => detectUnusedTools(report)).not.toThrow();
-    expect(detectUnusedTools(report)).toHaveLength(0);
+    expect(detectUnusedTools(report, catalog)).toEqual([]);
   });
 
-  it("returns an empty array when toolInventory is null", () => {
-    const task = makeTask("t1", [], [], []);
-    (task as unknown as Record<string, unknown>)["toolInventory"] = null;
-    const report = makeReport([task]);
-    expect(detectUnusedTools(report)).toHaveLength(0);
+  it("returns empty array when toolInventory is missing or null", () => {
+    const taskMissing = makeTask("t1", [], [], []);
+    delete (taskMissing as unknown as Record<string, unknown>)["toolInventory"];
+    const taskNull = makeTask("t2", [], [], [], 0, { toolInventory: null });
+
+    expect(detectUnusedTools(makeReport([taskMissing, taskNull]), catalog)).toEqual([]);
   });
-});
 
-// ---------------------------------------------------------------------------
-// 4. Empty available array → zero findings, no NaN / division-by-zero
-// ---------------------------------------------------------------------------
-
-describe("detectUnusedTools — empty available array", () => {
-  it("returns no findings when available is empty", () => {
+  it("returns empty array without NaN when available is empty", () => {
     const report = makeReport([makeTask("t1", [], [], [])]);
-    const findings = detectUnusedTools(report);
-    expect(findings).toHaveLength(0);
+    expect(detectUnusedTools(report, catalog)).toEqual([]);
   });
 
-  it("does not produce NaN or Infinity in idleRatio", () => {
-    // available === [] means estimatedTokensPerTool === null; no division.
-    const report = makeReport([makeTask("t1", [], [], [])]);
-    // No finding is emitted, so no NaN can appear in the output.
-    const findings = detectUnusedTools(report);
-    expect(findings).toHaveLength(0);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 5. Estimation flag verification (I-6)
-// ---------------------------------------------------------------------------
-
-describe("detectUnusedTools — estimation flag (I-6)", () => {
-  it("rawValue.tokenImpactIsEstimate is always true when tokenImpact is present", () => {
-    const tools = ["a", "b", "c", "d"];
-    const used = ["a"];
-    const idle = ["b", "c", "d"];
-    const report = makeReport([makeTask("t1", tools, used, idle, 1000)]);
-    const [finding] = detectUnusedTools(report);
-    expect(finding).toBeDefined();
-    const rv = finding.evidence.rawValue as Record<string, unknown>;
-    expect(rv.tokenImpactIsEstimate).toBe(true);
-  });
-
-  it("description text contains 'estimate'", () => {
-    const tools = ["a", "b", "c"];
-    const used = ["a"];
-    const idle = ["b", "c"];
-    const report = makeReport([makeTask("t1", tools, used, idle, 900)]);
-    const [finding] = detectUnusedTools(report);
-    expect(finding.description?.toLowerCase()).toContain("estimate");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 6. Multi-task: mixed idle and fully-used tasks
-// ---------------------------------------------------------------------------
-
-describe("detectUnusedTools — multi-task report", () => {
-  const allTools = ["t1", "t2", "t3"];
-  const taskWithIdle = makeTask("task-a", allTools, ["t1"], ["t2", "t3"]);
-  const taskFullyUsed = makeTask("task-b", allTools, allTools, []);
-  const report = makeReport([taskWithIdle, taskFullyUsed]);
-  const findings = detectUnusedTools(report);
-
-  it("produces one finding for the task with idle tools", () => {
+  it("fires only for root tasks with disableable idle tools in multi-task reports", () => {
+    const taskWithDisableable = makeTask(
+      "task-a",
+      ["read_file", "use_skill"],
+      ["read_file"],
+      ["use_skill"],
+      1000
+    );
+    const taskOnlyActiveGroupIdle = makeTask(
+      "task-b",
+      ["read_file", "read_xlsx"],
+      ["read_file"],
+      ["read_xlsx"],
+      1000
+    );
+    const findings = detectUnusedTools(
+      makeReport([taskWithDisableable, taskOnlyActiveGroupIdle]),
+      catalog
+    );
     expect(findings).toHaveLength(1);
-  });
-
-  it("finding is for the task that has idle tools (task-a)", () => {
     expect(findings[0].taskId).toBe("task-a");
-  });
-
-  it("does not fire for the fully-used task (task-b)", () => {
-    expect(findings.every((f) => f.taskId !== "task-b")).toBe(true);
+    expect(findings[0].tokenImpact).toBe(500);
   });
 });

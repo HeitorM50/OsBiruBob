@@ -92,44 +92,58 @@ describe("prescribeOverheadReduction — tool groups", () => {
     expect(prescribeOverheadReduction([baseFinding("project-rules-absent")])).toEqual([]);
   });
 
-  it("emits one alphabetically ordered prescription per group", () => {
+  it("emits one alphabetically ordered prescription per group with purpose and Bob steps", () => {
     const source = unusedFinding([
-      { name: "zeta", group: "planning" },
-      { name: "beta", group: "editing" },
-      { name: "alpha", group: "editing" },
+      { name: "start_workflow", group: "workflow", purpose: "Runs a workflow." },
+      { name: "switch_mode", group: "mode", purpose: "Switches active mode." },
+      { name: "use_skill", group: "skill", purpose: "Activates a skill." },
     ]);
     const result = prescribeOverheadReduction([source]);
 
-    expect(result.map((item) => item.kind)).toEqual(["disable-tool", "disable-tool"]);
-    expect(result[0].content).toContain("Group: editing");
-    expect(result[0].content?.indexOf("- alpha")).toBeLessThan(
-      result[0].content?.indexOf("- beta") ?? -1
-    );
-    expect(result[1].content).toContain("Group: planning");
+    expect(result.map((item) => item.kind)).toEqual([
+      "disable-tool",
+      "disable-tool",
+      "disable-tool",
+    ]);
+    expect(result[0].content).toContain("Group: mode");
+    expect(result[0].content).toContain("- switch_mode: Switches active mode.");
+    expect(result[0].targetFile).toBe(".bob/custom_modes.yaml");
+    expect(result[0].tools).toEqual([
+      { name: "switch_mode", group: "mode", purpose: "Switches active mode." },
+    ]);
+    expect(result[0].isEstimate).toBe(true);
+    expect(result[0].estimationBasis).toBeTruthy();
+    expect(result[1].content).toContain("Group: skill");
+    expect(result[2].content).toContain("Group: workflow");
     expect(result.every((item) => item.findingIds[0] === source.id)).toBe(true);
   });
 
-  it("preserves the outros group", () => {
+  it("preserves the 'other' group without claiming a Bob-group token saving", () => {
     const result = prescribeOverheadReduction([
-      unusedFinding([{ name: "future_tool", group: "outros" }]),
+      unusedFinding([{ name: "future_tool", group: "other" }], undefined),
     ]);
     expect(result).toHaveLength(1);
-    expect(result[0].content).toContain("Group: outros");
+    expect(result[0].content).toContain("Group: other");
     expect(result[0].content).toContain("future_tool");
+    expect(result[0]).not.toHaveProperty("estimatedTokenSaving");
+    expect(result[0]).not.toHaveProperty("targetFile");
   });
 
   it("retains essential tools and excludes them from recommendations", () => {
     const result = prescribeOverheadReduction([
-      unusedFinding([
-        { name: "safe_to_disable", group: "editing" },
-        { name: "required_tool", group: "editing", essential: true },
-      ], 100),
+      unusedFinding(
+        [
+          { name: "use_skill", group: "skill" },
+          { name: "apply_diff", group: "edit", essential: true },
+        ],
+        100
+      ),
     ]);
 
     expect(result).toHaveLength(1);
-    expect(result[0].content).toContain("safe_to_disable");
-    expect(result[0].content).not.toContain("required_tool");
-    expect(result[0].rationale).toContain("required_tool");
+    expect(result[0].content).toContain("use_skill");
+    expect(result[0].content).not.toContain("apply_diff");
+    expect(result[0].rationale).toContain("apply_diff");
     expect(result[0].estimatedTokenSaving).toBe(100);
   });
 
@@ -137,65 +151,78 @@ describe("prescribeOverheadReduction — tool groups", () => {
     expect(
       prescribeOverheadReduction([
         unusedFinding(
-          [{ name: "required_tool", group: "editing", essential: true }],
+          [{ name: "apply_diff", group: "edit", essential: true }],
           undefined
         ),
       ])
     ).toEqual([]);
   });
 
-  it("distributes the estimate exactly and leaves missing estimates absent", () => {
+  it("distributes the estimate exactly across Bob groups and omits 'other' from saving allocation", () => {
     const estimated = prescribeOverheadReduction([
-      unusedFinding([
-        { name: "a", group: "one" },
-        { name: "b", group: "one" },
-        { name: "c", group: "two" },
-      ], 10),
+      unusedFinding(
+        [
+          { name: "a", group: "mode" },
+          { name: "b", group: "mode" },
+          { name: "c", group: "skill" },
+          { name: "artifact", group: "other" },
+        ],
+        10
+      ),
     ]);
-    expect(estimated[0].estimatedTokenSaving).toBe(20 / 3);
-    expect(estimated[1].estimatedTokenSaving).toBe(10 - 20 / 3);
+    const mode = estimated.find((item) => item.content?.includes("Group: mode"))!;
+    const skill = estimated.find((item) => item.content?.includes("Group: skill"))!;
+    const other = estimated.find((item) => item.content?.includes("Group: other"))!;
+
+    expect(mode.estimatedTokenSaving).toBe(20 / 3);
+    expect(skill.estimatedTokenSaving).toBe(10 - 20 / 3);
+    expect(other).not.toHaveProperty("estimatedTokenSaving");
     expect(
       estimated.reduce((sum, item) => sum + (item.estimatedTokenSaving ?? 0), 0)
     ).toBe(10);
 
     const unavailable = prescribeOverheadReduction([
-      unusedFinding([{ name: "a", group: "one" }], 600, { tokenImpact: undefined }),
+      unusedFinding([{ name: "a", group: "skill" }], 600, { tokenImpact: undefined }),
     ]);
     expect(unavailable[0]).not.toHaveProperty("estimatedTokenSaving");
   });
 
   it("rejects malformed metrics and candidate mismatches without partial output", () => {
-    const malformed = unusedFinding([{ name: "a", group: "one" }], 10, {
+    const malformed = unusedFinding([{ name: "a", group: "skill" }], 10, {
       metric: { idleTools: "not-an-array", disableCandidateCount: 1 },
     });
-    const mismatch = unusedFinding([{ name: "a", group: "one" }], 10, {
+    const mismatch = unusedFinding([{ name: "a", group: "skill" }], 10, {
       evidence: { type: "breakdown", redactable: false, unusedTools: ["different"] },
     });
     expect(prescribeOverheadReduction([malformed, mismatch])).toEqual([]);
   });
 
   it("deduplicates identical tools but rejects conflicting duplicates", () => {
-    const duplicate = unusedFinding([
-      { name: "same", group: "editing" },
-      { name: "same", group: "editing" },
-    ], 20, {
-      evidence: { type: "breakdown", redactable: false, unusedTools: ["same"] },
-      metric: {
-        idleTools: [
-          { name: "same", group: "editing", purpose: null, essential: false },
-          { name: "same", group: "editing", purpose: null, essential: false },
-        ],
-        disableCandidateCount: 1,
-        tokenImpactIsEstimate: true,
-      },
-    });
+    const duplicate = unusedFinding(
+      [
+        { name: "same", group: "skill" },
+        { name: "same", group: "skill" },
+      ],
+      20,
+      {
+        evidence: { type: "breakdown", redactable: false, unusedTools: ["same"] },
+        metric: {
+          idleTools: [
+            { name: "same", group: "skill", purpose: null, essential: false },
+            { name: "same", group: "skill", purpose: null, essential: false },
+          ],
+          disableCandidateCount: 1,
+          tokenImpactIsEstimate: true,
+        },
+      }
+    );
     expect(prescribeOverheadReduction([duplicate])).toHaveLength(1);
 
-    const conflicting = unusedFinding([{ name: "same", group: "editing" }], 10, {
+    const conflicting = unusedFinding([{ name: "same", group: "skill" }], 10, {
       metric: {
         idleTools: [
-          { name: "same", group: "editing", purpose: null, essential: false },
-          { name: "same", group: "planning", purpose: null, essential: false },
+          { name: "same", group: "skill", purpose: null, essential: false },
+          { name: "same", group: "mode", purpose: null, essential: false },
         ],
         disableCandidateCount: 1,
         tokenImpactIsEstimate: true,
@@ -206,7 +233,7 @@ describe("prescribeOverheadReduction — tool groups", () => {
 });
 
 describe("prescribeOverheadReduction — Skill overhead", () => {
-  it("emits a generic Skill prescription with the aggregate estimate", () => {
+  it("emits actionable Bob Settings → Skills steps and distinguishes measured overhead from estimated saving", () => {
     const source = skillFinding();
     const result = prescribeOverheadReduction([source]);
     expect(result).toHaveLength(1);
@@ -215,15 +242,22 @@ describe("prescribeOverheadReduction — Skill overhead", () => {
       findingIds: [source.id],
       createdAt: source.detectedAt,
       estimatedTokenSaving: 1541,
+      isEstimate: true,
     });
-    expect(result[0].content).toContain("does not identify a specific Skill");
-    expect(result[0].rationale?.toLowerCase()).toContain("estimated");
+    expect(result[0].content).toContain("Settings → Skills");
+    expect(result[0].content).toContain("Allow Bob to use this skill");
+    expect(result[0].content).toContain(".bob/custom_modes.yaml");
+    expect(result[0].steps?.length).toBeGreaterThanOrEqual(3);
+    expect(result[0].rationale).toContain("measured");
+    expect(result[0].rationale).toContain("upper-bound estimate");
+    expect(result[0].estimationBasis).toContain("measured breakdown.skills");
   });
 
-  it("does not invent a target when loaded Skills are named", () => {
+  it("does not emit when loadedSkills is non-empty or absent (unavailable)", () => {
     expect(
       prescribeOverheadReduction([
         skillFinding({ metric: { skillTokens: 1541, loadedSkills: ["private-skill"] } }),
+        skillFinding({ metric: { skillTokens: 1541 } }),
       ])
     ).toEqual([]);
   });
@@ -237,8 +271,8 @@ describe("prescribeOverheadReduction — Skill overhead", () => {
 describe("prescribeOverheadReduction — determinism, privacy and immutability", () => {
   it("is invariant to Finding and tool order and removes duplicate Findings", () => {
     const tools = [
-      { name: "z", group: "two" },
-      { name: "a", group: "one" },
+      { name: "z", group: "workflow" },
+      { name: "a", group: "mode" },
     ];
     const first = unusedFinding(tools, 20);
     const reordered = unusedFinding([...tools].reverse(), 20);
@@ -251,8 +285,8 @@ describe("prescribeOverheadReduction — determinism, privacy and immutability",
 
   it("keeps different sessions and tasks separate", () => {
     const result = prescribeOverheadReduction([
-      unusedFinding([{ name: "a", group: "one" }], 10),
-      unusedFinding([{ name: "b", group: "one" }], 10, {
+      unusedFinding([{ name: "a", group: "mode" }], 10),
+      unusedFinding([{ name: "b", group: "mode" }], 10, {
         id: "other-task",
         taskId: "task-2",
       }),
@@ -265,7 +299,7 @@ describe("prescribeOverheadReduction — determinism, privacy and immutability",
 
   it("does not copy sensitive Finding fields into public output or IDs", () => {
     const secret = "C:/private/customer/password.txt";
-    const source = unusedFinding([{ name: "safe_tool", group: "editing" }], 10, {
+    const source = unusedFinding([{ name: "safe_tool", group: "skill" }], 10, {
       id: `unused-tool:${secret}`,
       description: secret,
       prescription: secret,
@@ -277,12 +311,14 @@ describe("prescribeOverheadReduction — determinism, privacy and immutability",
       },
     });
     const result = prescribeOverheadReduction([source]);
-    const visible = result.map((item) => `${item.id}\n${item.content}\n${item.rationale}`).join("\n");
+    const visible = result
+      .map((item) => `${item.id}\n${item.content}\n${item.rationale}`)
+      .join("\n");
     expect(visible).not.toContain(secret);
   });
 
   it("does not mutate deeply frozen input", () => {
-    const source = unusedFinding([{ name: "a", group: "one" }], 10);
+    const source = unusedFinding([{ name: "a", group: "skill" }], 10);
     Object.freeze(source.evidence.unusedTools);
     Object.freeze(source.evidence);
     const idleTools = source.metric.idleTools as Array<Record<string, unknown>>;
@@ -294,9 +330,9 @@ describe("prescribeOverheadReduction — determinism, privacy and immutability",
     expect(() => prescribeOverheadReduction(input)).not.toThrow();
   });
 
-  it("never emits custom-mode", () => {
+  it("never emits custom-mode (handled by prescribeCustomMode)", () => {
     const result = prescribeOverheadReduction([
-      unusedFinding([{ name: "a", group: "one" }]),
+      unusedFinding([{ name: "a", group: "skill" }]),
       skillFinding(),
     ]);
     expect(result.some((item) => item.kind === "custom-mode")).toBe(false);
@@ -306,7 +342,7 @@ describe("prescribeOverheadReduction — determinism, privacy and immutability",
 describe("prescribeOverheadReduction — baseline integration", () => {
   const baseline = loadBaseline();
 
-  it("produces six tool groups and one generic Skill prescription", () => {
+  it("produces only disableable Bob groups (+ other without inflated savings) and one Skill prescription", () => {
     const diagnosis = diagnoseWithCatalogs(baseline);
     const result = prescribeOverheadReduction(diagnosis.findings);
     const tools = result.filter((item) => item.kind === "disable-tool");
@@ -322,16 +358,16 @@ describe("prescribeOverheadReduction — baseline integration", () => {
     expect(tools).toHaveLength(6);
     expect(skills).toHaveLength(1);
     expect(groupCounts).toEqual({
-      "code-navigation": 5,
-      delegation: 3,
-      documentation: 2,
-      editing: 4,
-      planning: 2,
-      presentation: 2,
+      mode: 1,
+      other: 2,
+      skill: 1,
+      subagent: 1,
+      subtask: 1,
+      workflow: 1,
     });
-    expect(tools.reduce((sum, item) => sum + (item.estimatedTokenSaving ?? 0), 0)).toBe(
-      (5403 / 23) * 18
-    );
+    expect(
+      tools.reduce((sum, item) => sum + (item.estimatedTokenSaving ?? 0), 0)
+    ).toBe((5403 / 23) * 5);
     expect(skills[0].estimatedTokenSaving).toBe(1541);
     expect(result.some((item) => item.kind === "custom-mode")).toBe(false);
   });

@@ -13,6 +13,7 @@ import type { EpochMs, Finding, Prescription } from "../domain/types";
 import { prescriptionId } from "./determinism";
 export { prescribeOverheadReduction } from "./overhead";
 export { prescribeMcpEnablement } from "./mcp";
+export { prescribeCustomMode } from "./custom-mode";
 
 type AgentsMdFindingKind =
   | "project-rules-absent"

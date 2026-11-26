@@ -38,7 +38,7 @@ describe("diagnose — recommendation catalogs", () => {
     expect(unusedFinding).toBeDefined();
     expect(unusedFinding?.metric.idleTools).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ name: "read_xlsx", group: "editing" }),
+        expect.objectContaining({ name: "read_xlsx", group: "read" }),
       ])
     );
   });
@@ -61,7 +61,7 @@ describe("diagnose — recommendation catalogs", () => {
     ).toBe(false);
   });
 
-  it("keeps unknown tools visible under the outros group", () => {
+  it("keeps unknown tools visible under the other group", () => {
     const report = structuredClone(baseline);
     const inventory = report.tasks[0].toolInventory;
     if (inventory === null) throw new Error("Expected baseline tool inventory");
@@ -79,7 +79,7 @@ describe("diagnose — recommendation catalogs", () => {
     expect(finding?.metric.idleTools).toEqual([
       {
         name: "future_tool",
-        group: "outros",
+        group: "other",
         purpose: null,
         essential: false,
       },

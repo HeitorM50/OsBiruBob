@@ -176,7 +176,7 @@ describe("App input screen", () => {
     expect(screen.getByText("new file")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("tab", { name: "MCPs" }));
-    expect(screen.getByText("Docker MCP Server")).toBeTruthy();
+    expect(screen.getByText(/Docker MCP Server/)).toBeTruthy();
     expect(screen.getByText(/2 matching commands/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole("tab", { name: "Subagents" }));
