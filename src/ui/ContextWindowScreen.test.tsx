@@ -172,40 +172,25 @@ describe("Baseline rendering (rodada-a.json values)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 2. projectRules === 0 → alert card present
+// 2. projectRules === 0 → listed in table without duplicate alert card
 // ---------------------------------------------------------------------------
 
-describe("projectRules === 0 alert", () => {
+describe("projectRules === 0 (no duplicate alert)", () => {
   const ctx = makeContext({ breakdown: { ...makeContext().breakdown, projectRules: 0 } });
   const html = renderScreen(ctx);
 
-  it("renders project-rules-alert element", () => {
-    expect(html).toContain('data-testid="project-rules-alert"');
+  it("does NOT render a separate project-rules-alert card (Finding handles this)", () => {
+    expect(html).not.toContain('data-testid="project-rules-alert"');
+    expect(html).not.toContain("This project has no AGENTS.md");
   });
 
-  it("alert has role=alert for accessibility", () => {
-    expect(html).toContain('role="alert"');
-  });
+  it("still lists projectRules with 0 tokens and 0.0% share", () => {
+    const tokensEl = html.match(
+      /data-testid="breakdown-tokens-projectRules"[^>]*>([^<]+)</
+    );
+    expect(tokensEl).not.toBeNull();
+    expect(tokensEl![1].trim()).toBe("0");
 
-  it("alert contains AGENTS.md explanation text", () => {
-    expect(html).toContain("AGENTS.md");
-  });
-
-  it("alert card shows the big zero digit", () => {
-    // The big zero appears in the .projectRulesZero element
-    expect(html).toContain(">0<");
-  });
-
-  it("alert contains 'This project has no AGENTS.md'", () => {
-    expect(html).toContain("This project has no AGENTS.md");
-  });
-
-  it("projectRules row has FINDING badge", () => {
-    expect(html).toContain("FINDING");
-  });
-
-  it("projectRules row shows 0% share", () => {
-    // Extract pct cell for projectRules
     const pctEl = html.match(
       /data-testid="breakdown-pct-projectRules"[^>]*>([^<]+)</
     );

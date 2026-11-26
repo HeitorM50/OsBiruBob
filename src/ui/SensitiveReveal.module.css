@@ -1,0 +1,99 @@
+.inlineWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.redactedToken {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  color: var(--ink3, #7b838c);
+}
+
+.revealedContent {
+  font-size: 12px;
+  color: var(--ink2, #4a525b);
+}
+
+.revealBar {
+  margin-top: 4px;
+}
+
+.revealButton {
+  border: 1px solid var(--line2, #dcdfe3);
+  background: var(--panel, #fff);
+  color: var(--ink2, #4a525b);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.revealButton:hover {
+  color: var(--ink, #14181c);
+}
+
+.revealButton:focus-visible {
+  outline: 2px solid var(--focus, #2f5d8c);
+  outline-offset: 2px;
+}
+
+.revealWarning {
+  border: 1px solid var(--accline, #d9a893);
+  border-radius: 6px;
+  background: var(--accsoft, #fbf3f0);
+  padding: 12px 14px;
+  max-width: 520px;
+}
+
+.revealWarningText {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink, #14181c);
+}
+
+.revealWarningActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.revealConfirmButton {
+  border: 0;
+  background: var(--acc, #a3401f);
+  color: var(--accent-ink, #fff);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.revealConfirmButton:hover {
+  opacity: 0.88;
+}
+
+.revealConfirmButton:focus-visible {
+  outline: 2px solid var(--focus, #2f5d8c);
+  outline-offset: 2px;
+}
+
+.revealCancelButton {
+  border: 1px solid var(--line2, #dcdfe3);
+  background: var(--panel, #fff);
+  color: var(--ink2, #4a525b);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 7px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.revealCancelButton:focus-visible {
+  outline: 2px solid var(--focus, #2f5d8c);
+  outline-offset: 2px;
+}

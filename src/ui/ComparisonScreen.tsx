@@ -1,5 +1,6 @@
 import React from "react";
 import type { Comparison, ObserveReport } from "../domain/types";
+import { findingKindLabel } from "./finding-labels";
 import styles from "./ComparisonScreen.module.css";
 
 type ValueKind = "currency" | "integer" | "duration";
@@ -184,7 +185,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       emphasis: true,
     },
     {
-      label: "Idle tools",
+      label: findingKindLabel("unused-tool"),
       valueA: metrics.idleToolsA,
       valueB: metrics.idleToolsB,
       delta: metrics.idleToolsDelta,
@@ -219,7 +220,7 @@ function calculatedRows(comparison: Comparison): MetricRow[] {
       trend: "lower-is-better",
     },
     {
-      label: "Skill paid but unused",
+      label: findingKindLabel("skill-overhead"),
       valueA: metrics.skillTokensA,
       valueB: metrics.skillTokensB,
       delta: metrics.skillTokensDelta,

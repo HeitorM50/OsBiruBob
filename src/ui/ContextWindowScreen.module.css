@@ -30,12 +30,16 @@
 /* ------------------------------------------------------------------ screen */
 
 .screen {
-  max-width: 900px;
+  max-width: 1180px;
   padding: 44px 28px 56px;
   margin: 0 auto;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
   color: var(--ink, #14181c);
   box-sizing: border-box;
+}
+
+.embeddedSection {
+  margin-bottom: 40px;
 }
 
 /* Section label */
@@ -409,6 +413,22 @@
   padding: 11px 12px;
   border-bottom: 1px solid var(--line, #eef0f2);
   font-variant-numeric: tabular-nums;
+}
+
+.tableRowLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.legendSwatch {
+  display: inline-block;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid var(--line2, #dcdfe3);
 }
 
 .tableRowName {

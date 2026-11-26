@@ -1,0 +1,60 @@
+.screen {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 44px 28px 56px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
+  color: var(--ink, #14181c);
+  box-sizing: border-box;
+}
+
+.header {
+  margin-bottom: 8px;
+}
+
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink3, #7b838c);
+  margin-bottom: 10px;
+}
+
+.heading {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 36px);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+
+.unavailableCard {
+  margin: 24px 0 36px;
+  border: 1px solid var(--line2, #dcdfe3);
+  border-radius: 10px;
+  padding: 22px 24px;
+  background: var(--panel, #fff);
+}
+
+.unavailableCard h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.unavailableCard p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink2, #4a525b);
+  max-width: 68ch;
+}
+
+.unavailableCard code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@media (max-width: 680px) {
+  .screen {
+    padding: 28px 16px 40px;
+  }
+}

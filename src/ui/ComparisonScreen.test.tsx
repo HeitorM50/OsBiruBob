@@ -52,7 +52,7 @@ describe("ComparisonScreen", () => {
       "API Cost (USD)",
       "Reported context",
       "Conversation tokens",
-      "Skill paid but unused",
+      "Undeclared skill overhead",
       "projectRules",
       "Assistant turns",
       "Human interventions",

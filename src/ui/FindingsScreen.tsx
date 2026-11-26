@@ -6,44 +6,27 @@
  * until the user confirms a reveal for that finding.
  */
 
-import React, { useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import type {
   ConfidenceLevel,
   Finding,
   FindingEvidence,
   FindingKind,
+  Prescription,
 } from "../domain/types";
+import {
+  CORE_FINDING_KINDS,
+  findTargetPrescription,
+  findingGroupLabel,
+  findingKindLabel,
+} from "./finding-labels";
+import {
+  SensitiveRevealControl,
+  containsAbsolutePath,
+  isSensitiveEvidence,
+  plainText,
+} from "./SensitiveReveal";
 import styles from "./FindingsScreen.module.css";
-
-const CORE_FINDING_KINDS: readonly FindingKind[] = [
-  "project-rules-absent",
-  "unused-tool",
-  "skill-overhead",
-  "mcp-candidate",
-  "redundant-read",
-  "retry-after-error",
-  "human-intervention",
-];
-
-const GROUP_LABELS: Readonly<Record<string, string>> = {
-  "project-rules-absent": "Missing configuration",
-  "unused-tool": "Overhead paid but unused",
-  "skill-overhead": "Overhead paid but undeclared",
-  "mcp-candidate": "Shell that could be a tool",
-  "redundant-read": "Redundant re-read",
-  "retry-after-error": "Retry after failure",
-  "human-intervention": "Human intervention",
-};
-
-const KIND_LABELS: Readonly<Record<string, string>> = {
-  "project-rules-absent": "Project rules missing",
-  "unused-tool": "Idle tools",
-  "skill-overhead": "Undeclared skill overhead",
-  "mcp-candidate": "MCP server candidate",
-  "redundant-read": "Redundant re-read",
-  "retry-after-error": "Retry after failure",
-  "human-intervention": "Human intervention",
-};
 
 const ZERO_DESCRIPTIONS: Readonly<Record<string, string>> = {
   "redundant-read":
@@ -115,13 +98,15 @@ function groupFindings(findings: readonly Finding[]): FindingGroup[] {
     return {
       kind,
       findings: sorted,
-      bestSeverity: sorted.map(suppliedSeverity).find((value) => value !== null) ?? null,
+      bestSeverity:
+        sorted.map(suppliedSeverity).find((value) => value !== null) ?? null,
     };
   });
 
   return groups.sort((a, b) => {
     if (a.bestSeverity !== null && b.bestSeverity !== null) {
-      const severityDelta = LEVEL_ORDER[a.bestSeverity] - LEVEL_ORDER[b.bestSeverity];
+      const severityDelta =
+        LEVEL_ORDER[a.bestSeverity] - LEVEL_ORDER[b.bestSeverity];
       if (severityDelta !== 0) return severityDelta;
     } else if (a.bestSeverity !== null) {
       return -1;
@@ -130,48 +115,25 @@ function groupFindings(findings: readonly Finding[]): FindingGroup[] {
     }
 
     const kindDelta = kindOrder(a.kind) - kindOrder(b.kind);
-    return kindDelta !== 0 ? kindDelta : String(a.kind).localeCompare(String(b.kind));
+    return kindDelta !== 0
+      ? kindDelta
+      : String(a.kind).localeCompare(String(b.kind));
   });
 }
 
-function plainText(value: unknown): string {
-  if (value === null) return "null";
-  if (value === undefined) return "";
-  if (typeof value === "string") return value;
-  if (typeof value === "object") {
-    try {
-      return JSON.stringify(value, null, 2);
-    } catch {
-      return "[Unserializable evidence]";
-    }
-  }
-  return String(value);
-}
-
-function containsAbsolutePath(value: unknown): boolean {
-  const text = plainText(value);
-  return /(?:^|[\s"'=(])(?:\/(?!\/)[^\s"']+|[A-Za-z]:[\\/][^\s"']+|\\\\[^\\\s]+\\[^\s"']+)/.test(
-    text
-  );
-}
-
-function isSensitiveEvidence(evidence: FindingEvidence): boolean {
-  if (evidence.redactable) return true;
+function isFindingTokenImpactMeasured(finding: Finding): boolean {
+  if (finding.tokenImpactIsEstimate === false) return true;
+  if (finding.tokenImpactIsEstimate === true) return false;
+  if (finding.metric.tokenImpactIsEstimate === true) return false;
+  const metricImpact = finding.metric.tokenImpact;
   if (
-    evidence.type === "message" ||
-    evidence.type === "command" ||
-    evidence.type === "cross-reference"
+    typeof metricImpact === "object" &&
+    metricImpact !== null &&
+    (metricImpact as Record<string, unknown>).estimated === false
   ) {
     return true;
   }
-  if (evidence.externalCommands !== undefined) return true;
-  if (
-    evidence.fieldPath !== undefined &&
-    /(?:content|toolCalls.*arguments|task\.title|primaryWorkspace)/i.test(evidence.fieldPath)
-  ) {
-    return true;
-  }
-  return containsAbsolutePath(evidence.rawValue);
+  return false;
 }
 
 function sourceExcerpt(evidence: FindingEvidence, fallback?: string): string {
@@ -181,7 +143,10 @@ function sourceExcerpt(evidence: FindingEvidence, fallback?: string): string {
   if (evidence.unusedTools !== undefined && evidence.unusedTools.length > 0) {
     return evidence.unusedTools.join("\n");
   }
-  if (evidence.externalCommands !== undefined && evidence.externalCommands.length > 0) {
+  if (
+    evidence.externalCommands !== undefined &&
+    evidence.externalCommands.length > 0
+  ) {
     return evidence.externalCommands.map((command) => `$ ${command}`).join("\n");
   }
   if (evidence.rawValue !== undefined) return plainText(evidence.rawValue);
@@ -216,13 +181,15 @@ function EvidenceBlock({
 }: EvidenceBlockProps): React.JSX.Element {
   const { evidence } = finding;
   const sensitive = isSensitiveEvidence(evidence);
-  const excerpt = sensitive && !revealed
-    ? "[REDACTED]"
-    : sourceExcerpt(evidence, finding.description);
+  const excerpt =
+    sensitive && !revealed
+      ? "[REDACTED]"
+      : sourceExcerpt(evidence, finding.description);
   const fieldPath =
     sensitive && !revealed && containsAbsolutePath(evidence.fieldPath)
       ? "[REDACTED]"
       : evidence.fieldPath ?? "Not supplied by detector.";
+  const basis = finding.tokenImpactEstimateBasis ?? finding.estimationBasis;
 
   return (
     <div className={styles.evidenceBlock}>
@@ -241,6 +208,8 @@ function EvidenceBlock({
         </div>
       </dl>
 
+      {basis && <p className={styles.evidenceRationale}>{basis}</p>}
+
       <div>
         <p className={styles.excerptLabel}>Source excerpt</p>
         <pre className={styles.evidenceExcerpt} tabIndex={0}>
@@ -253,48 +222,14 @@ function EvidenceBlock({
       )}
 
       {sensitive && (
-        <div className={styles.revealBar}>
-          {!revealed && !pending && (
-            <button
-              type="button"
-              className={styles.revealButton}
-              onClick={onRequestReveal}
-            >
-              Show raw content…
-            </button>
-          )}
-          {pending && (
-            <div className={styles.revealWarning} role="alert">
-              <p className={styles.revealWarningText}>
-                <strong>Warning:</strong> this action may expose message content,
-                tool arguments, the full prompt in task.title and absolute paths.
-                Only reveal it if your surroundings are safe.
-              </p>
-              <div className={styles.revealWarningActions}>
-                <button
-                  type="button"
-                  className={styles.revealConfirmButton}
-                  onClick={onConfirmReveal}
-                  autoFocus
-                >
-                  Understood — show this item
-                </button>
-                <button
-                  type="button"
-                  className={styles.revealCancelButton}
-                  onClick={onCancelReveal}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-          {revealed && (
-            <button type="button" className={styles.revealButton} onClick={onHide}>
-              Hide raw content
-            </button>
-          )}
-        </div>
+        <SensitiveRevealControl
+          revealed={revealed}
+          pending={pending}
+          onRequestReveal={onRequestReveal}
+          onConfirmReveal={onConfirmReveal}
+          onCancelReveal={onCancelReveal}
+          onHide={onHide}
+        />
       )}
     </div>
   );
@@ -303,78 +238,126 @@ function EvidenceBlock({
 interface FindingRowProps {
   finding: Finding;
   expanded: boolean;
+  focused: boolean;
   revealed: boolean;
   pending: boolean;
+  targetPrescriptionId: string | null;
+  onNavigateToPrescription?: (prescriptionId: string) => void;
   onToggle: () => void;
   onRequestReveal: () => void;
   onConfirmReveal: () => void;
   onCancelReveal: () => void;
   onHide: () => void;
+  rowRef?: (el: HTMLElement | null) => void;
 }
 
 function FindingRow({
   finding,
   expanded,
+  focused,
   revealed,
   pending,
+  targetPrescriptionId,
+  onNavigateToPrescription,
   onToggle,
   onRequestReveal,
   onConfirmReveal,
   onCancelReveal,
   onHide,
+  rowRef,
 }: FindingRowProps): React.JSX.Element {
   const detailId = useId();
   const severity = suppliedSeverity(finding);
   const sensitive = isSensitiveEvidence(finding.evidence);
-  const hasImpact = finding.tokenImpact !== undefined || finding.costImpact !== undefined;
+  const hasImpact =
+    finding.tokenImpact !== undefined || finding.costImpact !== undefined;
+  const measured =
+    hasImpact &&
+    finding.costImpact === undefined &&
+    isFindingTokenImpactMeasured(finding);
 
   return (
-    <article className={styles.findingRow} data-finding-id={finding.id}>
-      <button
-        type="button"
-        className={styles.findingHeader}
-        onClick={onToggle}
-        aria-expanded={expanded}
-        aria-controls={detailId}
-      >
-        <span className={styles.caret} aria-hidden="true">
-          {expanded ? "▼" : "▶"}
-        </span>
-        <span className={styles.findingHeaderContent}>
-          <span className={styles.findingTitle}>
-            {KIND_LABELS[finding.kind] ?? finding.kind}
+    <article
+      ref={rowRef}
+      className={`${styles.findingRow} ${focused ? styles.findingRowFocused : ""}`}
+      data-finding-id={finding.id}
+      data-focused={focused ? "true" : undefined}
+    >
+      <div className={styles.findingHeaderBar}>
+        <button
+          type="button"
+          className={styles.findingHeader}
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-controls={detailId}
+        >
+          <span className={styles.caret} aria-hidden="true">
+            {expanded ? "▼" : "▶"}
           </span>
-          {finding.description && (
-            <span className={styles.findingDescription}>
-              {sensitive && !revealed && !finding.evidence.descriptionSafe
-                ? "[REDACTED]"
-                : finding.description}
+          <span className={styles.findingHeaderContent}>
+            <span className={styles.findingTitle}>
+              {findingKindLabel(finding.kind)}
             </span>
-          )}
-          {hasImpact && (
-            <span className={styles.estimateHint}>
-              Hypothesis/estimate — not a measured value:
-              {finding.tokenImpact !== undefined && ` ${finding.tokenImpact} estimated tokens`}
-              {finding.costImpact !== undefined && ` · $${finding.costImpact} estimated cost`}
+            {finding.description && (
+              <span className={styles.findingDescription}>
+                {sensitive && !revealed && !finding.evidence.descriptionSafe
+                  ? "[REDACTED]"
+                  : finding.description}
+              </span>
+            )}
+            {hasImpact && (
+              <span className={styles.estimateHint}>
+                {measured ? (
+                  <>Measured: {Math.round(finding.tokenImpact!)} tokens</>
+                ) : (
+                  <>
+                    Hypothesis/estimate — not a measured value:
+                    {finding.tokenImpact !== undefined &&
+                      ` ${Math.round(finding.tokenImpact)} estimated tokens`}
+                    {finding.costImpact !== undefined &&
+                      ` · $${finding.costImpact} estimated cost`}
+                  </>
+                )}
+              </span>
+            )}
+          </span>
+          <span className={styles.badges}>
+            {hasImpact && (
+              <span className={styles.badgeEstimate}>
+                {measured ? "MEASURED" : "ESTIMATE"}
+              </span>
+            )}
+            <span
+              className={`${styles.badge} ${levelClass(finding.confidence)}`}
+              aria-label={`Confidence: ${finding.confidence}`}
+            >
+              CONFIDENCE {CONFIDENCE_LABELS[finding.confidence]}
             </span>
-          )}
-        </span>
-        <span className={styles.badges}>
-          {hasImpact && <span className={styles.badgeEstimate}>ESTIMATE</span>}
-          <span
-            className={`${styles.badge} ${levelClass(finding.confidence)}`}
-            aria-label={`Confidence: ${finding.confidence}`}
-          >
-            CONFIDENCE {CONFIDENCE_LABELS[finding.confidence]}
+            <span
+              className={`${styles.badge} ${
+                severity ? levelClass(severity) : styles.badgeUnavailable
+              }`}
+              aria-label={`Severity: ${severity ?? "unavailable"}`}
+            >
+              {severity
+                ? `SEVERITY ${severity.toUpperCase()}`
+                : "SEVERITY UNAVAILABLE"}
+            </span>
           </span>
-          <span
-            className={`${styles.badge} ${severity ? levelClass(severity) : styles.badgeUnavailable}`}
-            aria-label={`Severity: ${severity ?? "unavailable"}`}
-          >
-            {severity ? `SEVERITY ${severity.toUpperCase()}` : "SEVERITY UNAVAILABLE"}
-          </span>
-        </span>
-      </button>
+        </button>
+
+        {targetPrescriptionId && onNavigateToPrescription && (
+          <div className={styles.findingActions}>
+            <button
+              type="button"
+              className={styles.seeFixButton}
+              onClick={() => onNavigateToPrescription(targetPrescriptionId)}
+            >
+              See fix →
+            </button>
+          </div>
+        )}
+      </div>
 
       {expanded && (
         <div id={detailId} className={styles.findingDetail}>
@@ -398,7 +381,7 @@ function ZeroDetectorCard({ kind }: { kind: FindingKind }): React.JSX.Element {
     <article className={styles.zeroCard} data-finding-kind={kind}>
       <div className={styles.zeroCardHeader}>
         <span className={styles.zeroCount}>0</span>
-        <span className={styles.zeroHeadline}>{KIND_LABELS[kind] ?? kind}</span>
+        <span className={styles.zeroHeadline}>{findingKindLabel(kind)}</span>
       </div>
       <p className={styles.zeroEmpty}>No findings of this type.</p>
       <p className={styles.zeroDetail}>
@@ -411,18 +394,50 @@ function ZeroDetectorCard({ kind }: { kind: FindingKind }): React.JSX.Element {
 
 export interface FindingsScreenProps {
   findings: readonly Finding[];
+  /** Prescriptions used to render "See fix →" links on each finding. */
+  prescriptions?: readonly Prescription[];
+  /** Called when the user clicks "See fix →" on a finding. */
+  onNavigateToPrescription?: (prescriptionId: string) => void;
+  /** Optional finding ID to auto-expand and highlight (e.g. from Fix back-link). */
+  focusedFindingId?: string | null;
+  /** When true, renders as a <section> inside DiagnoseScreen without outer page chrome. */
+  embedded?: boolean;
 }
 
-export function FindingsScreen({ findings }: FindingsScreenProps): React.JSX.Element {
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+export function FindingsScreen({
+  findings,
+  prescriptions = [],
+  onNavigateToPrescription,
+  focusedFindingId = null,
+  embedded = false,
+}: FindingsScreenProps): React.JSX.Element {
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() =>
+    focusedFindingId ? new Set([focusedFindingId]) : new Set()
+  );
   const [revealedIds, setRevealedIds] = useState<Set<string>>(() => new Set());
   const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set());
+  const rowRefs = useRef<Map<string, HTMLElement | null>>(new Map());
+
+  useEffect(() => {
+    if (!focusedFindingId) return;
+    setExpandedIds((current) => {
+      if (current.has(focusedFindingId)) return current;
+      const next = new Set(current);
+      next.add(focusedFindingId);
+      return next;
+    });
+    const el = rowRefs.current.get(focusedFindingId);
+    el?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  }, [focusedFindingId]);
+
   const groups = useMemo(() => groupFindings(findings), [findings]);
   const representedKinds = useMemo(
     () => new Set(findings.map((finding) => finding.kind)),
     [findings]
   );
-  const zeroKinds = CORE_FINDING_KINDS.filter((kind) => !representedKinds.has(kind));
+  const zeroKinds = CORE_FINDING_KINDS.filter(
+    (kind) => !representedKinds.has(kind)
+  );
 
   function updateSet(
     setter: React.Dispatch<React.SetStateAction<Set<string>>>,
@@ -446,20 +461,32 @@ export function FindingsScreen({ findings }: FindingsScreenProps): React.JSX.Ele
     });
   }
 
-  return (
-    <main className={styles.wrapper}>
-      <header className={styles.header}>
-        <p className={styles.headerSub}>Findings · {CORE_FINDING_KINDS.length} detectors</p>
-        <h1 className={styles.headerTitle}>
-          {findings.length === 0
-            ? "No findings."
-            : `${findings.length} ${findings.length === 1 ? "finding" : "findings"}, each traceable to a field in the export.`}
-        </h1>
-        <p className={styles.headerDesc}>
-          This screen only presents the Findings it receives. Missing evidence is
-          marked unavailable; no detector is re-run in the interface.
-        </p>
-      </header>
+  const content = (
+    <>
+      {embedded ? (
+        <header className={styles.embeddedHeader}>
+          <h2 className={styles.embeddedTitle}>
+            {findings.length === 0
+              ? "No findings."
+              : `${findings.length} ${findings.length === 1 ? "finding" : "findings"}`}
+          </h2>
+        </header>
+      ) : (
+        <header className={styles.header}>
+          <p className={styles.headerSub}>
+            Findings · {CORE_FINDING_KINDS.length} detectors
+          </p>
+          <h1 className={styles.headerTitle}>
+            {findings.length === 0
+              ? "No findings."
+              : `${findings.length} ${findings.length === 1 ? "finding" : "findings"}, each traceable to a field in the export.`}
+          </h1>
+          <p className={styles.headerDesc}>
+            This screen only presents the Findings it receives. Missing evidence
+            is marked unavailable; no detector is re-run in the interface.
+          </p>
+        </header>
+      )}
 
       <div className={styles.toolbar}>
         <span className={styles.toolbarStat}>
@@ -467,7 +494,8 @@ export function FindingsScreen({ findings }: FindingsScreenProps): React.JSX.Ele
         </span>
         <span className={styles.toolbarDivider} aria-hidden="true" />
         <span className={styles.toolbarNote}>
-          Sensitive content is redacted by default and revealed one item at a time.
+          Sensitive content is redacted by default and revealed one item at a
+          time.
         </span>
       </div>
 
@@ -475,10 +503,12 @@ export function FindingsScreen({ findings }: FindingsScreenProps): React.JSX.Ele
         <nav className={styles.typeNav} aria-label="Finding types">
           {groups.map((group) => (
             <a key={group.kind} href={`#finding-group-${group.kind}`}>
-              {KIND_LABELS[group.kind] ?? group.kind} ({group.findings.length})
+              {findingKindLabel(group.kind)} ({group.findings.length})
             </a>
           ))}
-          {zeroKinds.length > 0 && <a href="#finding-zero-groups">Detectors at zero</a>}
+          {zeroKinds.length > 0 && (
+            <a href="#finding-zero-groups">Detectors at zero</a>
+          )}
         </nav>
       )}
 
@@ -486,7 +516,8 @@ export function FindingsScreen({ findings }: FindingsScreenProps): React.JSX.Ele
         <section className={styles.emptyState} aria-label="Overall empty state">
           <p className={styles.emptyStateText}>No findings to display.</p>
           <p className={styles.emptyStateHint}>
-            Zero results is valid information; the per-type states continue below.
+            Zero results is valid information; the per-type states continue
+            below.
           </p>
         </section>
       )}
@@ -498,26 +529,42 @@ export function FindingsScreen({ findings }: FindingsScreenProps): React.JSX.Ele
           className={styles.group}
           aria-labelledby={`finding-group-title-${group.kind}`}
         >
-          <h2 id={`finding-group-title-${group.kind}`} className={styles.groupHeader}>
-            {GROUP_LABELS[group.kind] ?? group.kind}
+          <h2
+            id={`finding-group-title-${group.kind}`}
+            className={styles.groupHeader}
+          >
+            {findingGroupLabel(group.kind)}
           </h2>
-          {group.findings.map((finding) => (
-            <FindingRow
-              key={finding.id}
-              finding={finding}
-              expanded={expandedIds.has(finding.id)}
-              revealed={revealedIds.has(finding.id)}
-              pending={pendingIds.has(finding.id)}
-              onToggle={() => toggleExpanded(finding.id)}
-              onRequestReveal={() => updateSet(setPendingIds, finding.id, true)}
-              onConfirmReveal={() => {
-                updateSet(setPendingIds, finding.id, false);
-                updateSet(setRevealedIds, finding.id, true);
-              }}
-              onCancelReveal={() => updateSet(setPendingIds, finding.id, false)}
-              onHide={() => updateSet(setRevealedIds, finding.id, false)}
-            />
-          ))}
+          {group.findings.map((finding) => {
+            const target = findTargetPrescription(finding, prescriptions);
+            return (
+              <FindingRow
+                key={finding.id}
+                finding={finding}
+                expanded={expandedIds.has(finding.id)}
+                focused={focusedFindingId === finding.id}
+                revealed={revealedIds.has(finding.id)}
+                pending={pendingIds.has(finding.id)}
+                targetPrescriptionId={target?.id ?? null}
+                onNavigateToPrescription={onNavigateToPrescription}
+                onToggle={() => toggleExpanded(finding.id)}
+                onRequestReveal={() =>
+                  updateSet(setPendingIds, finding.id, true)
+                }
+                onConfirmReveal={() => {
+                  updateSet(setPendingIds, finding.id, false);
+                  updateSet(setRevealedIds, finding.id, true);
+                }}
+                onCancelReveal={() =>
+                  updateSet(setPendingIds, finding.id, false)
+                }
+                onHide={() => updateSet(setRevealedIds, finding.id, false)}
+                rowRef={(el) => {
+                  rowRefs.current.set(finding.id, el);
+                }}
+              />
+            );
+          })}
         </section>
       ))}
 
@@ -527,10 +574,22 @@ export function FindingsScreen({ findings }: FindingsScreenProps): React.JSX.Ele
             Detectors that found nothing
           </h2>
           <div className={styles.zeroGrid}>
-            {zeroKinds.map((kind) => <ZeroDetectorCard key={kind} kind={kind} />)}
+            {zeroKinds.map((kind) => (
+              <ZeroDetectorCard key={kind} kind={kind} />
+            ))}
           </div>
         </section>
       )}
-    </main>
+    </>
   );
+
+  if (embedded) {
+    return (
+      <section className={styles.embeddedSection} aria-label="Findings">
+        {content}
+      </section>
+    );
+  }
+
+  return <main className={styles.wrapper}>{content}</main>;
 }
