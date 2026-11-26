@@ -39,11 +39,16 @@ function loadBaselineReport(): ObserveReport {
   return observe(parsed.value);
 }
 
-function makeTaskReport(taskId: string, context: ContextSummary): TaskReport {
+function makeTaskReport(
+  taskId: string,
+  context: ContextSummary,
+  overrides: Partial<Pick<TaskReport, "parentId" | "isSubtask">> = {}
+): TaskReport {
   return {
     taskId,
     parentId: null,
     isSubtask: false,
+    ...overrides,
     title: "[REDACTED]",
     modeId: "synthetic-test-mode",
     createdAt: 1_787_958_109_275,
@@ -242,5 +247,29 @@ describe("detectProjectRulesAbsent", () => {
     );
     returnedBreakdown.projectRules = 999;
     expect(report.tasks[0].context!.breakdown.projectRules).toBe(0);
+  });
+
+  it("ignores subtasks (isSubtask or parentId !== null) per I-5 while preserving root fieldPath index", () => {
+    const subtask = makeTaskReport("subtask-absent", baselineContext, {
+      parentId: "root-task",
+      isSubtask: true,
+    });
+    const subtaskWithOnlyParentId = makeTaskReport("subtask-parent-id", baselineContext, {
+      parentId: "root-task",
+      isSubtask: false,
+    });
+    const rootTask = makeTaskReport("root-task", baselineContext);
+
+    expect(detectProjectRulesAbsent(makeReport([subtask]))).toEqual([]);
+    expect(detectProjectRulesAbsent(makeReport([subtaskWithOnlyParentId]))).toEqual([]);
+
+    const findings = detectProjectRulesAbsent(
+      makeReport([subtask, rootTask, subtaskWithOnlyParentId])
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].taskId).toBe("root-task");
+    expect(findings[0].evidence.fieldPath).toBe(
+      "tasks[1].task.costs.contextWindowBreakdown.breakdown.projectRules"
+    );
   });
 });

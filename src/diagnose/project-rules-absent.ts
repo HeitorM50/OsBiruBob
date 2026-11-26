@@ -22,6 +22,8 @@ export function detectProjectRulesAbsent(report: ObserveReport): Finding[] {
 
   for (let taskIndex = 0; taskIndex < report.tasks.length; taskIndex++) {
     const task = report.tasks[taskIndex];
+    // Exclude subtasks from session-level diagnostics (I-5).
+    if (task.isSubtask || task.parentId !== null) continue;
     // No breakdown means the signal cannot be observed; absence of data is not
     // evidence of a missing AGENTS.md.
     if (task.context === null) continue;
